@@ -1,5 +1,7 @@
+# add option to pass args to nloptr
+# also return br probs (add flag to toggle this)
 
-brcal <- function(x,y,t_level){
+brcal <- function(x,y,t_level, x0=c(0.5,0.5)){
 
   eval_f <- function(x, probs, outs, t_level){
     # this assumes x is vector?
@@ -14,7 +16,7 @@ brcal <- function(x,y,t_level){
     return(c1)
   }
 
-  res <- nloptr(x0 = c(0.5,0.5),
+  res <- nloptr(x0 = x0,
                   eval_f = eval_f,
                   lb = c(0.0001, -Inf),
                   ub = c(Inf, Inf),
