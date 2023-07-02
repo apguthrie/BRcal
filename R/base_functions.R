@@ -1,17 +1,36 @@
 # Linear Log Odds Recalibration Function
 LLO <- function(p, delta, gamma){
+  # check p are probabilities in [0,1]
+
+  # check delta > 0 & numeric & size 1
+
+  # check gamma in Reals & numeric & size 1
+
   return((delta * (p^gamma)) / ((delta * (p^gamma)) + ((1-p)^gamma)))
 }
 
 # Converts probs to logit scale
 logit <- function(p){
+
+  # check p are probabilities in [0,1]
+
+  # better way to handle the rounding here? - check literature
   p <- ifelse(p < (10^(-300)), (10^(-300)), p)
   p <- ifelse(p > 0.9999999999999999, 0.9999999999999999, p)
+
   return(log(p/(1-p)))
 }
 
 # Likelihood
 llo_lik <- function(params, x, y, log = FALSE, neg = FALSE){
+
+  # check params are of right length, right values
+
+  # check x's are between 0,1
+
+  # check y's are 0s or 1s
+
+  # check log & neg are logical
 
   # rounding off x's that are too close to zero or one
   x <- ifelse(x < (10^(-300)), (10^(-300)), x)
@@ -37,6 +56,17 @@ llo_lik <- function(params, x, y, log = FALSE, neg = FALSE){
 
 # Likelihood Ratio Test
 LLO_LRT <- function(x, y, params = c(1,1), optim_details = FALSE, start = c(0.5,0.5), lower = c(0.001, -5), upper = c(10,30)){
+
+  # check params are of right length, right values
+
+  # check x's are between 0,1
+
+  # check y's are 0s or 1s
+
+  # check optim details are logical
+
+  # check start, lower, upper
+
 
   top <- llo_lik(params, x, y, log = TRUE)
   optLRT <- optim(start, llo_lik, x=x, y=y, method = "L-BFGS-B",
