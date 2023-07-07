@@ -69,12 +69,12 @@ LLO_LRT <- function(x, y, params = c(1,1), optim_details = FALSE, start = c(0.5,
 
 
   top <- llo_lik(params, x, y, log = TRUE)
-  optLRT <- optim(start, llo_lik, x=x, y=y, method = "L-BFGS-B",
+  optLRT <- stats::optim(start, llo_lik, x=x, y=y, method = "L-BFGS-B",
                   lower = lower, upper = upper, neg = TRUE, log = TRUE)
   bottom <- -optLRT$value
   est_params <- optLRT$par
   val <- 2*(bottom-top)
-  pval <- 1-pchisq(val, 2)
+  pval <- 1-stats::pchisq(val, 2)
 
   if(optim_details){
     results <- list(test_stat = val,

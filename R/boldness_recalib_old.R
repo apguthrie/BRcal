@@ -47,11 +47,11 @@ bold_recalib <- function(vec, zmat, calib = 0.95, filen){
   for(i in 1:nrow(adj_res)){
     # adj_mat[,i] <- LLO(vec, delta = adj_res$delta[i], gamma = adj_res$gamma[i])
     temp <- LLO(vec, delta = adj_res$delta[i], gamma = adj_res$gamma[i])
-    adj_res$sd[i] <- sd(temp)
+    adj_res$sd[i] <- stats::sd(temp)
   }
 
 
-  write.csv(adj_res, paste0("simstudy_results/adjres_", filen, "_", calib, ".csv"))
+  utils::write.csv(adj_res, paste0("simstudy_results/adjres_", filen, "_", calib, ".csv"))
 
   # adj_df <- data.frame(adj_mat)
   # colnames(adj_df) <- expand.grid(paste0(filen, "_"), as.character(1:ncol(adj_df))) %>%

@@ -8,7 +8,7 @@ BIC_llo <- function(x, y, k, params = NA, lower = c(0.001, -5), upper = c(10,30)
 
     result <- -2*llo_lik(params = params, x = x, y = y, log = TRUE)
   } else if(anyNA(params)){
-    optBayes <- optim(c(0.5, 0.5), llo_lik, x=x, y=y, log = TRUE, neg = TRUE, method = "L-BFGS-B",
+    optBayes <- stats::optim(c(0.5, 0.5), llo_lik, x=x, y=y, log = TRUE, neg = TRUE, method = "L-BFGS-B",
                       lower = lower, upper = upper)
     max_lik <- -optBayes$value
     MLEs <- optBayes$par

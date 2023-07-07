@@ -6,7 +6,7 @@ brcal <- function(x,y,t_level, x0=c(0.5,0.5)){
   eval_f <- function(x, probs, outs, t_level){
     # this assumes x is vector?
     probs_new <- LLO(probs, x[1], x[2])
-    return(-sd(probs_new) )
+    return(-stats::sd(probs_new) )
   }
 
   eval_g <- function(x, probs, outs, t_level){
@@ -16,7 +16,7 @@ brcal <- function(x,y,t_level, x0=c(0.5,0.5)){
     return(c1)
   }
 
-  res <- nloptr(x0 = x0,
+  res <- nloptr::nloptr(x0 = x0,
                   eval_f = eval_f,
                   lb = c(0.0001, -Inf),
                   ub = c(Inf, Inf),

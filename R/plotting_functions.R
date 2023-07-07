@@ -1,5 +1,6 @@
 
 # Function to make contour plot
+
 plot_params <- function(z, len.out = 100,
                         lower = c(0.0001,-2), upper = c(5,2),
                         cont_levels = c(0.8, 0.9),
@@ -18,7 +19,7 @@ plot_params <- function(z, len.out = 100,
                         labcex=0.6,
                         legend.args = list(las=180),
                         ...){
-  library(fields)
+  #library(fields)
   max_z <- max(z[!is.na(z)])
 
   if(anyNA(lower)){
@@ -32,7 +33,7 @@ plot_params <- function(z, len.out = 100,
   d <- as.numeric(rownames(z))
 
   if(!contours_only){
-    image.plot(d, g, z, zlim = zlim, xlim = c(lower[1], upper[1]), ylim = c(lower[2], upper[2]),
+    fields::image.plot(d, g, z, zlim = zlim, xlim = c(lower[1], upper[1]), ylim = c(lower[2], upper[2]),
                main = paste0(ttle, ttle_extra),
                xlab = xlab,
                ylab = ylab,
@@ -65,6 +66,8 @@ lineplot <- function(df, ttle="Line Plot", ylab="Probability", xlab = "Posterior
                      pt_alpha = 0.35, ln_alpha = 0.25, font_base = 10,
                      ylim=c(0,1), breaks=seq(0,1,by=0.2)){
   font_size_lp <- font_base
+
+  requireNamespace(ggplot2)
 
   if(!outside_only){
 
