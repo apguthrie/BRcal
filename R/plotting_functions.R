@@ -149,6 +149,7 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
   if(!is.null(t) & !is.null(delta)) stop('EITHER t OR delta and gamma must be specified, both are specified')
 
 
+  # When delta & gamma are specified....
   if(!is.null(delta)){
     # check validity of delta, gamma
     # numeric
@@ -163,8 +164,44 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
     if(any(delta <= 0)) stop("delta must be greater than 0")
 
 
+    # GET DATA IN RIGHT FORM
+
+    # get posterior model probabilities
+
+    # create data frame to hold params & posterior model probs
+
+    df <- data.frame(matrix(nrow=length(x)*(length(delta)+1), ncol=7))
+    colnames(df) <- c("probs", "outcome", "post", "pairing", "delta", "gamma", "label")
+
+    # df_pmps <- data.frame(matrix(nrow=length(delta),ncol=3))
+    # colnames(df_pmps) <- c("delta", "gamma", "pmp")
+
+    nplot <- length(x)
+
+    # for original
+    bt <- bayes_testing(x, y)
+    df$probs[1:nplot] <- x
+    df$outcome[1:nplot] <- factor(y, levels = c("1", "0"))
+    df$post[1:nplot] <- rep(bt$posterior_model_prob, nplot)
+    df$pairing[1:nplot] <- factor(seq(1, nplot))
+    df$delta[1:nplot] <- df$gamma[1:nplot]  <-  rep(1, nplot)
+    df$label[1:nplot] <- rep(paste0("Original \n (",
+                                as.character(post), ")"), nplot)  # NEED TO FINISH THIS
+
+    # NEED TO MAKE LAST PART A FACTOR AND DECIDE ON LABELS
+
+    # for all sets of passed delta, gamma
+    # recalibrate, then pass to bayes_testing
+    for(i in 2:nrow(df_pmps)){
+      bt <- bayes_testing(LLO(x, y)
+      df_pmps[i,] <- c(delta[i-1],gamma[i-1],bt$posterior_model_prob)
+
+    }
+
+
   }
 
+  # When t is specified...
   # check validity of t
   if(!is.null(t)){
     # numeric
@@ -178,20 +215,7 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
 
 
 
-  # GET DATA IN RIGHT FORM
 
-  # get posterior model probabilities
-
-  # create data frame to hold params &
-
-  # for original
-  bt <- bayes_testing(x, y)
-
-  # for all sets of passed delta, gamma
-  # recalibrate, then pass to bayes_testing
-  for(i in 1:length(delta)){
-
-  }
 
   font_size_lp <- font_base
 
