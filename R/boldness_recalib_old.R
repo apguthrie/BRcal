@@ -22,6 +22,41 @@ get_zmat <- function(x,y, len.out = 100, lower = c(0.0001,-2), upper = c(5,2)){
   return(z_mat)
 }
 
+# version where maxxed log likelihood is returned instead of pmp
+get_zmat_ml <- function(x,y, len.out = 100, lower = c(0.0001,-2), upper = c(5,2)){
+
+  # Set up grid of Delta (d) and Gamma (g)
+  d <- seq(lower[1], upper[1], length.out = len.out)
+  g <- seq(lower[2], upper[2], length.out = len.out)
+  grd <- expand.grid(d,g)
+
+
+  # # BIC under alternative
+  # temp <- BIC_llo(x = x, y = y, k = k, params = params, lower = lower, upper = upper)
+  # BIC2 <- temp$BIC
+  #
+  # optBayes <- stats::optim(c(0.5, 0.5), llo_lik, x=x, y=y, log = TRUE, neg = TRUE, method = "L-BFGS-B",
+  #                          lower = lower, upper = upper)
+  # max_lik <- -optBayes$value
+
+
+  # Loop through grid points to get posterior model probability
+  temp <- c()
+  for(i in 1:nrow(grd)){
+    x_new <- LLO(x, delta = grd[i,1], gamma = grd[i,2])   # LLO adjust probs FIRST based on grid point
+
+    optBayes <- stats::optim(c(0.5, 0.5), llo_lik, x=x_new, y=y, log = TRUE, neg = TRUE, method = "L-BFGS-B",
+                             lower = lower, upper = upper)
+    max_lik <- -optBayes$value
+    temp <- c(temp, max_lik)
+  }
+
+  # Reshape vector of posterior model probs into matrix for plotting
+  z_mat <- matrix(temp, nrow = length(d), ncol = length(g))
+  colnames(z_mat) <- g
+  rownames(z_mat) <- d
+  return(z_mat)
+}
 
 
 
