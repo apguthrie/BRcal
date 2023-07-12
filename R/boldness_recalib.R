@@ -1,7 +1,7 @@
 # add option to pass args to nloptr
 # also return br probs (add flag to toggle this)
 
-brcal <- function(x,y,t_level, x0=c(0.5,0.5)){
+brcal <- function(x,y,t_level, x0=c(0.5,0.5), print_level=3){
 
   eval_f <- function(x, probs, outs, t_level){
     # this assumes x is vector?
@@ -23,7 +23,7 @@ brcal <- function(x,y,t_level, x0=c(0.5,0.5)){
                   eval_g_ineq = eval_g,
                   opts = list("algorithm"="NLOPT_LN_COBYLA",
                               "xtol_rel"=1.0e-8,
-                              "print_level"=3),
+                              "print_level"=print_level),
                   probs = x,
                   outs = y,
                   t_level = t_level)
