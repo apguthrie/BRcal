@@ -119,9 +119,9 @@ lineplot <- function(df, ttle="Line Plot", ylab="Probability", xlab = "Posterior
 lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot", ylab="Probability",
                          xlab = "Posterior Model Probability",
                          font_size_lp=5,
-                         outside_only = FALSE, pt_size = 0.75, ln_size = 0.25,
+                         outside_only = FALSE, pt_size = 1.5, ln_size = 0.5,
                          pt_alpha = 0.35, ln_alpha = 0.25, font_base = 10,
-                         ylim=c(0,1), breaks=seq(0,1,by=0.2)){
+                         ylim=c(0,1), breaks=seq(0,1,by=0.2), thin_by=NULL, thin_percent=NULL){
 
 
   # check validity of x,y inputs
@@ -213,7 +213,8 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
   }
 
   # create labels
-  df$label <- factor(as.character(df$post), levels = unique(as.character(df$post)))
+  df$label <- factor(as.character(round(df$post, 5)), levels = unique(as.character(round(df$post, 5))))
+
 
 
   # When t is specified...
