@@ -117,11 +117,12 @@ lineplot <- function(df, ttle="Line Plot", ylab="Probability", xlab = "Posterior
 }
 
 lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot", ylab="Probability",
-                         xlab = "Posterior Model Probability",
+                         xlab = "Posterior Model Probability", x_tick_labs = NULL,
                          font_size_lp=5,
                          outside_only = FALSE, pt_size = 1.5, ln_size = 0.5,
                          pt_alpha = 0.35, ln_alpha = 0.25, font_base = 10,
-                         ylim=c(0,1), breaks=seq(0,1,by=0.2), thin_by=NULL, thin_percent=NULL){
+                         ylim=c(0,1), breaks=seq(0,1,by=0.2), thin_to=NULL,
+                         thin_percent=NULL){
 
 
   # check validity of x,y inputs
@@ -164,20 +165,25 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
     if(any(delta <= 0)) stop("delta must be greater than 0")
 
     # ADD THINNING
+    if(!is.null(thin_to) & !is.null(thin_percent)) warning('both thin_to and thin_by specified, thin_by ignored')
 
-    # GET DATA IN RIGHT FORM
+    if(length(x) > 5000 & is.null(thin_to) & is.null(thin_percent)) warning('plotting may be slow due to large x, considering using thin_to or thin_by')
 
-    # get posterior model probabilities
+    if(!is.null(thin_to)){
+      set.seed(0)
+      rows <- sample(1:length(x), size=thin_to)
+    } else if (!is.null(thin_percent)){
+      set.seed(0)
+      rows <- sample(1:length(x), size=length(x)*thin_percent)
+    } else{
+      rows <- 1:length(x)
+    }
+    nplot <- length(rows)
+    x <- x[rows]
+    y <- y[rows]
 
-    # create data frame to hold params & posterior model probs
-
-    nplot <- length(x)
     df <- data.frame(matrix(nrow=nplot, ncol=7))
     colnames(df) <- c("probs", "outcome", "post", "pairing", "delta", "gamma", "label")
-
-    # df_pmps <- data.frame(matrix(nrow=length(delta),ncol=3))
-    # colnames(df_pmps) <- c("delta", "gamma", "pmp")
-
 
 
     # for original
@@ -212,10 +218,10 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
     }
   }
 
-  # create labels
-  df$label <- factor(as.character(round(df$post, 5)), levels = unique(as.character(round(df$post, 5))))
-
-
+  if(is.null(x_tick_labs)){
+    # create labels
+    df$label <- factor(as.character(round(df$post, 5)), levels = unique(as.character(round(df$post, 5))))
+  }
 
   # When t is specified...
   # check validity of t
