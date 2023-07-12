@@ -138,7 +138,7 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
   if(any(!(y %in% c(0,1)))) stop('y must be numeric vector of 1s (event) and 0s (nonevent)')
 
   # x between 0,1
-  if(any((x < 0 || x > 1))) stop('x must be numeric vector in [0,1]')
+  if(any((x < 0 | x > 1))) stop('x must be numeric vector in [0,1]')
 
 
   # check that EITHER t or delta and gamma are specified
