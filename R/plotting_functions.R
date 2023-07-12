@@ -117,7 +117,7 @@ lineplot <- function(df, ttle="Line Plot", ylab="Probability", xlab = "Posterior
 }
 
 lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot", ylab="Probability",
-                         xlab = "Posterior Model Probability", x_tick_labs = NULL,
+                         xlab = "Posterior Model Probability",
                          font_size_lp=5,
                          outside_only = FALSE, pt_size = 1.5, ln_size = 0.5,
                          pt_alpha = 0.35, ln_alpha = 0.25, font_base = 10,
@@ -193,6 +193,7 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
     df$post <- rep(bt$posterior_model_prob, nplot)
     df$pairing <- factor(seq(1, nplot))
     df$delta <- df$gamma  <-  rep(1, nplot)
+    df$label <- paste0(as.character(round(df$post, 5)), "\n (Original)")
     #df$label[1:nplot] <- rep(paste0("Original \n (",
     #                                as.character(post), ")"), nplot)  # NEED TO FINISH THIS
 
@@ -213,15 +214,15 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
       temp$pairing <- factor(seq(1, nplot))
       temp$delta <- rep(delta[i], nplot)
       temp$gamma <- rep(gamma[i], nplot)
-
+      temp$label <- paste0(as.character(round(temp$post, 5)), "\n (delta=", round(delta[i],3), ", gamma=", round(gamma[i],3), ")")
       df <- rbind(df, temp)
     }
+
+    df$label <- factor(df$label,
+                       levels = unique(df$label))
+
   }
 
-  if(is.null(x_tick_labs)){
-    # create labels
-    df$label <- factor(as.character(round(df$post, 5)), levels = unique(as.character(round(df$post, 5))))
-  }
 
   # When t is specified...
   # check validity of t
