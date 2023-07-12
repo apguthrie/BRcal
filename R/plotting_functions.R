@@ -230,7 +230,7 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
     if(any(class(t) != "numeric")) stop("t must be non-empty numeric vector")
 
     # correct range for t
-    if(any(!(t < 0 || t > 1))) stop('x must be numeric vector in [0,1]')
+    if(any(!(t < 0 | t > 1))) stop('x must be numeric vector in [0,1]')
   }
 
   # CHECK GRAPHING PARAMS
