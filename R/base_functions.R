@@ -54,6 +54,18 @@ llo_lik <- function(params, x, y, log = FALSE, neg = FALSE){
   return(result)
 }
 
+llo_optim_wrap <- function(params, x, y, log = FALSE, neg = FALSE){
+  if(params[1] <= 0){
+    result <- -9999
+    if(neg){
+      result <- -result
+    }
+  } else {
+    result <- llo_lik(params=params, x=x, y=y, log=log, neg=neg)
+  }
+  return(result)
+}
+
 # Likelihood Ratio Test
 LLO_LRT <- function(x, y, params = c(1,1), optim_details = FALSE, start = c(0.5,0.5), lower = c(0.001, -5), upper = c(10,30)){
 
@@ -71,6 +83,44 @@ LLO_LRT <- function(x, y, params = c(1,1), optim_details = FALSE, start = c(0.5,
   top <- llo_lik(params, x, y, log = TRUE)
   optLRT <- stats::optim(start, llo_lik, x=x, y=y, method = "L-BFGS-B",
                   lower = lower, upper = upper, neg = TRUE, log = TRUE)
+  bottom <- -optLRT$value
+  est_params <- optLRT$par
+  val <- 2*(bottom-top)
+  pval <- 1-stats::pchisq(val, 2)
+
+  if(optim_details){
+    results <- list(test_stat = val,
+                    pval = pval,
+                    est_params = est_params,
+                    opt_value = bottom,
+                    opt_counts = optLRT$counts,
+                    opt_convergence = optLRT$convergence,
+                    opt_message = optLRT$message)
+  } else {
+    results <- list(test_stat = val,
+                    pval = pval,
+                    est_params = est_params)
+  }
+  return(results)
+}
+
+# Likelihood Ratio Test
+LLO_LRT_dev <- function(x, y, params = c(1,1), optim_details = FALSE, start = c(0.5,0.5), lower = c(0.001, -5), upper = c(10,30)){
+
+  # check params are of right length, right values
+
+  # check x's are between 0,1
+
+  # check y's are 0s or 1s
+
+  # check optim details are logical
+
+  # check start, lower, upper
+
+
+  top <- llo_lik(params, x, y, log = TRUE)
+  optLRT <- stats::optim(start, llo_optim_wrap, x=x, y=y, method = "Nelder-Mead",
+                          neg = TRUE, log = TRUE)
   bottom <- -optLRT$value
   est_params <- optLRT$par
   val <- 2*(bottom-top)
