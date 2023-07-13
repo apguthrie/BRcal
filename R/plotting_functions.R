@@ -122,7 +122,7 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
                          outside_only = FALSE, pt_size = 1.5, ln_size = 0.5,
                          pt_alpha = 0.35, ln_alpha = 0.25, font_base = 10,
                          ylim=c(0,1), breaks=seq(0,1,by=0.2), thin_to=NULL,
-                         thin_percent=NULL){
+                         thin_percent=NULL, thin_by=NULL){
 
 
   # check validity of x,y inputs
@@ -175,6 +175,9 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
     } else if (!is.null(thin_percent)){
       set.seed(0)
       rows <- sample(1:length(x), size=length(x)*thin_percent)
+    } else if (!is.null(thin_by)){
+      rows <- seq(1,length(x),thin_by)
+    }
     } else{
       rows <- 1:length(x)
     }
