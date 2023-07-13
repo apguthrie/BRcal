@@ -289,7 +289,7 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
             axis.text = element_text(size = font_size_lp),
             title = element_text(size = font_size_lp))
   }
-  return(lines)
+  return(list(plot=lines, df=df))
 
 }
 
