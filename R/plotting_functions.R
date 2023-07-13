@@ -177,7 +177,6 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
       rows <- sample(1:length(x), size=length(x)*thin_percent)
     } else if (!is.null(thin_by)){
       rows <- seq(1,length(x),thin_by)
-    }
     } else{
       rows <- 1:length(x)
     }
