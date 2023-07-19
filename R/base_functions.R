@@ -81,8 +81,10 @@ LLO_LRT <- function(x, y, params = c(1,1), optim_details = FALSE, start = c(0.5,
 
 
   top <- llo_lik(params, x, y, log = TRUE)
-  optLRT <- stats::optim(start, llo_lik, x=x, y=y, method = "L-BFGS-B",
-                  lower = lower, upper = upper, neg = TRUE, log = TRUE)
+  # optLRT <- stats::optim(start, llo_lik, x=x, y=y, method = "L-BFGS-B",
+  #                 lower = lower, upper = upper, neg = TRUE, log = TRUE)
+  optLRT <- stats::optim(start, llo_optim_wrap, x=x, y=y, method = "Nelder-Mead",
+                         neg = TRUE, log = TRUE)
   bottom <- -optLRT$value
   est_params <- optLRT$par
   val <- 2*(bottom-top)
