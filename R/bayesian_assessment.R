@@ -55,10 +55,10 @@ post_mod_prob <- function(BF){
 # Bayesian Calibration assessment function
 bayes_testing <- function(x, y, k = 2, params_null = c(1,1), params = NA, optim_details = FALSE, lower = c(0.001, -5), upper = c(10,30)){
   # BIC under null
-  BIC1 <- BIC_llo_dev(x = x, y = y, k = 0, params = params_null, lower = lower, upper = upper)
+  BIC1 <- BIC_llo(x = x, y = y, k = 0, params = params_null, lower = lower, upper = upper)
 
   # BIC under alternative
-  temp <- BIC_llo_dev(x = x, y = y, k = k, params = params, lower = lower, upper = upper)
+  temp <- BIC_llo(x = x, y = y, k = k, params = params, lower = lower, upper = upper)
   BIC2 <- temp$BIC
 
 
