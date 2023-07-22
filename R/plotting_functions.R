@@ -293,3 +293,55 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
 
 }
 
+# Function to get matrix of posterior model probabilities across delta/gamma grid
+get_zmat <- function(x, y, len.out = 100, lower = c(0.0001,-2), upper = c(5,2)){
+
+  # Set up grid of Delta (d) and Gamma (g)
+  d <- seq(lower[1], upper[1], length.out = len.out)
+  g <- seq(lower[2], upper[2], length.out = len.out)
+  grd <- expand.grid(d,g)
+
+  # Loop through grid points to get posterior model probability
+  #temp <- c()
+  # for(i in 1:nrow(grd)){
+  #   x_new <- LLO(x, delta = grd[i,1], gamma = grd[i,2])   # LLO adjust probs FIRST based on grid point
+  #   pmp <- bayes_testing(x_new, y)$posterior_model_prob   # Get posterior model prob
+  #   temp <- c(temp, pmp)
+  # }
+
+  x0 <- x
+  paramsM <- LLO_LRT(x0, y, optim_details=FALSE)$est_params
+  xM <- LLO(x0, delta=paramsM[1], gamma=paramsM[2])
+
+  grd.loglik <- c()
+  optim.loglik <- c()
+  BIC_1 <- c()
+  grd.BIC_2 <- c()
+  optim.BIC_2 <- c()
+
+  n <- length(x0)
+
+  for(i in 1:nrow(grd)){
+    xg <- LLO(x0, delta = grd[i,1], gamma = grd[i,2])
+    xu <- unique(xM)[1:2]  # grab two unique xs
+    uniq_inds <- c(which(xM == xu[1])[1], which(xM == xu[2])[1]) # find their indices (make sure only grab one index for each)
+    start <- logit(xg[uniq_inds])
+    goal <- logit(xM[uniq_inds])
+    b <- (goal[2] - goal[1]) / (start[2] - start[1])
+    a <- goal[2] - b*start[2]
+    grd.loglik[i] <- llo_lik(params=c(exp(a),b), x=xg, y=y, log=TRUE)
+    BIC_1[i] <- (-2)*llo_lik(params=c(1,1), x=xg, y=y, log=TRUE)
+    grd.BIC_2[i] <- 2*log(n) - 2*grd.loglik[i]
+  }
+
+  grd.BF <- bayes_factor(BIC1 = grd.BIC_2, BIC2 = BIC_1)
+  temp <- post_mod_prob(grd.BF)
+
+
+  # Reshape vector of posterior model probs into matrix for plotting
+  z_mat <- matrix(temp, nrow = length(d), ncol = length(g))
+  colnames(z_mat) <- g
+  rownames(z_mat) <- d
+  return(z_mat)
+}
+
