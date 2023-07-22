@@ -22,7 +22,7 @@ logit <- function(p){
 }
 
 # Likelihood
-llo_lik <- function(params, x, y, log = FALSE, neg = FALSE){
+llo_lik <- function(params, x, y, log = FALSE, neg = FALSE, tau = FALSE){
 
   # check params are of right length, right values
 
@@ -36,7 +36,13 @@ llo_lik <- function(params, x, y, log = FALSE, neg = FALSE){
   x <- ifelse(x < (10^(-300)), (10^(-300)), x)
   x <- ifelse(x > 0.9999999999999999, 0.9999999999999999, x)
 
-  llo <- LLO(p = x, delta = params[1], gamma = params[2])
+  if(tau){
+    llo <- LLO(p = x, delta = exp(params[1]), gamma = params[2])
+  } else {
+    llo <- LLO(p = x, delta = params[1], gamma = params[2])
+  }
+
+
 
   llo <- ifelse(llo < (10^(-300)), (10^(-300)), llo)
   llo <- ifelse(llo > 0.9999999999999999, 0.9999999999999999, llo)
@@ -67,8 +73,13 @@ llo_optim_wrap <- function(params, x, y, log = FALSE, neg = FALSE){
 }
 
 llo_optim <- function(x, y, lower, upper, start=c(0.5,0.5)){
-  opt <- optim(start, llo_lik, x=x, y=y, log = TRUE, neg = TRUE, method = "L-BFGS-B",
-                                              lower = lower, upper = upper)
+  # opt <- optim(start, llo_lik, x=x, y=y, log = TRUE, neg = TRUE, method = "L-BFGS-B",
+  #                                             lower = lower, upper = upper)
+  opt <- optim(start, llo_lik, x=x, y=y, method = "Nelder-Mead",
+                                                 neg = TRUE, log = TRUE, tau=TRUE)
+
+  opt$par[1] <- exp(opt$par[1])
+
   return(opt)
 }
 
