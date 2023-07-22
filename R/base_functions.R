@@ -66,6 +66,12 @@ llo_optim_wrap <- function(params, x, y, log = FALSE, neg = FALSE){
   return(result)
 }
 
+llo_optim <- function(x, y, lower, upper, start=c(0.5,0.5)){
+  opt <- optim(start, llo_lik, x=x, y=y, log = TRUE, neg = TRUE, method = "L-BFGS-B",
+                                              lower = lower, upper = upper)
+  return(opt)
+}
+
 # Likelihood Ratio Test
 LLO_LRT <- function(x, y, params = c(1,1), optim_details = FALSE, start = c(0.5,0.5), lower = c(0.001, -5), upper = c(10,30)){
 
@@ -83,8 +89,10 @@ LLO_LRT <- function(x, y, params = c(1,1), optim_details = FALSE, start = c(0.5,
   top <- llo_lik(params, x, y, log = TRUE)
   # optLRT <- stats::optim(start, llo_lik, x=x, y=y, method = "L-BFGS-B",
   #                 lower = lower, upper = upper, neg = TRUE, log = TRUE)
-  optLRT <- stats::optim(start, llo_optim_wrap, x=x, y=y, method = "Nelder-Mead",
-                         neg = TRUE, log = TRUE)
+  # optLRT <- stats::optim(start, llo_optim_wrap, x=x, y=y, method = "Nelder-Mead",
+  #                        neg = TRUE, log = TRUE)
+  optLRT <- llo_optim(x,y,lower,upper,start)
+
   bottom <- -optLRT$value
   est_params <- optLRT$par
   val <- 2*(bottom-top)

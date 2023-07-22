@@ -10,8 +10,9 @@ BIC_llo <- function(x, y, k, params = NA, lower = c(0.001, -5), upper = c(10,30)
   } else if(anyNA(params)){
     # optBayes <- stats::optim(c(0.5, 0.5), llo_lik, x=x, y=y, log = TRUE, neg = TRUE, method = "L-BFGS-B",
     #                   lower = lower, upper = upper)
-    optBayes <- stats::optim(c(0.5, 0.5), llo_optim_wrap, x=x, y=y, method = "Nelder-Mead",
-                           neg = TRUE, log = TRUE)
+    # optBayes <- stats::optim(c(0.5, 0.5), llo_optim_wrap, x=x, y=y, method = "Nelder-Mead",
+    #                        neg = TRUE, log = TRUE)
+    optBayes <- llo_optim(x,y,lower,upper)
     max_lik <- -optBayes$value
     MLEs <- optBayes$par
     result <- list(BIC = k * log(n) - (2 * max_lik),
@@ -23,26 +24,6 @@ BIC_llo <- function(x, y, k, params = NA, lower = c(0.001, -5), upper = c(10,30)
   return(result)
 }
 
-BIC_llo_dev <- function(x, y, k, params = NA, lower = c(0.001, -5), upper = c(10,30)){
-  n <- length(x)
-  if(k == 0){
-    #suppressWarnings(if(is.na(params)) stop("must specify null params when k = 0"))
-    suppressWarnings(if(anyNA(params)) stop("must specify null params when k = 0"))
-
-    result <- -2*llo_lik(params = params, x = x, y = y, log = TRUE)
-  } else if(anyNA(params)){
-    optBayes <- stats::optim(c(0.5, 0.5), llo_optim_wrap, x=x, y=y, log = TRUE, neg = TRUE, method = "Nelder-Mead")
-                             #lower = lower, upper = upper)
-    max_lik <- -optBayes$value
-    MLEs <- optBayes$par
-    result <- list(BIC = k * log(n) - (2 * max_lik),
-                   est_params = MLEs)
-  } else {
-    result <- list(BIC = k * log(n) - (2 * llo_lik(params = params, x = x, y = y, log = TRUE)),
-                   params = params)
-  }
-  return(result)
-}
 
 # Bayes factor - only approx BIC version for now
 bayes_factor <- function(BIC1, BIC2, approx = TRUE){
