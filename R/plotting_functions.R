@@ -11,13 +11,14 @@ plot_params <- function(z, len.out = 100,
                         contours_only = FALSE,
                         add = FALSE,
                         contour_color = "white",
-                        leg_lab = "",
+                        legend.lab = "",
                         drawlabels = TRUE,
                         xlab = "delta",
                         ylab = "gamma",
                         lwd=1,
                         labcex=0.6,
                         legend.args = list(las=180),
+                        legend.mar = 9, no_legend=FALSE,
                         ...){
   #library(fields)
   max_z <- max(z[!is.na(z)])
@@ -33,17 +34,31 @@ plot_params <- function(z, len.out = 100,
   d <- as.numeric(rownames(z))
 
   if(!contours_only){
-    fields::image.plot(d, g, z, zlim = zlim, xlim = c(lower[1], upper[1]), ylim = c(lower[2], upper[2]),
-                       main = paste0(ttle, ttle_extra),
-                       xlab = xlab,
-                       ylab = ylab,
-                       sub = sub,
-                       legend.mar = 9,
-                       legend.lab = leg_lab,
-                       legend.args = legend.args, ...)
-    if(!anyNA(cont_levels)){
-      contour(d, g, z, add = TRUE, levels = cont_levels, col = contour_color,
-              drawlabels = drawlabels, lwd=lwd, labcex=labcex)
+
+    if(no_legend){
+      image(d, g, z, zlim = zlim, xlim = c(lower[1], upper[1]), ylim = c(lower[2], upper[2]),
+                         main = paste0(ttle, ttle_extra),
+                         xlab = xlab,
+                         ylab = ylab,
+                         sub = sub, ...)
+      if(!anyNA(cont_levels)){
+        contour(d, g, z, add = TRUE, levels = cont_levels, col = contour_color,
+                drawlabels = drawlabels, lwd=lwd, labcex=labcex)
+      }
+    }else{
+
+      fields::image.plot(d, g, z, zlim = zlim, xlim = c(lower[1], upper[1]), ylim = c(lower[2], upper[2]),
+                         main = paste0(ttle, ttle_extra),
+                         xlab = xlab,
+                         ylab = ylab,
+                         sub = sub,
+                         legend.mar = legend.mar,
+                         legend.lab = legend.lab,
+                         legend.args = legend.args, ...)
+      if(!anyNA(cont_levels)){
+        contour(d, g, z, add = TRUE, levels = cont_levels, col = contour_color,
+                drawlabels = drawlabels, lwd=lwd, labcex=labcex)
+      }
     }
   }else{
     if(!anyNA(cont_levels)){
@@ -122,7 +137,7 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
                          outside_only = FALSE, pt_size = 1.5, ln_size = 0.5,
                          pt_alpha = 0.35, ln_alpha = 0.25, font_base = 10,
                          ylim=c(0,1), breaks=seq(0,1,by=0.2), thin_to=NULL,
-                         thin_percent=NULL, thin_by=NULL){
+                         thin_percent=NULL, thin_by=NULL, pmp_label=FALSE){
 
 
   # check validity of x,y inputs
@@ -195,7 +210,20 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
     df$post <- rep(bt$posterior_model_prob, nplot)
     df$pairing <- factor(seq(1, nplot))
     df$delta <- df$gamma  <-  rep(1, nplot)
-    df$label <- paste0(as.character(round(df$post, 5)), "\n (Original)")
+
+    if(pmp_label){
+      if(round(df$post[1],4)==0){
+        post = "0.0000"
+      } else {
+        post <- as.character(round(df$post, 4))
+      }
+      df$label <- paste0("Original \n(", post ,")")
+
+    } else {
+      df$label <- paste0(as.character(round(df$post, 5)), "\n (Original)")
+
+    }
+
     #df$label[1:nplot] <- rep(paste0("Original \n (",
     #                                as.character(post), ")"), nplot)  # NEED TO FINISH THIS
 
@@ -216,7 +244,24 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
       temp$pairing <- factor(seq(1, nplot))
       temp$delta <- rep(delta[i], nplot)
       temp$gamma <- rep(gamma[i], nplot)
-      temp$label <- paste0(as.character(round(temp$post, 5)), "\n (delta=", round(delta[i],3), ", gamma=", round(gamma[i],3), ")")
+
+      if(pmp_label){
+        # NEED TO GENERALIZE! usee t instead
+        if(i==1){
+          lab <- "MLE Recalib."
+          post <- as.character(round(temp$post, 4))
+        }else if(i==2){
+          lab <- "95% B-R"
+          post <- "0.9500"
+        }
+
+        temp$label <- paste0(lab, " \n(", post,")")
+
+      } else {
+        temp$label <- paste0(as.character(round(temp$post, 5)), "\n (delta=", round(delta[i],3), ", gamma=", round(gamma[i],3), ")")
+
+      }
+
       df <- rbind(df, temp)
     }
 
@@ -289,8 +334,8 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
             axis.text = element_text(size = font_size_lp),
             title = element_text(size = font_size_lp))
   }
-  return(list(plot=lines, df=df))
-
+  #return(list(plot=lines, df=df))
+  return(lines)
 }
 
 # Function to get matrix of posterior model probabilities across delta/gamma grid
