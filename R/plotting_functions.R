@@ -195,6 +195,8 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
     } else{
       rows <- 1:length(x)
     }
+
+    # if thin before will alter pmp!!
     nplot <- length(rows)
     x <- x[rows]
     y <- y[rows]
