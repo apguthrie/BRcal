@@ -10,7 +10,7 @@ LLO <- function(p, delta, gamma){
 }
 
 # Converts probs to logit scale
-logit <- function(p){
+to_logit <- logit <- function(p){
 
   # check p are probabilities in [0,1]
 
@@ -19,6 +19,10 @@ logit <- function(p){
   p <- ifelse(p > 0.9999999999999999, 0.9999999999999999, p)
 
   return(log(p/(1-p)))
+}
+
+to_prob <- function(x){
+  return(exp(x)/(1+exp(x)))
 }
 
 # Likelihood
