@@ -82,7 +82,7 @@ lineplot <- function(df, ttle="Line Plot", ylab="Probability", xlab = "Posterior
                      ylim=c(0,1), breaks=seq(0,1,by=0.2)){
   font_size_lp <- font_base
 
-  requireNamespace(ggplot2)
+  #requireNamespace(ggplot2)
 
   if(!outside_only){
 
