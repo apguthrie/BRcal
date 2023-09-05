@@ -196,10 +196,10 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
       rows <- 1:length(x)
     }
 
-    # if thin before will alter pmp!!
+
     nplot <- length(rows)
-    x <- x[rows]
-    y <- y[rows]
+    x_thin <- x[rows]
+    y_thin <- y[rows]
 
     df <- data.frame(matrix(nrow=nplot, ncol=7))
     colnames(df) <- c("probs", "outcome", "post", "pairing", "delta", "gamma", "label")
@@ -207,8 +207,8 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
 
     # for original
     bt <- bayes_testing(x, y)
-    df$probs <- x
-    df$outcome <- factor(y, levels = c("1", "0"))
+    df$probs <- x_thin
+    df$outcome <- factor(y_thin, levels = c("1", "0"))
     df$post <- rep(bt$posterior_model_prob, nplot)
     df$pairing <- factor(seq(1, nplot))
     df$delta <- df$gamma  <-  rep(1, nplot)
@@ -237,11 +237,12 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
       temp <- data.frame(matrix(nrow=nplot, ncol=7))
       colnames(temp) <- c("probs", "outcome", "post", "pairing", "delta", "gamma", "label")
 
-      temp$probs <- LLO(x, delta[i], gamma[i])
+      llo_probs <-  LLO(x, delta[i], gamma[i])
+      temp$probs <- llo_probs[rows]
 
-      bt <- bayes_testing(temp$probs, y)
+      bt <- bayes_testing(llo_probs, y)
 
-      temp$outcome <- factor(y, levels = c("1", "0"))
+      temp$outcome <- factor(y_thin, levels = c("1", "0"))
       temp$post <- rep(bt$posterior_model_prob, nplot)
       temp$pairing <- factor(seq(1, nplot))
       temp$delta <- rep(delta[i], nplot)
