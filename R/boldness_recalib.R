@@ -1,7 +1,13 @@
 # add option to pass args to nloptr
 # also return br probs (add flag to toggle this)
 
-brcal <- function(x,y,t_level, x0=c(0.5,0.5), print_level=3, maxeval=100, xtol_rel=1.0e-8){
+brcal <- function(x,y,t_level, x0=c(0.5,0.5), print_level=3, maxeval=100,
+                  xtol_rel=1.0e-8, start_at_MLEs=TRUE){
+
+  if(start_at_MLEs){
+    bt <- bayes_testing(x,y)
+    x0 <- bt$est_params
+  }
 
   eval_f <- function(x, probs, outs, t_level){
     # this assumes x is vector?
@@ -17,17 +23,17 @@ brcal <- function(x,y,t_level, x0=c(0.5,0.5), print_level=3, maxeval=100, xtol_r
   }
 
   res <- nloptr::nloptr(x0 = x0,
-                  eval_f = eval_f,
-                  lb = c(0.0001, -Inf),
-                  ub = c(Inf, Inf),
-                  eval_g_ineq = eval_g,
-                  opts = list("algorithm"="NLOPT_LN_COBYLA",
-                              "xtol_rel"=xtol_rel,
-                              "print_level"=print_level,
-                              "maxeval"=maxeval),
-                  probs = x,
-                  outs = y,
-                  t_level = t_level)
+                        eval_f = eval_f,
+                        lb = c(0.0001, -Inf),
+                        ub = c(Inf, Inf),
+                        eval_g_ineq = eval_g,
+                        opts = list("algorithm"="NLOPT_LN_COBYLA",
+                                    "xtol_rel"=xtol_rel,
+                                    "print_level"=print_level,
+                                    "maxeval"=maxeval),
+                        probs = x,
+                        outs = y,
+                        t_level = t_level)
   return(res)
 }
 
