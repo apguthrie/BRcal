@@ -37,10 +37,10 @@ plot_params <- function(z, len.out = 100,
 
     if(no_legend){
       image(d, g, z, zlim = zlim, xlim = c(lower[1], upper[1]), ylim = c(lower[2], upper[2]),
-                         main = paste0(ttle, ttle_extra),
-                         xlab = xlab,
-                         ylab = ylab,
-                         sub = sub, ...)
+            main = paste0(ttle, ttle_extra),
+            xlab = xlab,
+            ylab = ylab,
+            sub = sub, ...)
       if(!anyNA(cont_levels)){
         contour(d, g, z, add = TRUE, levels = cont_levels, col = contour_color,
                 drawlabels = drawlabels, lwd=lwd, labcex=labcex)
@@ -137,7 +137,7 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
                          outside_only = FALSE, pt_size = 1.5, ln_size = 0.5,
                          pt_alpha = 0.35, ln_alpha = 0.25, font_base = 10,
                          ylim=c(0,1), breaks=seq(0,1,by=0.2), thin_to=NULL,
-                         thin_percent=NULL, thin_by=NULL, pmp_label=FALSE){
+                         thin_percent=NULL, thin_by=NULL, pmp_label=FALSE, deciles=FALSE){
 
 
   # check validity of x,y inputs
@@ -192,14 +192,19 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
       rows <- sample(1:length(x), size=length(x)*thin_percent)
     } else if (!is.null(thin_by)){
       rows <- seq(1,length(x),thin_by)
-    } else{
+    }  else{
       rows <- 1:length(x)
     }
 
-
-    nplot <- length(rows)
-    x_thin <- x[rows]
-    y_thin <- y[rows]
+    if (deciles){
+      x_thin <- quantile(x,seq(0,1,.1))
+      y_thin <- rep(1, length(x_thin))
+      nplot <- length(x_thin)
+    } else{
+      nplot <- length(rows)
+      x_thin <- x[rows]
+      y_thin <- y[rows]
+    }
 
     df <- data.frame(matrix(nrow=nplot, ncol=7))
     colnames(df) <- c("probs", "outcome", "post", "pairing", "delta", "gamma", "label")
@@ -238,7 +243,9 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
       colnames(temp) <- c("probs", "outcome", "post", "pairing", "delta", "gamma", "label")
 
       llo_probs <-  LLO(x, delta[i], gamma[i])
-      temp$probs <- llo_probs[rows]
+
+
+      temp$probs <- LLO(x_thin, delta[i], gamma[i])
 
       bt <- bayes_testing(llo_probs, y)
 
@@ -294,7 +301,22 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
 
   library(ggplot2)
 
-  if(!outside_only){
+  if(deciles){
+    lines <- ggplot(data = df, mapping = aes(x = label, y = probs)) +
+      geom_point(color = "black", alpha = pt_alpha, size = pt_size,
+                 show.legend = FALSE) +
+      geom_line(aes(group=pairing), size = ln_size, alpha = ln_alpha,
+                show.legend = FALSE, color="black") +
+      labs(x = xlab,
+           y = ylab) +
+      ggtitle(ttle) +
+      theme_bw(base_size = font_size_lp) +
+      scale_y_continuous(breaks = breaks,
+                         limits = ylim,
+                         expand = c(0, 0))+
+      #scale_color_manual(values = c("blue", "red")) +
+      scale_x_discrete(expand = c(0, 0.075))
+  } else if(!outside_only){
 
     lines <- ggplot(data = df, mapping = aes(x = label, y = probs)) +
       geom_point(aes(color = outcome), alpha = pt_alpha, size = pt_size,
