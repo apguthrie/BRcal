@@ -2,7 +2,7 @@
 # also return br probs (add flag to toggle this)
 
 brcal <- function(x,y,t_level, x0=c(0.5,0.5), print_level=3, maxeval=100,
-                  xtol_rel=1.0e-8, start_at_MLEs=TRUE){
+                  xtol_rel=1.0e-8, start_at_MLEs=FALSE){
 
   if(start_at_MLEs){
     bt <- bayes_testing(x,y)
