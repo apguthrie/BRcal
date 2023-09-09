@@ -24,7 +24,7 @@ brcal <- function(x,y,t_level, x0=c(0.5,0.5), print_level=3, maxeval=100,
 
   res <- nloptr::nloptr(x0 = x0,
                         eval_f = eval_f,
-                        lb = c(0.0001, -Inf),
+                        lb = c(0.0001, -15),
                         ub = c(Inf, 1074),
                         eval_g_ineq = eval_g,
                         opts = list("algorithm"="NLOPT_LN_COBYLA",
