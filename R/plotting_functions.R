@@ -415,3 +415,80 @@ get_zmat <- function(x, y, len.out = 100, lower = c(0.0001,-2), upper = c(5,2)){
   return(z_mat)
 }
 
+
+
+plot_params2 <- function(x, y, len.out = 100,
+                        lower = c(0.0001,-2), upper = c(5,2),
+                        cont_levels = c(0.8, 0.9),
+                        sub = "",
+                        zlim = c(0,1),
+                        ttle_extra = "",
+                        ttle = "Posterior Model Probability of Calibration",
+                        contours_only = FALSE,
+                        add = FALSE,
+                        contour_color = "white",
+                        legend.lab = "",
+                        drawlabels = TRUE,
+                        xlab = "delta",
+                        ylab = "gamma",
+                        lwd=1,
+                        labcex=0.6,
+                        legend.args = list(las=180),
+                        legend.mar = 9, no_legend=FALSE,
+                        ...){
+
+  z <- get_zmat(x=x, y=y, len.out=len.out, lower=lower, upper=upper)
+
+  #library(fields)
+  max_z <- max(z[!is.na(z)])
+
+  if(anyNA(lower)){
+    lower <- c(min(d), min(g))
+  }
+  if(anyNA(upper)){
+    upper <- c(max(d), max(g))
+  }
+
+  g <- as.numeric(colnames(z))
+  d <- as.numeric(rownames(z))
+
+  if(!contours_only){
+
+    if(no_legend){
+      image(d, g, z, zlim = zlim, xlim = c(lower[1], upper[1]), ylim = c(lower[2], upper[2]),
+            main = paste0(ttle, ttle_extra),
+            xlab = xlab,
+            ylab = ylab,
+            sub = sub, ...)
+      if(!anyNA(cont_levels)){
+        contour(d, g, z, add = TRUE, levels = cont_levels, col = contour_color,
+                drawlabels = drawlabels, lwd=lwd, labcex=labcex)
+      }
+    }else{
+
+      fields::image.plot(d, g, z, zlim = zlim, xlim = c(lower[1], upper[1]), ylim = c(lower[2], upper[2]),
+                         main = paste0(ttle, ttle_extra),
+                         xlab = xlab,
+                         ylab = ylab,
+                         sub = sub,
+                         legend.mar = legend.mar,
+                         legend.lab = legend.lab,
+                         legend.args = legend.args, ...)
+      if(!anyNA(cont_levels)){
+        contour(d, g, z, add = TRUE, levels = cont_levels, col = contour_color,
+                drawlabels = drawlabels, lwd=lwd, labcex=labcex)
+      }
+    }
+  }else{
+    if(!anyNA(cont_levels)){
+      contour(d, g, z, add = add, levels = cont_levels, col = contour_color,
+              zlim = zlim, xlim = c(lower[1], upper[1]), ylim = c(lower[2], upper[2]),
+              main = paste0(ttle, ttle_extra),
+              xlab = xlab,
+              ylab = ylab,
+              sub = sub, drawlabels = drawlabels, lwd=lwd, labcex=labcex, ...)
+    } else {
+      stop("must provide contour levels")
+    }
+  }
+}
