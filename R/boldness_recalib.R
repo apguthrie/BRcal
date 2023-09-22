@@ -2,7 +2,9 @@
 # also return br probs (add flag to toggle this)
 
 brcal <- function(x,y,t_level, x0=c(0.5,0.5), print_level=3, maxeval=100,
-                  xtol_rel=1.0e-8, start_at_MLEs=TRUE){
+                  xtol_rel=1.0e-8, start_at_MLEs=TRUE,
+                  algorithm="NLOPT_LD_SLSQP",
+                  check_derivatives=FALSE){
 
   if(start_at_MLEs){
     bt <- bayes_testing(x,y)
@@ -81,10 +83,10 @@ brcal <- function(x,y,t_level, x0=c(0.5,0.5), print_level=3, maxeval=100,
                         ub = c(Inf, 1074),
                         eval_g_ineq = eval_g,
                         eval_jac_g_ineq  = eval_grad_g,
-                        opts = list("algorithm"="NLOPT_LD_SLSQP",
+                        opts = list("algorithm"=algorithm,
                                     "xtol_rel"=xtol_rel,
                                     "print_level"=print_level,
-                                    "maxeval"=maxeval, "check_derivatives"=TRUE),
+                                    "maxeval"=maxeval, "check_derivatives"=check_derivatives),
                         probs = x,
                         outs = y,
                         t_level = t_level)
