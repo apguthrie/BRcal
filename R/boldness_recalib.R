@@ -1,9 +1,10 @@
 # add option to pass args to nloptr
 # also return br probs (add flag to toggle this)
 
-brcal <- function(x,y,t_level, x0=c(0.5,0.5), print_level=3, maxeval=100,
-                  xtol_rel=1.0e-8, start_at_MLEs=TRUE,
-                  algorithm="NLOPT_LD_SLSQP",
+brcal <- function(x,y,t_level, x0=c(0.5,0.5), print_level=3, maxeval=300,
+                  xtol_rel_outer=1.0e-6, start_at_MLEs=TRUE,
+                  xtol_rel_inner=1.0e-6,
+                  # algorithm="NLOPT_LD_SLSQP",
                   check_derivatives=FALSE){
 
   if(start_at_MLEs){
@@ -14,7 +15,7 @@ brcal <- function(x,y,t_level, x0=c(0.5,0.5), print_level=3, maxeval=100,
   eval_f <- function(x, probs, outs, t_level){
     # this assumes x is vector?
     probs_new <- LLO(probs, x[1], x[2])
-    return(-stats::sd(probs_new) )
+    return(-stats::sd(probs_new))
   }
 
   eval_grad_f <- function(x, probs, outs, t_level){
@@ -76,20 +77,43 @@ brcal <- function(x,y,t_level, x0=c(0.5,0.5), print_level=3, maxeval=100,
     return(grad_obj)
   }
 
-  res <- nloptr::nloptr(x0 = x0,
-                        eval_f = eval_f,
-                        eval_grad_f = eval_grad_f,
-                        lb = c(0.0001, -15),
-                        ub = c(Inf, 1074),
-                        eval_g_ineq = eval_g,
-                        eval_jac_g_ineq  = eval_grad_g,
-                        opts = list("algorithm"=algorithm,
-                                    "xtol_rel"=xtol_rel,
-                                    "print_level"=print_level,
-                                    "maxeval"=maxeval, "check_derivatives"=check_derivatives),
-                        probs = x,
-                        outs = y,
-                        t_level = t_level)
+  # res <- nloptr::nloptr(x0 = x0,
+  #                       eval_f = eval_f,
+  #                       eval_grad_f = eval_grad_f,
+  #                       lb = c(0.0001, -15),
+  #                       ub = c(Inf, 1074),
+  #                       eval_g_ineq = eval_g,
+  #                       eval_jac_g_ineq  = eval_grad_g,
+  #                       opts = list("algorithm"=algorithm,
+  #                                   "xtol_rel"=xtol_rel,
+  #                                   "print_level"=print_level,
+  #                                   "maxeval"=maxeval, "check_derivatives"=check_derivatives),
+  #                       probs = x,
+  #                       outs = y,
+  #                       t_level = t_level)
+
+
+  res <- nloptr(x0 = x0,
+                eval_f = eval_f,
+                eval_grad_f = eval_grad_f,
+                eval_g_ineq = eval_g,
+                eval_jac_g_ineq  = eval_grad_g,
+                opts = list(algorithm = "NLOPT_LD_AUGLAG",
+                            maxeval = maxeval,
+                            xtol_rel = xtol_rel_outer,
+                            print_level = print_level,
+                            #xtol_abs1 = 1e-4,
+                            local_opts = list(
+                              algorithm = "NLOPT_LD_SLSQP",
+                              eval_grad_f = eval_grad_f,
+                              eval_jac_g_ineq  = eval_grad_g,
+                              #xtol_abs1 = 1e-4,
+                              xtol_rel = xtol_rel_inner
+                            )),
+                probs = x,
+                outs = y,
+                t_level = t_level)
+
   return(res)
 }
 
