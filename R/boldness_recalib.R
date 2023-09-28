@@ -93,26 +93,26 @@ brcal <- function(x,y,t_level, x0=c(0.5,0.5), print_level=3, maxeval=300,
   #                       t_level = t_level)
 
 
-  res <- nloptr(x0 = x0,
-                eval_f = eval_f,
-                eval_grad_f = eval_grad_f,
-                eval_g_ineq = eval_g,
-                eval_jac_g_ineq  = eval_grad_g,
-                opts = list(algorithm = "NLOPT_LD_AUGLAG",
-                            maxeval = maxeval,
-                            xtol_rel = xtol_rel_outer,
-                            print_level = print_level,
-                            #xtol_abs1 = 1e-4,
-                            local_opts = list(
-                              algorithm = "NLOPT_LD_SLSQP",
-                              eval_grad_f = eval_grad_f,
-                              eval_jac_g_ineq  = eval_grad_g,
-                              #xtol_abs1 = 1e-4,
-                              xtol_rel = xtol_rel_inner
-                            )),
-                probs = x,
-                outs = y,
-                t_level = t_level)
+  res <- nloptr::nloptr(x0 = x0,
+                        eval_f = eval_f,
+                        eval_grad_f = eval_grad_f,
+                        eval_g_ineq = eval_g,
+                        eval_jac_g_ineq  = eval_grad_g,
+                        opts = list(algorithm = "NLOPT_LD_AUGLAG",
+                                    maxeval = maxeval,
+                                    xtol_rel = xtol_rel_outer,
+                                    print_level = print_level,
+                                    #xtol_abs1 = 1e-4,
+                                    local_opts = list(
+                                      algorithm = "NLOPT_LD_SLSQP",
+                                      eval_grad_f = eval_grad_f,
+                                      eval_jac_g_ineq  = eval_grad_g,
+                                      #xtol_abs1 = 1e-4,
+                                      xtol_rel = xtol_rel_inner
+                                    )),
+                        probs = x,
+                        outs = y,
+                        t_level = t_level)
 
   return(res)
 }
