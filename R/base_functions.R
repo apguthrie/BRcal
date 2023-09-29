@@ -76,14 +76,32 @@ llo_optim_wrap <- function(params, x, y, log = FALSE, neg = FALSE){
   return(result)
 }
 
-llo_optim <- function(x, y, lower, upper, start=c(0.5,0.5)){
-  # opt <- optim(start, llo_lik, x=x, y=y, log = TRUE, neg = TRUE, method = "L-BFGS-B",
-  #                                             lower = lower, upper = upper)
-  opt <- optim(start, llo_lik, x=x, y=y, method = "Nelder-Mead",
-                                                 neg = TRUE, log = TRUE, tau=TRUE)
+llo_optim <- function(x, y, lower=c(0.0001, -15), upper=c(4e+08, 150), start=c(0.5,0.5), tau=TRUE){
+  if(tau){
+    lower[1] <- log(lower[1])
+    upper[1] <- log(upper[1])
+    start[1] <- log(start[1])
+  }
 
-  opt$par[1] <- exp(opt$par[1])
+  gradient <- function(params, x, y, tau, log=TRUE, neg=TRUE){
+    if(tau){
+      params[1] <- exp(params[1])
+    }
+    ddelta <- -sum((y / params[1]) - ((x^params[2])/(params[1] * x^params[2] + (1-x)^params[2])))
+    dgamma <- -sum(y * log(x) + log(1-x) - ((params[1] * log(x) * x^params[2] + log(1-x) * (1-x)^params[2])/(params[1] * x^params[2] + (1-x)^params[2])) - y * log(1-x))
+    return(c(ddelta, dgamma))
+  }
 
+  opt <- optim(par=start, fn=llo_lik, gr=gradient,
+               x=x, y=y,
+               method = "L-BFGS-B",
+               lower = lower, upper = upper, tau=tau, log = TRUE, neg = TRUE)
+  # opt <- optim(start, llo_lik, x=x, y=y, method = "Nelder-Mead",
+  #                                                neg = TRUE, log = TRUE, tau=TRUE)
+
+  if(tau){
+    opt$par[1] <- exp(opt$par[1])
+  }
   return(opt)
 }
 
@@ -145,7 +163,7 @@ LLO_LRT_dev <- function(x, y, params = c(1,1), optim_details = FALSE, start = c(
 
   top <- llo_lik(params, x, y, log = TRUE)
   optLRT <- stats::optim(start, llo_optim_wrap, x=x, y=y, method = "Nelder-Mead",
-                          neg = TRUE, log = TRUE)
+                         neg = TRUE, log = TRUE)
   bottom <- -optLRT$value
   est_params <- optLRT$par
   val <- 2*(bottom-top)
