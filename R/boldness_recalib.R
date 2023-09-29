@@ -5,21 +5,30 @@ brcal <- function(x,y,t_level, x0=c(0.5,0.5), print_level=3, maxeval=300,
                   xtol_rel_outer=1.0e-6, start_at_MLEs=TRUE,
                   xtol_rel_inner=1.0e-6,
                   # algorithm="NLOPT_LD_SLSQP",
-                  check_derivatives=FALSE){
+                  check_derivatives=FALSE, tau=FALSE){
 
   if(start_at_MLEs){
     bt <- bayes_testing(x,y)
     x0 <- bt$est_params
   }
 
-  eval_f <- function(x, probs, outs, t_level){
+  if(tau){
+    x0[1] <- log(x0[1])
+  }
+
+  eval_f <- function(x, probs, outs, t_level, tau){
+    if(tau)(
+      x[1] <- exp(x[1])
+    )
     # this assumes x is vector?
     probs_new <- LLO(probs, x[1], x[2])
     return(-stats::sd(probs_new))
   }
 
-  eval_grad_f <- function(x, probs, outs, t_level){
-
+  eval_grad_f <- function(x, probs, outs, t_level, tau){
+    if(tau)(
+      x[1] <- exp(x[1])
+    )
 
     n <- length(probs)
     probs_new <- LLO(probs, x[1], x[2])
@@ -42,15 +51,19 @@ brcal <- function(x,y,t_level, x0=c(0.5,0.5), print_level=3, maxeval=300,
     return(grad_obj)
   }
 
-  eval_g <- function(x, probs, outs, t_level){
-
+  eval_g <- function(x, probs, outs, t_level, tau){
+    if(tau)(
+      x[1] <- exp(x[1])
+    )
     probs_new <- LLO(probs, x[1], x[2])
     c1 <- bayes_testing(probs_new, outs)$posterior_model_prob * -1 + t_level
     return(c1)
   }
 
-  eval_grad_g <- function(x, probs, outs, t_level){
-
+  eval_grad_g <- function(x, probs, outs, t_level, tau){
+    if(tau)(
+      x[1] <- exp(x[1])
+    )
 
     n <- length(probs)
     probs_new <- LLO(probs, x[1], x[2])
@@ -77,21 +90,6 @@ brcal <- function(x,y,t_level, x0=c(0.5,0.5), print_level=3, maxeval=300,
     return(grad_obj)
   }
 
-  # res <- nloptr::nloptr(x0 = x0,
-  #                       eval_f = eval_f,
-  #                       eval_grad_f = eval_grad_f,
-  #                       lb = c(0.0001, -15),
-  #                       ub = c(Inf, 1074),
-  #                       eval_g_ineq = eval_g,
-  #                       eval_jac_g_ineq  = eval_grad_g,
-  #                       opts = list("algorithm"=algorithm,
-  #                                   "xtol_rel"=xtol_rel,
-  #                                   "print_level"=print_level,
-  #                                   "maxeval"=maxeval, "check_derivatives"=check_derivatives),
-  #                       probs = x,
-  #                       outs = y,
-  #                       t_level = t_level)
-
 
   res <- nloptr::nloptr(x0 = x0,
                         eval_f = eval_f,
@@ -112,7 +110,26 @@ brcal <- function(x,y,t_level, x0=c(0.5,0.5), print_level=3, maxeval=300,
                                     )),
                         probs = x,
                         outs = y,
-                        t_level = t_level)
+                        t_level = t_level,
+                        tau = tau)
+
+  # res <- nloptr::nloptr(x0 = x0,
+  #                       eval_f = eval_f,
+  #                       eval_grad_f = eval_grad_f,
+  #                       lb = c(0.0001, -15),
+  #                       ub = c(Inf, 1074),
+  #                       eval_g_ineq = eval_g,
+  #                       eval_jac_g_ineq  = eval_grad_g,
+  #                       opts = list("algorithm"=algorithm,
+  #                                   "xtol_rel"=xtol_rel,
+  #                                   "print_level"=print_level,
+  #                                   "maxeval"=maxeval, "check_derivatives"=check_derivatives),
+  #                       probs = x,
+  #                       outs = y,
+  #                       t_level = t_level)
+
+
+  res$solution[1] <- exp(res$solution[1])
 
   return(res)
 }
