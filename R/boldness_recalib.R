@@ -91,7 +91,7 @@ brcal <- function(x,y,t_level, x0=c(0.5,0.5), print_level=3, maxeval=300,
   }
 
   lower <- c(0.0001, -15)
-  upper <- c(Inf, 1074)
+  upper <- c(4e+08, 1000)
 
   if(tau){
     lower[1] <- log(lower[1])
