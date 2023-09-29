@@ -90,12 +90,21 @@ brcal <- function(x,y,t_level, x0=c(0.5,0.5), print_level=3, maxeval=300,
     return(grad_obj)
   }
 
+  lower <- c(0.0001, -15)
+  upper <- c(Inf, 1074)
+
+  if(tau){
+    lower[1] <- log(lower[1])
+    upper[1] <- log(upper[1])
+  }
 
   res <- nloptr::nloptr(x0 = x0,
                         eval_f = eval_f,
                         eval_grad_f = eval_grad_f,
                         eval_g_ineq = eval_g,
                         eval_jac_g_ineq  = eval_grad_g,
+                        lb = lower,
+                        ub = upper,
                         opts = list(algorithm = "NLOPT_LD_AUGLAG",
                                     maxeval = maxeval,
                                     xtol_rel = xtol_rel_outer,
@@ -103,6 +112,8 @@ brcal <- function(x,y,t_level, x0=c(0.5,0.5), print_level=3, maxeval=300,
                                     #xtol_abs1 = 1e-4,
                                     local_opts = list(
                                       algorithm = "NLOPT_LD_SLSQP",
+                                      lb = lower,
+                                      ub = upper,
                                       eval_grad_f = eval_grad_f,
                                       eval_jac_g_ineq  = eval_grad_g,
                                       #xtol_abs1 = 1e-4,
