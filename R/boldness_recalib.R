@@ -139,8 +139,10 @@ brcal <- function(x,y,t_level, x0=c(0.5,0.5), print_level=3, maxeval=300,
   #                       outs = y,
   #                       t_level = t_level)
 
+  if(tau){
+    res$solution[1] <- exp(res$solution[1])
+  }
 
-  res$solution[1] <- exp(res$solution[1])
 
   return(res)
 }
