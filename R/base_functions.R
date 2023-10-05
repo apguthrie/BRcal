@@ -92,12 +92,12 @@ llo_optim <- function(x, y, lower=c(0.0001, -15), upper=c(4e+08, 150), start=c(0
     return(c(ddelta, dgamma))
   }
 
-  opt <- optim(par=start, fn=llo_lik, gr=gradient,
-               x=x, y=y,
-               method = "L-BFGS-B",
-               lower = lower, upper = upper, tau=tau, log = TRUE, neg = TRUE)
-  # opt <- optim(start, llo_lik, x=x, y=y, method = "Nelder-Mead",
-  #                                                neg = TRUE, log = TRUE, tau=TRUE)
+  # opt <- optim(par=start, fn=llo_lik, gr=gradient,
+  #              x=x, y=y,
+  #              method = "L-BFGS-B",
+  #              lower = lower, upper = upper, tau=tau, log = TRUE, neg = TRUE)
+  opt <- optim(start, llo_lik, x=x, y=y, method = "Nelder-Mead",
+                                                 neg = TRUE, log = TRUE, tau=tau)
 
   if(tau){
     opt$par[1] <- exp(opt$par[1])
