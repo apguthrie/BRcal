@@ -435,7 +435,26 @@ plot_params2 <- function(x, y, len.out = 100,
                         labcex=0.6,
                         legend.args = list(las=180),
                         legend.mar = 9, no_legend=FALSE,
+                        thin_to=NULL,
+                        thin_by=NULL,
+                        thin_percent=NULL,
                         ...){
+
+  rows <- 1:length(x)
+  if(!is.null(thin_to)){
+    set.seed(0)
+    rows <- sample(1:length(x), size=thin_to)
+  } else if (!is.null(thin_percent)){
+    set.seed(0)
+    rows <- sample(1:length(x), size=length(x)*thin_percent)
+  } else if (!is.null(thin_by)){
+    rows <- seq(1,length(x),thin_by)
+  }  else{
+    rows <- 1:length(x)
+  }
+
+  x <- x[rows]
+  y <- y[rows]
 
   z <- get_zmat(x=x, y=y, len.out=len.out, lower=lower, upper=upper)
 
