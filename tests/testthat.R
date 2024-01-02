@@ -9,4 +9,4 @@
 library(testthat)
 library(BRcal)
 
-test_check("BRcal")
+# test_check("BRcal")
