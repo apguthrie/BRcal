@@ -21,29 +21,14 @@ LLO <- function(p, delta, gamma){
   #  Input Checks  #
   ##################
 
-  # check if p is list
-  if(is.list(p)){
-    warning("argument p is a list, will be coerced to vector")
-    p <- unlist(p)
-  }
-
-  # check p is vector
-  if(!is.vector(p)) warning("argument p is ", class(p) ," type, not a vector")
-
-  # check p is numeric
-  if(!is.numeric(p)) stop("argument p is not numeric type")
-
-  # check p are probabilities in [0,1]
-  if(!check_probs(p)) stop("argument p contains values outside of [0,1]")
+  # check input probs are valid
+  p <- check_input_probs(p, "p")
 
   # check delta > 0 & numeric & size 1
-  if(length(delta) != 1) stop("argument delta must be single value")
-  if(!is.numeric(delta)) stop("argument delta is not numeric type")
-  if(delta <= 0) stop("argument delta must be greater than 0")
+  check_input_delta(delta)
 
   # check gamma in Reals & numeric & size 1
-  if(length(gamma) != 1) stop("argument gamma must be single value")
-  if(!is.numeric(gamma)) stop("argument gamma is not numeric type")
+  check_input_gamma(gamma)
 
   ###################
   #  Function Code  #
@@ -82,20 +67,8 @@ prelec <- function(p, alpha, beta){
   #  Input Checks  #
   ##################
 
-  # check if p is list
-  if(is.list(p)){
-    warning("argument p is a list, will be coerced to vector")
-    p <- unlist(p)
-  }
-
-  # check p is vector
-  if(!is.vector(p)) warning("argument p is ", class(p) ," type, not a vector")
-
-  # check p is numeric
-  if(!is.numeric(p)) stop("argument p is not numeric type")
-
-  # check p are probabilities in [0,1]
-  if(!check_probs(p)) stop("argument p contains values outside of [0,1]")
+  # check input probs are valid
+  p <- check_input_probs(p, "p")
 
   # check alpha > 0 & numeric & size 1
   if(length(alpha) != 1) stop("argument alpha must be single value")
@@ -148,13 +121,28 @@ to_prob <- function(x){
 # Likelihood
 llo_lik <- function(params, x, y, log = FALSE, neg = FALSE, tau = FALSE){
 
+  ##################
+  #  Input Checks  #
+  ##################
+
   # check params are of right length, right values
+  params <- check_input_params(params, tau=tau)
 
-  # check x's are between 0,1
+  # check x is vector, values in [0,1]
+  x <- check_input_probs(x, name="x")
 
-  # check y's are 0s or 1s
+  # check y is vector, values are 0s or 1s
+  y <- check_input_outcomes(x, name="y")
 
   # check log & neg are logical
+  if(!is.logical(log) & !(log %in% c(0,1))) error("argument log must be logical")
+  if(!is.logical(neg) & !(neg %in% c(0,1))) error("argument neg must be logical")
+
+  ###################
+  #  Function Code  #
+  ###################
+
+
 
   # rounding off x's that are too close to zero or one
   x <- ifelse(x < (10^(-300)), (10^(-300)), x)
