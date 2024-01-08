@@ -1,12 +1,52 @@
-# Linear Log Odds Recalibration Function
+#' Linear Log Odds (LLO) Recalibration Function
+#'
+#' Description goes here.
+#'
+#' Details go here. NEED TO CITE TURNER? Consider removing functionality for
+#' lists/matrices (any other types?).
+#'
+#' @param p a numeric vector of probabilities to be LLO-adjusted
+#' @param delta numeric, shift parameter (on log odds scale), must be > 0.
+#' @param gamma numeric, scale parameter (on log odds scale).
+#'
+#' @return The LLO-adjusted vector of probabilities (ADD NOTATION FROM PAPER? OR KEEP IN DETAILS?)
+#' @export
+#'
+#' @examples
 LLO <- function(p, delta, gamma){
+
+  # check if p is list
+  if(is.list(p)){
+    warning("argument p is a list, will be coerced to vector")
+    p <- unlist(p)
+  }
+
+  # check p is vector
+  if(!is.vector(p)) warning("argument p is ", class(p) ," type, not a vector")
+
+  # check p is numeric
+  if(!is.numeric(p)) stop("argument p is not numeric type")
+
   # check p are probabilities in [0,1]
+  if(!check_probs(p)) warning("argument p contains values outside of [0,1]")
 
   # check delta > 0 & numeric & size 1
+  if(length(delta) != 1) stop("argument delta must be single value")
+  if(!is.numeric(delta)) stop("argument delta is not numeric type")
+  if(delta <= 0) stop("argument delta must be greater than 0")
 
   # check gamma in Reals & numeric & size 1
+  if(length(gamma) != 1) stop("argument gamma must be single value")
+  if(!is.numeric(gamma)) stop("argument gamma is not numeric type")
 
-  return((delta * (p^gamma)) / ((delta * (p^gamma)) + ((1-p)^gamma)))
+  p_llo <- (delta * (p^gamma)) / ((delta * (p^gamma)) + ((1-p)^gamma))
+
+
+  # check p are probabilities in [0,1]
+  if(!check_probs(p_llo)) warning("return value contains values outside of [0,1]")
+
+  return(p_llo)
+  #return((delta * (p^gamma)) / ((delta * (p^gamma)) + ((1-p)^gamma)))
 }
 
 # Converts probs to logit scale
