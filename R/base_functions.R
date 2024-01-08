@@ -5,15 +5,21 @@
 #' Details go here. NEED TO CITE TURNER? Consider removing functionality for
 #' lists/matrices (any other types?).
 #'
-#' @param p a numeric vector of probabilities to be LLO-adjusted
-#' @param delta numeric, shift parameter (on log odds scale), must be > 0.
-#' @param gamma numeric, scale parameter (on log odds scale).
+#' @param p a numeric vector of probabilities to be LLO-adjusted. Must only
+#'          contain values in \[0,1\].
+#' @param delta numeric, must be > 0, parameter \eqn{\delta} in LLO
+#'              recalibration function.
+#' @param gamma numeric, parameter \eqn{\gamma} in LLO recalibration function.
 #'
 #' @return The LLO-adjusted vector of probabilities (ADD NOTATION FROM PAPER? OR KEEP IN DETAILS?)
 #' @export
 #'
 #' @examples
 LLO <- function(p, delta, gamma){
+
+  ##################
+  #  Input Checks  #
+  ##################
 
   # check if p is list
   if(is.list(p)){
@@ -28,7 +34,7 @@ LLO <- function(p, delta, gamma){
   if(!is.numeric(p)) stop("argument p is not numeric type")
 
   # check p are probabilities in [0,1]
-  if(!check_probs(p)) warning("argument p contains values outside of [0,1]")
+  if(!check_probs(p)) stop("argument p contains values outside of [0,1]")
 
   # check delta > 0 & numeric & size 1
   if(length(delta) != 1) stop("argument delta must be single value")
@@ -39,7 +45,16 @@ LLO <- function(p, delta, gamma){
   if(length(gamma) != 1) stop("argument gamma must be single value")
   if(!is.numeric(gamma)) stop("argument gamma is not numeric type")
 
+  ###################
+  #  Function Code  #
+  ###################
+
   p_llo <- (delta * (p^gamma)) / ((delta * (p^gamma)) + ((1-p)^gamma))
+
+
+  ###################
+  #  Output Checks  #
+  ###################
 
   # check if return vector contains nans
   if(!check_noNaNs(p_llo)) warning("return value contains NaNs")
@@ -49,6 +64,70 @@ LLO <- function(p, delta, gamma){
 
   return(p_llo)
 }
+
+#' Prelec Two Parameter Recalibration Function
+#'
+#' @param p a numeric vector of probabilities to be Prelec-adjusted. Must only
+#'          contain values in \[0,1\].
+#' @param alpha numeric, must be > 0, \eqn{\alpha} in Prelec two parameter function.
+#' @param beta numeric, must be > 0, \eqn{\beta} in Prelec two parameter function.
+#'
+#' @return
+#' @export
+#'
+#' @examples
+prelec <- function(p, alpha, beta){
+
+  ##################
+  #  Input Checks  #
+  ##################
+
+  # check if p is list
+  if(is.list(p)){
+    warning("argument p is a list, will be coerced to vector")
+    p <- unlist(p)
+  }
+
+  # check p is vector
+  if(!is.vector(p)) warning("argument p is ", class(p) ," type, not a vector")
+
+  # check p is numeric
+  if(!is.numeric(p)) stop("argument p is not numeric type")
+
+  # check p are probabilities in [0,1]
+  if(!check_probs(p)) stop("argument p contains values outside of [0,1]")
+
+  # check alpha > 0 & numeric & size 1
+  if(length(alpha) != 1) stop("argument alpha must be single value")
+  if(!is.numeric(alpha)) stop("argument alpha is not numeric type")
+  if(alpha <= 0) stop("argument alpha must be greater than 0")
+
+  # check beta > 0 & numeric & size 1
+  if(length(beta) != 1) stop("argument beta must be single value")
+  if(!is.numeric(beta)) stop("argument beta is not numeric type")
+  if(beta <= 0) stop("argument beta must be greater than 0")
+
+  ###################
+  #  Function Code  #
+  ###################
+
+  p_prelec <- exp(-beta * ((-log(p))^alpha))
+
+  ###################
+  #  Output Checks  #
+  ###################
+
+  # check if return vector contains nans
+  if(!check_noNaNs(p_prelec)) warning("return value contains NaNs")
+
+  # check if return vector contains nans
+  if(!check_noInfs(p_prelec)) warning("return value contains +/-Inf")
+
+  return(p_prelec)
+}
+
+
+
 
 # Converts probs to logit scale
 to_logit <- logit <- function(p){
@@ -226,7 +305,4 @@ LLO_LRT_dev <- function(x, y, params = c(1,1), optim_details = FALSE, start = c(
   return(results)
 }
 
-# Prelec two parameter function
-prelec <- function(p, alpha, beta){
-  return(exp(-beta * ((-log(p))^alpha)))
-}
+
