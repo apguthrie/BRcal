@@ -8,3 +8,8 @@ check_probs <- function(x){
 check_noNaNs <- function(x){
   return(!any(is.na(x)))
 }
+
+# Returns true if there are no Inf or -Inf in vector
+check_noInfs <- function(x){
+  return(!any(is.infinite(x)))
+}
