@@ -227,6 +227,6 @@ LLO_LRT_dev <- function(x, y, params = c(1,1), optim_details = FALSE, start = c(
 }
 
 # Prelec two parameter function
-prelec <- function(x, alpha, beta){
-  return(exp(-beta * ((-log(x))^alpha)))
+prelec <- function(p, alpha, beta){
+  return(exp(-beta * ((-log(p))^alpha)))
 }
