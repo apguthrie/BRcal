@@ -41,12 +41,13 @@ LLO <- function(p, delta, gamma){
 
   p_llo <- (delta * (p^gamma)) / ((delta * (p^gamma)) + ((1-p)^gamma))
 
+  # check if return vector contains nans
+  if(!check_noNaNs(p_llo)) warning("return value contains NaNs")
 
   # check p are probabilities in [0,1]
-  if(!check_probs(p_llo)) warning("return value contains values outside of [0,1]")
+  if(!check_probs(p_llo[!is.na(p_llo)])) warning("return value contains values outside of [0,1]")
 
   return(p_llo)
-  #return((delta * (p^gamma)) / ((delta * (p^gamma)) + ((1-p)^gamma)))
 }
 
 # Converts probs to logit scale

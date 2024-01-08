@@ -7,6 +7,7 @@ test_that("LLO() only accepts single numeric inputs > 0 for delta", {
   # Set up
   set.seed(47)
   n <- 100
+  x <- runif(n)
   g <- 2
 
   # delta = 0 - error
@@ -35,28 +36,18 @@ test_that("LLO() only accepts single numeric inputs > 0 for delta", {
   d6 <- c(1, 1)
   expect_error(LLO(x, d6, g))
 
-
 })
 
 test_that("LLO() only accepts single numeric inputs for gamma", {
   # Set up
   set.seed(47)
   n <- 100
+  x <- runif(n)
   d8 <- 1
-
-  # gamma = Inf - warning
-  g2 <- Inf
-  expect_warning(LLO(x, d8, g2))
 
   # Non-real number input for gamma
   g3 <- -1+2i
   expect_error(LLO(x, d8, g3))
-
-  # very large gamma - no error
-  g4 <- 10000
-  expect_no_error(LLO(x, d8, g4))
-  g5 <- -10000
-  expect_no_error(LLO(x, d8, g5))
 
   # character input for gamma - error
   g6 <- "hello"
@@ -123,7 +114,8 @@ test_that("LLO() returns vector of correct size", {
 
   # Numeric vector input with non [0,1] values - warning
   x2 <- rnorm(n)
-  expect_vector(LLO(x2, d, g), ptype=numeric(), size=n)
+  expect_warning(p <- LLO(x2, d, g))
+  expect_vector(p, ptype=numeric(), size=n)
 
   # Single numeric value - single element return
   x3 <- 0.5
@@ -131,9 +123,11 @@ test_that("LLO() returns vector of correct size", {
 
   # Single numeric value outside [0,1] - warning, single element return
   x5 <- 3
-  expect_vector(LLO(x5, d, g), ptype = numeric(), size=1)
+  expect_warning(p <- LLO(x5, d, g))
+  expect_vector(p, ptype = numeric(), size=1)
   x6 <- -3
-  expect_vector(LLO(x6, d, g), ptype = numeric(), size=1)
+  expect_warning(p <- LLO(x6, d, g))
+  expect_vector(p, ptype = numeric(), size=1)
 
   # very large delta - vector of size n=100
   d4 <- 10000
@@ -145,13 +139,16 @@ test_that("LLO() returns vector of correct size", {
 
   # gamma = Inf - warning
   g2 <- Inf
-  expect_vector(LLO(x, d, g2), ptype=numeric(), size=n)
+  expect_warning(p <- LLO(x, d, g2))
+  expect_vector(p, ptype=numeric(), size=n)
 
   # very large gamma - no error
   g4 <- 10000
-  expect_vector(LLO(x, d, g4), ptype=numeric(), size=n)
+  expect_warning(p <- LLO(x, d, g4))
+  expect_vector(p, ptype=numeric(), size=n)
   g5 <- -10000
-  expect_vector(LLO(x, d, g5), ptype=numeric(), size=n)
+  expect_warning(p <- LLO(x, d, g5))
+  expect_vector(p, ptype=numeric(), size=n)
 
 })
 
