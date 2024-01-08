@@ -7,11 +7,13 @@
 LLO(p, delta, gamma)
 }
 \arguments{
-\item{p}{a numeric vector of probabilities to be LLO-adjusted}
+\item{p}{a numeric vector of probabilities to be LLO-adjusted. Must only
+contain values in [0,1].}
 
-\item{delta}{numeric, shift parameter (on log odds scale), must be > 0.}
+\item{delta}{numeric, must be > 0, parameter \eqn{\delta} in LLO
+recalibration function.}
 
-\item{gamma}{numeric, scale parameter (on log odds scale).}
+\item{gamma}{numeric, parameter \eqn{\gamma} in LLO recalibration function.}
 }
 \value{
 The LLO-adjusted vector of probabilities (ADD NOTATION FROM PAPER? OR KEEP IN DETAILS?)
@@ -20,5 +22,6 @@ The LLO-adjusted vector of probabilities (ADD NOTATION FROM PAPER? OR KEEP IN DE
 Description goes here.
 }
 \details{
-Details go here. NEED TO CITE TURNER?
+Details go here. NEED TO CITE TURNER? Consider removing functionality for
+lists/matrices (any other types?).
 }
