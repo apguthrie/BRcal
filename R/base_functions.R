@@ -1,3 +1,7 @@
+######################################################
+#  External Functions                                #
+######################################################
+
 #' Linear Log Odds (LLO) Recalibration Function
 #'
 #' Description goes here.
@@ -53,6 +57,7 @@ LLO <- function(p, delta, gamma){
   return(p_llo)
 }
 
+
 #' Prelec Two Parameter Recalibration Function
 #'
 #' @param p a numeric vector of probabilities to be Prelec-adjusted. Must only
@@ -103,9 +108,55 @@ prelec <- function(p, alpha, beta){
 }
 
 
+# Likelihood Ratio Test
+LLO_LRT <- function(x, y, params = c(1,1), optim_details = FALSE,
+                    start = c(0.5,0.5), lower = c(0.001, -5), upper = c(10,30),
+                    ...){
+
+  # check params are of right length, right values
+
+  # check x's are between 0,1
+
+  # check y's are 0s or 1s
+
+  # check optim details are logical
+
+  # check start, lower, upper
 
 
-# Converts probs to logit scale
+  top <- llo_lik(params, x, y, log = TRUE)
+  # optLRT <- stats::optim(start, llo_lik, x=x, y=y, method = "L-BFGS-B",
+  #                 lower = lower, upper = upper, neg = TRUE, log = TRUE)
+  # optLRT <- stats::optim(start, llo_optim_wrap, x=x, y=y, method = "Nelder-Mead",
+  #                        neg = TRUE, log = TRUE)
+  optLRT <- llo_optim(x, y, lower, upper, start, ...)
+
+  bottom <- -optLRT$value
+  est_params <- optLRT$par
+  val <- 2*(bottom-top)
+  pval <- 1-stats::pchisq(val, 2)
+
+  if(optim_details){
+    results <- list(test_stat = val,
+                    pval = pval,
+                    est_params = est_params,
+                    opt_value = bottom,
+                    opt_counts = optLRT$counts,
+                    opt_convergence = optLRT$convergence,
+                    opt_message = optLRT$message)
+  } else {
+    results <- list(test_stat = val,
+                    pval = pval,
+                    est_params = est_params)
+  }
+  return(results)
+}
+
+
+######################################################
+#  Internal Functions                                #
+######################################################
+
 to_logit <- logit <- function(p){
 
   # check input probs are valid
@@ -188,7 +239,8 @@ llo_optim_wrap <- function(params, x, y, log = FALSE, neg = FALSE){
   return(result)
 }
 
-llo_optim <- function(x, y, lower=c(0.0001, -15), upper=c(4e+08, 150), start=c(0.5,0.5), tau=TRUE){
+llo_optim <- function(x, y, lower=c(0.0001, -15), upper=c(4e+08, 150),
+                      start=c(0.5,0.5), tau=TRUE, ...){
   if(tau){
     lower[1] <- log(lower[1])
     upper[1] <- log(upper[1])
@@ -208,8 +260,8 @@ llo_optim <- function(x, y, lower=c(0.0001, -15), upper=c(4e+08, 150), start=c(0
   #              x=x, y=y,
   #              method = "L-BFGS-B",
   #              lower = lower, upper = upper, tau=tau, log = TRUE, neg = TRUE)
-  opt <- optim(start, llo_lik, x=x, y=y, method = "Nelder-Mead",
-                                                 neg = TRUE, log = TRUE, tau=tau)
+  opt <- optim(start, llo_lik, x=x, y=y, method = "Nelder-Mead", ...,
+               neg = TRUE, log = TRUE, tau=tau)
 
   if(tau){
     opt$par[1] <- exp(opt$par[1])
@@ -217,47 +269,6 @@ llo_optim <- function(x, y, lower=c(0.0001, -15), upper=c(4e+08, 150), start=c(0
   return(opt)
 }
 
-# Likelihood Ratio Test
-LLO_LRT <- function(x, y, params = c(1,1), optim_details = FALSE, start = c(0.5,0.5), lower = c(0.001, -5), upper = c(10,30)){
-
-  # check params are of right length, right values
-
-  # check x's are between 0,1
-
-  # check y's are 0s or 1s
-
-  # check optim details are logical
-
-  # check start, lower, upper
-
-
-  top <- llo_lik(params, x, y, log = TRUE)
-  # optLRT <- stats::optim(start, llo_lik, x=x, y=y, method = "L-BFGS-B",
-  #                 lower = lower, upper = upper, neg = TRUE, log = TRUE)
-  # optLRT <- stats::optim(start, llo_optim_wrap, x=x, y=y, method = "Nelder-Mead",
-  #                        neg = TRUE, log = TRUE)
-  optLRT <- llo_optim(x,y,lower,upper,start)
-
-  bottom <- -optLRT$value
-  est_params <- optLRT$par
-  val <- 2*(bottom-top)
-  pval <- 1-stats::pchisq(val, 2)
-
-  if(optim_details){
-    results <- list(test_stat = val,
-                    pval = pval,
-                    est_params = est_params,
-                    opt_value = bottom,
-                    opt_counts = optLRT$counts,
-                    opt_convergence = optLRT$convergence,
-                    opt_message = optLRT$message)
-  } else {
-    results <- list(test_stat = val,
-                    pval = pval,
-                    est_params = est_params)
-  }
-  return(results)
-}
 
 # Likelihood Ratio Test
 LLO_LRT_dev <- function(x, y, params = c(1,1), optim_details = FALSE, start = c(0.5,0.5), lower = c(0.001, -5), upper = c(10,30)){
@@ -296,5 +307,3 @@ LLO_LRT_dev <- function(x, y, params = c(1,1), optim_details = FALSE, start = c(
   }
   return(results)
 }
-
-
