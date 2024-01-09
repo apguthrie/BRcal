@@ -26,8 +26,9 @@ check_input_probs <- function(x, name="probs"){
   }
 
   # check p is vector
-  if(!is.vector(x)) warning("argument ", name, " is ", class(x) ," type, not a
-                            vector; unexpected behavior may occur")
+  # if(!is.vector(x)) warning("argument ", name, " is ", class(x) ," type, not a
+  #                           vector; unexpected behavior may occur")
+  if(!is.vector(x)) stop("argument ", name, " is ", class(x) ," type, not a vector")
 
   # check p is numeric
   if(!is.numeric(x)) stop("argument ", name, " is not numeric type")
@@ -39,6 +40,7 @@ check_input_probs <- function(x, name="probs"){
 }
 
 check_input_outcomes <- function(y, name="outcomes"){
+
   # check if p is list
   if(is.list(y)){
     warning("argument ", name, " is a list, coerced to vector")
@@ -46,8 +48,9 @@ check_input_outcomes <- function(y, name="outcomes"){
   }
 
   # check p is vector
-  if(!is.vector(y)) warning("argument ", name, " is ", class(y) ," type, not a
-                            vector; unexpected behavior may occur")
+  # if(!is.vector(y)) warning("argument ", name, " is ", class(y) ," type, not a
+  #                           vector; unexpected behavior may occur")
+  if(!is.vector(y)) stop("argument ", name, " is ", class(y) ," type, not a vector")
 
   # check p is numeric
   if(!is.numeric(y)) stop("argument ", name, " is not numeric type")
@@ -67,8 +70,10 @@ check_input_params <- function(params, tau=FALSE){
   }
 
   # check p is vector
-  if(!is.vector(params)) stop("argument params is ", class(params) ," type,
-                              not a vector")
+  if(!is.vector(params)) stop("argument params is ", class(params) ," type, not a vector")
+
+  # check length
+  if(length(params) != 2) stop("argument params must be length 2")
 
   if(tau){
     # check tau

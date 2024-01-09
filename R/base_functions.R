@@ -44,7 +44,10 @@ LLO <- function(p, delta, gamma){
   # check if return vector contains nans
   if(!check_noNaNs(p_llo)) warning("return value contains NaNs")
 
-  # check p are probabilities in [0,1]
+  # check if return vector contains - typically not possible
+  if(!check_noInfs(p_llo)) warning("return value contains +/-Inf")
+
+  # check p are probabilities in [0,1] - typically not possible to break
   if(!check_probs(p_llo[!is.na(p_llo)])) warning("return value contains values outside of [0,1]")
 
   return(p_llo)
@@ -93,7 +96,7 @@ prelec <- function(p, alpha, beta){
   # check if return vector contains nans
   if(!check_noNaNs(p_prelec)) warning("return value contains NaNs")
 
-  # check if return vector contains nans
+  # check if return vector contains Infs - typically not possible
   if(!check_noInfs(p_prelec)) warning("return value contains +/-Inf")
 
   return(p_prelec)
@@ -105,7 +108,8 @@ prelec <- function(p, alpha, beta){
 # Converts probs to logit scale
 to_logit <- logit <- function(p){
 
-  # check p are probabilities in [0,1]
+  # check input probs are valid
+  p <- check_input_probs(p, "p")
 
   # better way to handle the rounding here? - check literature
   p <- ifelse(p < (10^(-300)), (10^(-300)), p)
@@ -115,7 +119,7 @@ to_logit <- logit <- function(p){
 }
 
 to_prob <- function(x){
-  return(exp(x)/(1+exp(x)))
+  return(exp(x) / (1 + exp(x)))
 }
 
 # Likelihood
@@ -132,17 +136,19 @@ llo_lik <- function(params, x, y, log = FALSE, neg = FALSE, tau = FALSE){
   x <- check_input_probs(x, name="x")
 
   # check y is vector, values are 0s or 1s
-  y <- check_input_outcomes(x, name="y")
+  y <- check_input_outcomes(y, name="y")
 
-  # check log & neg are logical
-  if(!is.logical(log) & !(log %in% c(0,1))) error("argument log must be logical")
-  if(!is.logical(neg) & !(neg %in% c(0,1))) error("argument neg must be logical")
+  # check x and y are the same length
+  if(length(x) != length(y)) stop("x and y length differ")
+
+  # check log, neg, and tau are logical - allow 0 or 1
+  if(!is.logical(log) & !(log %in% c(0,1))) stop("argument log must be logical")
+  if(!is.logical(neg) & !(neg %in% c(0,1))) stop("argument neg must be logical")
+  if(!is.logical(tau) & !(tau %in% c(0,1))) stop("argument tau must be logical")
 
   ###################
   #  Function Code  #
   ###################
-
-
 
   # rounding off x's that are too close to zero or one
   x <- ifelse(x < (10^(-300)), (10^(-300)), x)
@@ -153,8 +159,6 @@ llo_lik <- function(params, x, y, log = FALSE, neg = FALSE, tau = FALSE){
   } else {
     llo <- LLO(p = x, delta = params[1], gamma = params[2])
   }
-
-
 
   llo <- ifelse(llo < (10^(-300)), (10^(-300)), llo)
   llo <- ifelse(llo > 0.9999999999999999, 0.9999999999999999, llo)

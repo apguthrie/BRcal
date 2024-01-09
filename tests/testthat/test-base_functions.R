@@ -113,12 +113,22 @@ test_that("LLO() returns vector of correct size", {
   expect_vector(p <- LLO(x3, d, g), ptype=numeric(), size=1)
   expect_true(check_probs(p))
 
+})
+
+test_that("LLO() warns when NaNs returned", {
+  # Set up
+  set.seed(127)
+  n <- 100
+  d <- 2
+  g <- 2
+  x <- runif(n)
+
   # very large delta - vector of size n=100
   d4 <- 10000
   expect_vector(p <- LLO(x, d4, g), ptype=numeric(), size=n)
   expect_true(check_probs(p))
   d8 <- Inf
-  expect_warning(p <-LLO(x, d8, g))
+  expect_warning(p <- LLO(x, d8, g))
   expect_vector(p, ptype=numeric(), size=n)
 
   # very large gamma - warnings
@@ -143,7 +153,7 @@ test_that("LLO() returns vector of correct size", {
 })
 
 #############################################
-#  prelec() Tests                              #
+#  prelec() Tests                           #
 #############################################
 
 test_that("prelec() only accepts single numeric inputs > 0 for alpha", {
@@ -177,7 +187,7 @@ test_that("prelec() only accepts single numeric inputs > 0 for alpha", {
 
 })
 
-test_that("Prelec() only accepts single numeric inputs > 0 for beta", {
+test_that("prelec() only accepts single numeric inputs > 0 for beta", {
   # Set up
   set.seed(47)
   n <- 100
@@ -286,6 +296,205 @@ test_that("prelec() returns valid output", {
   x8 <- rbinom(n, 1, prob=x)
   expect_vector(prelec(x8, a, b), ptype=numeric(), size=n)
 
+})
+
+#############################################
+#  llo_lik() Tests                          #
+#############################################
+
+
+test_that("llo_lik() only accepts valid params",{
+  set.seed(37)
+  n <- 100
+  x <- runif(n)
+  y <- rbinom(n, 1, prob=x)
+
+  # params not length 2
+  params4 <- c(1)
+  expect_error(llo_lik(params4, x, y))
+  params5 <- c(1, 1, 2, 3)
+  expect_error(llo_lik(params5, x, y))
+
+  # delta <= 0
+  params2 <- c(0, 1)
+  expect_error(llo_lik(params2, x, y))
+  params3 <- c(-10, 1)
+  expect_error(llo_lik(params3, x, y))
+
+  # delta non-numeric
+  params6 <- c(TRUE, FALSE)
+  expect_error(llo_lik(params6, x, y))
+  params7 <- c("10", 1)
+  expect_error(llo_lik(params7, x, y))
+  params8 <- c(list(1,2), 1)
+  expect_warning(expect_error(llo_lik(params8, x, y)))
+
+  # gamma
+
+})
+
+test_that("llo_lik() only accepts x in correct format",{
+  set.seed(37)
+  n <- 100
+  x <- runif(n)
+  y <- rbinom(n, 1, prob=x)
+  params <- c(1, 1)
+
+  # x has values outside [0,1]
+  x2 <- rnorm(n)
+  expect_error(llo_lik(params, x, y2))
+
+  # y is character vector
+  y2 <- c(0, 1)
+  x3 <- c("h", "f")
+  expect_error(llo_lik(params, x3, y2))
+
+  # y is logical vector
+  x4 <- c(TRUE, FALSE)
+  expect_error(llo_lik(params, x4, y2))
+
+  # y is list - warning
+  x5 <- list(runif(n))
+  expect_warning(llo_lik(params, x5, y))
+  x6 <- list(0.5, 0.2)
+  expect_warning(llo_lik(params, x6, y2))
+
+  # y is matrix - error (diff lengths) & warning (wrong type)
+  x7 <- matrix(c(0.2, 1, 0.7532),ncol=1)
+  expect_error(llo_lik(params, x7, y2))
+
+  # y is matrix - warning (wrong type)
+  x8 <- matrix(c(0.111, 0), ncol=1)
+  expect_error(llo_lik(params, x8, y2))
+})
+
+test_that("llo_lik() only accepts y in correct format",{
+  set.seed(37)
+  n <- 100
+  x <- runif(n)
+  params <- c(1,1)
+
+  # y has non 0 or 1s
+  y2 <- rnorm(n)
+  expect_error(llo_lik(params, x, y2))
+
+  # y is character vector
+  x2 <- c(0.5, 0.1)
+  y3 <- c("h", "f")
+  expect_error(llo_lik(params, x2, y3))
+
+  # y is logical vector
+  y4 <- c(TRUE, FALSE)
+  expect_error(llo_lik(params, x2, y3))
+
+  # y is list - warning
+  y5 <- list(rbinom(n, 1, prob=x))
+  expect_warning(llo_lik(params, x, y5))
+  y6 <- list(1, 0)
+  expect_warning(llo_lik(params, x2, y6))
+
+  # y is matrix - error (diff lengths) & warning (wrong type)
+  y7 <- matrix(c(0,1,1),ncol=1)
+  expect_error(llo_lik(params, x2, y7))
+
+  # y is matrix - warning (wrong type)
+  y8 <- matrix(c(0,1),ncol=1)
+  expect_error(llo_lik(params, x2, y8))
+})
+
+
+test_that("llo_lik() only accepts x and y of the same length",{
+  set.seed(37)
+  n <- 100
+  x <- runif(n)
+  y <- rbinom(n, 1, prob=x)
+  params <- c(1,1)
+
+  # same length - no error
+  expect_no_error(llo_lik(params, x, y))
+
+  # y shorter than x - error
+  y2 <- c(0, 1,0)
+  expect_error(llo_lik(params, x, y2))
+
+  # x shorter than y - error
+  x2 <-c(0.2, 0.4, 0.7)
+  expect_error(llo_lik(params, x2, y))
+})
+
+test_that("llo_lik() only accepts log in correct format", {
+  # set up
+  set.seed(37)
+  n <- 100
+  x <- runif(n)
+  y <- rbinom(n, 1, prob=x)
+  params <- c(1,1)
+
+  # character input - error
+  expect_error(llo_lik(params, x, y, log="yes"))
+
+  # numeric input - error
+  expect_error(llo_lik(params, x, y, log=2))
+
+  # logical input - no error
+  expect_no_error(llo_lik(params, x, y, log=TRUE))
+  expect_no_error(llo_lik(params, x, y, log=FALSE))
+  expect_no_error(llo_lik(params, x, y, log=T))
+  expect_no_error(llo_lik(params, x, y, log=F))
+
+  # numeric but technically ok
+  expect_no_error(llo_lik(params, x, y, log=0))
+  expect_no_error(llo_lik(params, x, y, log=1))
+})
+
+test_that("llo_lik() only accepts neg in correct format",{
+  # set up
+  set.seed(37)
+  n <- 100
+  x <- runif(n)
+  y <- rbinom(n, 1, prob=x)
+  params <- c(1,1)
+
+  # character input - error
+  expect_error(llo_lik(params, x, y, neg="yes"))
+
+  # numeric input - error
+  expect_error(llo_lik(params, x, y, neg=2))
+
+  # logical input - no error
+  expect_no_error(llo_lik(params, x, y, neg=TRUE))
+  expect_no_error(llo_lik(params, x, y, neg=FALSE))
+  expect_no_error(llo_lik(params, x, y, neg=T))
+  expect_no_error(llo_lik(params, x, y, neg=F))
+
+  # numeric but technically ok
+  expect_no_error(llo_lik(params, x, y, neg=0))
+  expect_no_error(llo_lik(params, x, y, neg=1))
+})
+
+test_that("llo_lik() only accepts tau in correct format",{
+  # set up
+  set.seed(37)
+  n <- 100
+  x <- runif(n)
+  y <- rbinom(n, 1, prob=x)
+  params <- c(1,1)
+
+  # character input - error
+  expect_error(llo_lik(params, x, y, tau="yes"))
+
+  # numeric input - error
+  expect_error(llo_lik(params, x, y, tau=2))
+
+  # logical input - no error
+  expect_no_error(llo_lik(params, x, y, tau=TRUE))
+  expect_no_error(llo_lik(params, x, y, tau=FALSE))
+  expect_no_error(llo_lik(params, x, y, tau=T))
+  expect_no_error(llo_lik(params, x, y, tau=F))
+
+  # numeric but technically ok
+  expect_no_error(llo_lik(params, x, y, tau=0))
+  expect_no_error(llo_lik(params, x, y, tau=1))
 })
 
 #############################################
