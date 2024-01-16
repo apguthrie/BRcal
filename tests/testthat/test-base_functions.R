@@ -501,7 +501,72 @@ test_that("llo_lik() only accepts tau in correct format",{
 #  LLO_LRT() Tests                          #
 #############################################
 
-test_that("LLO_LRT gives correct p-value",{
+test_that("LLO_LRT() only accepts valid params",{
+  set.seed(37)
+  n <- 100
+  x <- runif(n)
+  y <- rbinom(n, 1, prob=x)
+
+  # params not length 2
+  params4 <- c(1)
+  expect_error(LLO_LRT(x, y, params4))
+  params5 <- c(1, 1, 2, 3)
+  expect_error(LLO_LRT(x, y, params5))
+
+  # delta <= 0
+  params2 <- c(0, 1)
+  expect_error(LLO_LRT(x, y, params2))
+  params3 <- c(-10, 1)
+  expect_error(LLO_LRT(x, y, params3))
+
+  # delta non-numeric
+  params6 <- c(TRUE, FALSE)
+  expect_error(LLO_LRT(x, y, params6))
+  params7 <- c("10", 1)
+  expect_error(LLO_LRT(x, y, params7))
+  params8 <- c(list(1,2), 1)
+  expect_warning(expect_error(LLO_LRT(x, y, params8)))
+
+  # gamma
+
+})
+#
+# test_that("LLO_LRT() only takes valid outcomes",{
+#   set.seed(37)
+#   n <- 100
+#   x <- runif(n)
+#   params <- c(1,1)
+#
+#   # y has non 0 or 1s
+#   y2 <- rnorm(n)
+#   expect_error(llo_lik(params, x, y2))
+#
+#   # y is character vector
+#   x2 <- c(0.5, 0.1)
+#   y3 <- c("h", "f")
+#   expect_error(llo_lik(params, x2, y3))
+#
+#   # y is logical vector
+#   y4 <- c(TRUE, FALSE)
+#   expect_error(llo_lik(params, x2, y3))
+#
+#   # y is list - warning
+#   y5 <- list(rbinom(n, 1, prob=x))
+#   expect_warning(llo_lik(params, x, y5))
+#   y6 <- list(1, 0)
+#   expect_warning(llo_lik(params, x2, y6))
+#
+#   # y is matrix - error (diff lengths) & warning (wrong type)
+#   y7 <- matrix(c(0,1,1),ncol=1)
+#   expect_error(llo_lik(params, x2, y7))
+#
+#   # y is matrix - warning (wrong type)
+#   y8 <- matrix(c(0,1),ncol=1)
+#   expect_error(llo_lik(params, x2, y8))
+#
+# })
+
+test_that("LLO_LRT() gives correct p-value",{
 
   # number of decimal places
   dec <- 5
@@ -515,7 +580,7 @@ test_that("LLO_LRT gives correct p-value",{
   expect_equal(round(lrt_rand$pval, dec), round(0.0000000, dec))
 })
 
-test_that("LLO_LRT gives correct test stat",{
+test_that("LLO_LRT() gives correct test stat",{
 
   # number of decimal places
   dec <- 5
@@ -529,7 +594,7 @@ test_that("LLO_LRT gives correct test stat",{
   expect_equal(round(lrt_rand$test_stat, dec), round(70.66915, dec))
 })
 
-test_that("LLO_LRT gives correct est_params",{
+test_that("LLO_LRT() gives correct est_params",{
 
   # number of decimal places
   dec <- 5

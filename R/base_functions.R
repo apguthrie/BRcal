@@ -113,16 +113,23 @@ LLO_LRT <- function(x, y, params = c(1,1), optim_details = FALSE,
                     start = c(0.5,0.5), lower = c(0.001, -5), upper = c(10,30),
                     ...){
 
-  # check params are of right length, right values
+  # check params, start, lower, upper are of right length, right values
+  params <- check_input_params(params)
+  start <- check_input_params(start, name="start")
+  lower <- check_input_params(lower, name="lower")
+  upper <- check_input_params(upper, name="upper")
 
-  # check x's are between 0,1
+  # check x is vector, values in [0,1]
+  x <- check_input_probs(x, name="x")
 
-  # check y's are 0s or 1s
+  # check y is vector, values are 0s or 1s
+  y <- check_input_outcomes(y, name="y")
 
-  # check optim details are logical
+  # check optim_details is logical
+  if(!is.logical(optim_details) & !(optim_details %in% c(0,1))) stop("argument log must be logical")
 
-  # check start, lower, upper
-
+  # check x and y are the same length
+  if(length(x) != length(y)) stop("x and y length differ")
 
   top <- llo_lik(params, x, y, log = TRUE)
   # optLRT <- stats::optim(start, llo_lik, x=x, y=y, method = "L-BFGS-B",

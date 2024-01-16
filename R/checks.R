@@ -61,7 +61,7 @@ check_input_outcomes <- function(y, name="outcomes"){
   return(y)
 }
 
-check_input_params <- function(params, tau=FALSE){
+check_input_params <- function(params, name="params", tau=FALSE){
 
   # check if params is list
   if(is.list(params)){
@@ -70,21 +70,21 @@ check_input_params <- function(params, tau=FALSE){
   }
 
   # check p is vector
-  if(!is.vector(params)) stop("argument params is ", class(params) ," type, not a vector")
+  if(!is.vector(params)) stop("argument ", name, " is ", class(params) ," type, not a vector")
 
   # check length
-  if(length(params) != 2) stop("argument params must be length 2")
+  if(length(params) != 2) stop("argument ", name, " must be length 2")
 
   if(tau){
-    # check tau
-    check_input_gamma(params[2], name="params[2]")
+    # check tau - use gamma function because same range
+    check_input_gamma(params[2], name=paste0(name, "[1]"))
   } else {
     #check delta
-    check_input_delta(params[1], name="params[1]")
+    check_input_delta(params[1], name=paste0(name, "[1]"))
   }
 
   #check gamma
-  check_input_gamma(params[2], name="params[2]")
+  check_input_gamma(params[2], name=paste0(name, "[2]"))
 
   return(params)
 }
