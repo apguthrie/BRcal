@@ -137,8 +137,9 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
                          outside_only = FALSE, pt_size = 1.5, ln_size = 0.5,
                          pt_alpha = 0.35, ln_alpha = 0.25, font_base = 10,
                          ylim=c(0,1), breaks=seq(0,1,by=0.2), thin_to=NULL,
-                         thin_percent=NULL, thin_by=NULL, pmp_label=FALSE, deciles=FALSE){
-
+                         thin_percent=NULL, thin_by=NULL, pmp_label=FALSE, deciles=FALSE,event=1){
+  # check y only has two values
+  y <- ifelse(y == event, 1, 0)
 
   # check validity of x,y inputs
 
@@ -364,7 +365,10 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
 }
 
 # Function to get matrix of posterior model probabilities across delta/gamma grid
-get_zmat <- function(x, y, len.out = 100, lower = c(0.0001,-2), upper = c(5,2)){
+get_zmat <- function(x, y, len.out = 100, lower = c(0.0001,-2), upper = c(5,2), event=1){
+  print("get_zmat start")
+  # check y only has two values
+  y <- ifelse(y == event, 1, 0)
 
   # Set up grid of Delta (d) and Gamma (g)
   d <- seq(lower[1], upper[1], length.out = len.out)
@@ -399,6 +403,7 @@ get_zmat <- function(x, y, len.out = 100, lower = c(0.0001,-2), upper = c(5,2)){
     goal <- logit(xM[uniq_inds])
     b <- (goal[2] - goal[1]) / (start[2] - start[1])
     a <- goal[2] - b*start[2]
+    print(paste0("a=", a, ", b=", b, ", exp(a)=", exp(a)))
     grd.loglik[i] <- llo_lik(params=c(exp(a),b), x=xg, y=y, log=TRUE)
     BIC_1[i] <- (-2)*llo_lik(params=c(1,1), x=xg, y=y, log=TRUE)
     grd.BIC_2[i] <- 2*log(n) - 2*grd.loglik[i]
@@ -412,6 +417,9 @@ get_zmat <- function(x, y, len.out = 100, lower = c(0.0001,-2), upper = c(5,2)){
   z_mat <- matrix(temp, nrow = length(d), ncol = length(g))
   colnames(z_mat) <- g
   rownames(z_mat) <- d
+
+  print("get_zmat end")
+
   return(z_mat)
 }
 
@@ -438,7 +446,12 @@ plot_params2 <- function(x, y, len.out = 100,
                         thin_to=NULL,
                         thin_by=NULL,
                         thin_percent=NULL,
+                        event=1,
                         ...){
+  print("plot_params2 start")
+
+  # check y only has two values
+  y <- ifelse(y == event, 1, 0)
 
   rows <- 1:length(x)
   if(!is.null(thin_to)){
@@ -510,4 +523,6 @@ plot_params2 <- function(x, y, len.out = 100,
       stop("must provide contour levels")
     }
   }
+  print("plot_params2 end")
+
 }

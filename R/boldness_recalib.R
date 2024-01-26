@@ -1,11 +1,15 @@
 # add option to pass args to nloptr
 # also return br probs (add flag to toggle this)
-
+# add option to see nlopt printing vs our own printing
 brcal <- function(x,y,t_level, x0=c(0.5,0.5), print_level=3, maxeval=300,
                   xtol_rel_outer=1.0e-6, start_at_MLEs=TRUE,
                   xtol_rel_inner=1.0e-6,
                   # algorithm="NLOPT_LD_SLSQP",
-                  check_derivatives=FALSE, tau=FALSE){
+                  check_derivatives=FALSE, tau=FALSE,
+                  event=1){
+
+  # check y only has two values
+  y <- ifelse(y == event, 1, 0)
 
   if(start_at_MLEs){
     bt <- bayes_testing(x,y)

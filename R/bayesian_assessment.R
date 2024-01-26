@@ -4,7 +4,13 @@
 
 
 # Bayesian Calibration assessment function
-bayes_testing <- function(x, y, k = 2, params_null = c(1,1), params = NA, optim_details = FALSE, lower = c(0.001, -5), upper = c(10,30)){
+bayes_testing <- function(x, y, k = 2, params_null = c(1,1), params = NA, optim_details = FALSE,
+                          lower = c(0.001, -5), upper = c(10,30),
+                          event=1){
+  # check y only has two values
+  y <- ifelse(y == event, 1, 0)
+
+
   # BIC under null
   BIC1 <- BIC_llo(x = x, y = y, k = 0, params = params_null, lower = lower, upper = upper)
 
