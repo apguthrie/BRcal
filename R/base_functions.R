@@ -20,6 +20,7 @@
 #'
 #' @examples
 LLO <- function(p, delta, gamma){
+  # print("LLO")
 
   ##################
   #  Input Checks  #
@@ -109,10 +110,11 @@ prelec <- function(p, alpha, beta){
 
 
 # Likelihood Ratio Test
-LLO_LRT <- function(x, y, params = c(1,1), optim_details = FALSE,
+llo_lrt <- LLO_LRT <- function(x, y, params = c(1,1), optim_details = FALSE,
                     start = c(0.5,0.5), lower = c(0.001, -5), upper = c(10,30),
                     ...){
-
+  # print("LLO_LRT")
+  # print(paste0(params, " LLO_LRT"))
   # check params, start, lower, upper are of right length, right values
   params <- check_input_params(params)
   start <- check_input_params(start, name="start")
@@ -137,7 +139,7 @@ LLO_LRT <- function(x, y, params = c(1,1), optim_details = FALSE,
   # optLRT <- stats::optim(start, llo_optim_wrap, x=x, y=y, method = "Nelder-Mead",
   #                        neg = TRUE, log = TRUE)
   optLRT <- llo_optim(x, y, lower, upper, start, ...)
-
+  # print(paste0(optLRT$par, " LLO_LRT after llo_optim"))
   bottom <- -optLRT$value
   est_params <- optLRT$par
   val <- 2*(bottom-top)
@@ -156,9 +158,23 @@ LLO_LRT <- function(x, y, params = c(1,1), optim_details = FALSE,
                     pval = pval,
                     est_params = est_params)
   }
+  # print("LLO_LRT end")
   return(results)
 }
 
+mle_recal <- function(x, y, probs_only=TRUE, optim_details = FALSE,
+                      start = c(0.5,0.5), lower = c(0.001, -5), upper = c(10,30),
+                      ...) {
+  optLRT <- llo_optim(x, y, lower, upper, start, ...)
+  est_params <- optLRT$par
+  new_probs <- LLO(x, est_params[1], est_params[2])
+  if(probs_only){
+    return(new_probs)
+  } else {
+    return(list(probs = new_probs,
+                MLEs = est_params))
+  }
+}
 
 ######################################################
 #  Internal Functions                                #
@@ -181,11 +197,15 @@ to_prob <- function(x){
 }
 
 # Likelihood
+# ADD OPTION TO HAVE ANY TWO LEVELS FOR y
 llo_lik <- function(params, x, y, log = FALSE, neg = FALSE, tau = FALSE){
 
   ##################
   #  Input Checks  #
   ##################
+  # print("llo_lik")
+  # print(paste0(params, " llo_lik"))
+  # print(paste0(tau, " llo_lik"))
 
   # check params are of right length, right values
   params <- check_input_params(params, tau=tau)
@@ -231,10 +251,13 @@ llo_lik <- function(params, x, y, log = FALSE, neg = FALSE, tau = FALSE){
   if(neg){
     result <- -result
   }
+  # print("llo_lik end")
   return(result)
 }
 
 llo_optim_wrap <- function(params, x, y, log = FALSE, neg = FALSE){
+  # print("llo_optim_wrap")
+
   if(params[1] <= 0){
     result <- -9999
     if(neg){
@@ -248,6 +271,9 @@ llo_optim_wrap <- function(params, x, y, log = FALSE, neg = FALSE){
 
 llo_optim <- function(x, y, lower=c(0.0001, -15), upper=c(4e+08, 150),
                       start=c(0.5,0.5), tau=TRUE, ...){
+  # print("llo_optim start")
+  # print(paste0(tau, " llo_optim"))
+
   if(tau){
     lower[1] <- log(lower[1])
     upper[1] <- log(upper[1])
@@ -269,10 +295,15 @@ llo_optim <- function(x, y, lower=c(0.0001, -15), upper=c(4e+08, 150),
   #              lower = lower, upper = upper, tau=tau, log = TRUE, neg = TRUE)
   opt <- optim(start, llo_lik, x=x, y=y, method = "Nelder-Mead", ...,
                neg = TRUE, log = TRUE, tau=tau)
-
+  # print(paste0(tau, " llo_optim end"))
+  # print(paste0(opt$par, " llo_optim before"))
   if(tau){
     opt$par[1] <- exp(opt$par[1])
   }
+  # print(paste0(opt$par, " llo_optim after"))
+
+  # print("llo_optim end")
+
   return(opt)
 }
 
