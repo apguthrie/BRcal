@@ -2,8 +2,7 @@
 
 hockey <- read.csv("../ppc/hockey/data/compiled_NHL_pundit_data20_21_FULL.csv",
                    row.names=1, stringsAsFactors=TRUE) %>%
-  dplyr::transmute(original538,
-                   y = Winner01,
+  dplyr::transmute(y = Winner01,
                    x = HomeProb538,
                    rand = withr::with_seed(8333, x_rand <- runif(n = nrow(.),
                                                                  min = min(.$HomeProb538),
