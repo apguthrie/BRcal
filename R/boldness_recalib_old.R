@@ -13,7 +13,7 @@ get_zmat_old <- function(x, y, len.out = 100, lower = c(0.0001,-2), upper = c(5,
   temp <- c()
   for(i in 1:nrow(grd)){
     x_new <- LLO(x, delta = grd[i,1], gamma = grd[i,2])   # LLO adjust probs FIRST based on grid point
-    pmp <- bayes_testing(x_new, y)$posterior_model_prob   # Get posterior model prob
+    pmp <- bayes_ms(x_new, y)$posterior_model_prob   # Get posterior model prob
     temp <- c(temp, pmp)
   }
 

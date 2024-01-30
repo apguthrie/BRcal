@@ -12,7 +12,7 @@ brcal <- function(x, y, t=0.95, x0=c(0.5,0.5), print_level=3, maxeval=300,
   y <- ifelse(y == event, 1, 0)
 
   if(start_at_MLEs){
-    bt <- bayes_testing(x,y)
+    bt <- bayes_ms(x,y)
     x0 <- bt$est_params
   }
 
@@ -60,7 +60,7 @@ brcal <- function(x, y, t=0.95, x0=c(0.5,0.5), print_level=3, maxeval=300,
       x[1] <- exp(x[1])
     )
     probs_new <- LLO(probs, x[1], x[2])
-    c1 <- bayes_testing(probs_new, outs)$posterior_model_prob * -1 + t
+    c1 <- bayes_ms(probs_new, outs)$posterior_model_prob * -1 + t
     return(c1)
   }
 
@@ -71,7 +71,7 @@ brcal <- function(x, y, t=0.95, x0=c(0.5,0.5), print_level=3, maxeval=300,
 
     n <- length(probs)
     probs_new <- LLO(probs, x[1], x[2])
-    bt <- bayes_testing(probs_new, outs)
+    bt <- bayes_ms(probs_new, outs)
     pmp <- bt$posterior_model_prob
     pmp2 <- pmp^2
     dhat <- bt$est_params[1]

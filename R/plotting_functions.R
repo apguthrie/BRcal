@@ -212,7 +212,7 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
 
 
     # for original
-    bt <- bayes_testing(x, y)
+    bt <- bayes_ms(x, y)
     df$probs <- x_thin
     df$outcome <- factor(y_thin, levels = c("1", "0"))
     df$post <- rep(bt$posterior_model_prob, nplot)
@@ -238,7 +238,7 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
     # NEED TO MAKE LAST PART A FACTOR AND DECIDE ON LABELS - later
 
     # for all sets of passed delta, gamma
-    # recalibrate, then pass to bayes_testing
+    # recalibrate, then pass to bayes_ms
     for(i in 1:length(delta)){
       temp <- data.frame(matrix(nrow=nplot, ncol=7))
       colnames(temp) <- c("probs", "outcome", "post", "pairing", "delta", "gamma", "label")
@@ -248,7 +248,7 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
 
       temp$probs <- LLO(x_thin, delta[i], gamma[i])
 
-      bt <- bayes_testing(llo_probs, y)
+      bt <- bayes_ms(llo_probs, y)
 
       temp$outcome <- factor(y_thin, levels = c("1", "0"))
       temp$post <- rep(bt$posterior_model_prob, nplot)
@@ -379,7 +379,7 @@ get_zmat <- function(x, y, len.out = 100, lower = c(0.0001,-2), upper = c(5,2), 
   #temp <- c()
   # for(i in 1:nrow(grd)){
   #   x_new <- LLO(x, delta = grd[i,1], gamma = grd[i,2])   # LLO adjust probs FIRST based on grid point
-  #   pmp <- bayes_testing(x_new, y)$posterior_model_prob   # Get posterior model prob
+  #   pmp <- bayes_ms(x_new, y)$posterior_model_prob   # Get posterior model prob
   #   temp <- c(temp, pmp)
   # }
 

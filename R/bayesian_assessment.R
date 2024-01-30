@@ -4,7 +4,7 @@
 
 
 # Bayesian Calibration assessment function
-bayes_testing <- function(x, y, k = 2, params_null = c(1,1), params = NA, optim_details = FALSE,
+bayes_ms <- function(x, y, k = 2, params_null = c(1,1), params = NA, optim_details = FALSE,
                           lower = c(0.001, -5), upper = c(10,30),
                           event=1){
   # check y only has two values
@@ -91,7 +91,7 @@ post_mod_prob <- function(BF){
 }
 
 
-bayes_testing_dev <- function(x, y, k = 2, params_null = c(1,1), params = NA, optim_details = FALSE, lower = c(0.001, -5), upper = c(10,30)){
+bayes_ms_dev <- function(x, y, k = 2, params_null = c(1,1), params = NA, optim_details = FALSE, lower = c(0.001, -5), upper = c(10,30)){
   # BIC under null
   BIC1 <- BIC_llo_dev(x = x, y = y, k = 0, params = params_null, lower = lower, upper = upper)
 
