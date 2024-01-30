@@ -1,7 +1,7 @@
 # add option to pass args to nloptr
 # also return br probs (add flag to toggle this)
 # add option to see nlopt printing vs our own printing
-brcal <- function(x,y,t_level=0.95, x0=c(0.5,0.5), print_level=3, maxeval=300,
+brcal <- function(x, y, t=0.95, x0=c(0.5,0.5), print_level=3, maxeval=300,
                   xtol_rel_outer=1.0e-6, start_at_MLEs=TRUE,
                   xtol_rel_inner=1.0e-6,
                   # algorithm="NLOPT_LD_SLSQP",
@@ -20,7 +20,7 @@ brcal <- function(x,y,t_level=0.95, x0=c(0.5,0.5), print_level=3, maxeval=300,
     x0[1] <- log(x0[1])
   }
 
-  eval_f <- function(x, probs, outs, t_level, tau){
+  eval_f <- function(x, probs, outs, t, tau){
     if(tau)(
       x[1] <- exp(x[1])
     )
@@ -29,7 +29,7 @@ brcal <- function(x,y,t_level=0.95, x0=c(0.5,0.5), print_level=3, maxeval=300,
     return(-stats::sd(probs_new))
   }
 
-  eval_grad_f <- function(x, probs, outs, t_level, tau){
+  eval_grad_f <- function(x, probs, outs, t, tau){
     if(tau)(
       x[1] <- exp(x[1])
     )
@@ -55,16 +55,16 @@ brcal <- function(x,y,t_level=0.95, x0=c(0.5,0.5), print_level=3, maxeval=300,
     return(grad_obj)
   }
 
-  eval_g <- function(x, probs, outs, t_level, tau){
+  eval_g <- function(x, probs, outs, t, tau){
     if(tau)(
       x[1] <- exp(x[1])
     )
     probs_new <- LLO(probs, x[1], x[2])
-    c1 <- bayes_testing(probs_new, outs)$posterior_model_prob * -1 + t_level
+    c1 <- bayes_testing(probs_new, outs)$posterior_model_prob * -1 + t
     return(c1)
   }
 
-  eval_grad_g <- function(x, probs, outs, t_level, tau){
+  eval_grad_g <- function(x, probs, outs, t, tau){
     if(tau)(
       x[1] <- exp(x[1])
     )
@@ -125,7 +125,7 @@ brcal <- function(x,y,t_level=0.95, x0=c(0.5,0.5), print_level=3, maxeval=300,
                                     )),
                         probs = x,
                         outs = y,
-                        t_level = t_level,
+                        t = t,
                         tau = tau)
 
   # res <- nloptr::nloptr(x0 = x0,
@@ -141,7 +141,7 @@ brcal <- function(x,y,t_level=0.95, x0=c(0.5,0.5), print_level=3, maxeval=300,
   #                                   "maxeval"=maxeval, "check_derivatives"=check_derivatives),
   #                       probs = x,
   #                       outs = y,
-  #                       t_level = t_level)
+  #                       t = t)
 
   if(tau){
     res$solution[1] <- exp(res$solution[1])
