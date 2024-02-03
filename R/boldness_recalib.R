@@ -10,7 +10,7 @@ brcal <- function(x, y, t=0.95,
                   # algorithm="NLOPT_LD_SLSQP",
                   check_derivatives=FALSE,
                   print_level=3){
-
+ x0<-start
   # check y only has two values
   y <- ifelse(y == event, 1, 0)
 
@@ -151,10 +151,10 @@ brcal <- function(x, y, t=0.95,
   }
 
 
-  return(res)
+  l <- list(nloptr = res,
+            BR_params = c(res$solution[1], res$solution[2]),
+            sb = -res$objective,
+            probs = LLO(x, res$solution[1], res$solution[2]))
+
+  return(l)
 }
-
-
-
-
-
