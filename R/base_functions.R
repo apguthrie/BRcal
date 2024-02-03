@@ -208,7 +208,8 @@ llo_lik <- function(params, x, y, log = FALSE, neg = FALSE, tau = FALSE){
   # print(paste0(tau, " llo_lik"))
 
   # check params are of right length, right values
-  params <- check_input_params(params, tau=tau)
+  #params <- check_input_params(params, tau=tau)
+  # DONT CHECK HERE< it gets run too many times
 
   # check x is vector, values in [0,1]
   x <- check_input_probs(x, name="x")
@@ -295,6 +296,9 @@ llo_optim <- function(x, y, lower=c(0.0001, -15), upper=c(4e+08, 150),
   #              lower = lower, upper = upper, tau=tau, log = TRUE, neg = TRUE)
   opt <- optim(start, llo_lik, x=x, y=y, method = "Nelder-Mead", ...,
                neg = TRUE, log = TRUE, tau=tau)
+  # opt <- optim(start, llo_lik, x=x, y=y, method = "L-BFGS-B",
+  #              lower = c(-Inf, -Inf), upper = c(Inf, Inf), ...,
+  #              neg = TRUE, log = TRUE, tau=tau)
   # print(paste0(tau, " llo_optim end"))
   # print(paste0(opt$par, " llo_optim before"))
   if(tau){
