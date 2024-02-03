@@ -269,7 +269,7 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
         temp$label <- paste0(lab, " \n(", post,")")
 
       } else {
-        temp$label <- paste0(as.character(round(temp$post, 5)), "\n (delta=", round(delta[i],3), ", gamma=", round(gamma[i],3), ")")
+        temp$label <- paste0(as.character(round(temp$post, 5)), "\n delta=", round(delta[i],3), "\n gamma=", round(gamma[i],3))
 
       }
 
@@ -332,7 +332,8 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
                          limits = ylim,
                          expand = c(0, 0))+
       scale_color_manual(values = c("blue", "red")) +
-      scale_x_discrete(expand = c(0, 0.075))
+      scale_x_discrete(expand = c(0, 0.075)) +
+      theme(axis.text.x = element_text(hjust=0.75))
     # theme(axis.title.x = element_blank(),
     #       axis.title.y = element_blank())
     # theme(axis.title.x = element_text(size = font_size_lp),
@@ -366,7 +367,7 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
 
 # Function to get matrix of posterior model probabilities across delta/gamma grid
 get_zmat <- function(x, y, len.out = 100, lower = c(0.0001,-2), upper = c(5,2), event=1){
-  print("get_zmat start")
+  # print("get_zmat start")
   # check y only has two values
   y <- ifelse(y == event, 1, 0)
 
@@ -375,6 +376,8 @@ get_zmat <- function(x, y, len.out = 100, lower = c(0.0001,-2), upper = c(5,2), 
   g <- seq(lower[2], upper[2], length.out = len.out)
   grd <- expand.grid(d,g)
 
+  #print(d)
+  #print(g)
   # Loop through grid points to get posterior model probability
   #temp <- c()
   # for(i in 1:nrow(grd)){
@@ -396,18 +399,27 @@ get_zmat <- function(x, y, len.out = 100, lower = c(0.0001,-2), upper = c(5,2), 
   n <- length(x0)
 
   for(i in 1:nrow(grd)){
-    xg <- LLO(x0, delta = grd[i,1], gamma = grd[i,2])
-    xu <- unique(xM)[1:2]  # grab two unique xs
-    uniq_inds <- c(which(xM == xu[1])[1], which(xM == xu[2])[1]) # find their indices (make sure only grab one index for each)
-    start <- logit(xg[uniq_inds])
-    goal <- logit(xM[uniq_inds])
-    b <- (goal[2] - goal[1]) / (start[2] - start[1])
-    a <- goal[2] - b*start[2]
-    print(paste0("a=", a, ", b=", b, ", exp(a)=", exp(a)))
-    grd.loglik[i] <- llo_lik(params=c(exp(a),b), x=xg, y=y, log=TRUE)
-    BIC_1[i] <- (-2)*llo_lik(params=c(1,1), x=xg, y=y, log=TRUE)
-    grd.BIC_2[i] <- 2*log(n) - 2*grd.loglik[i]
+
+    if(grd[i,2] == 0){
+      temp <- bayes_ms(LLO(x0, delta = grd[i,1], gamma = grd[i,2]), y)
+      BIC_1[i] <- temp$BIC_H0
+      grd.BIC_2[i] <- temp$BIC_H1
+    }else{
+      xg <- LLO(x0, delta = grd[i,1], gamma = grd[i,2])
+      xu <- unique(xM)[1:2]  # grab two unique xs
+      uniq_inds <- c(which(xM == xu[1])[1], which(xM == xu[2])[1]) # find their indices (make sure only grab one index for each)
+      start <- logit(xg[uniq_inds])
+      goal <- logit(xM[uniq_inds])
+      b <- (goal[2] - goal[1]) / (start[2] - start[1])
+      a <- goal[2] - b*start[2]
+      # print(paste0("a=", a, ", b=", b, ", exp(a)=", exp(a)))
+      # print(paste0("delta=", grd[i,1], ", gamma=", grd[i,2]))
+      grd.loglik[i] <- llo_lik(params=c(exp(a),b), x=xg, y=y, log=TRUE)
+      BIC_1[i] <- (-2)*llo_lik(params=c(1,1), x=xg, y=y, log=TRUE)
+      grd.BIC_2[i] <- 2*log(n) - 2*grd.loglik[i]
+    }
   }
+
 
   grd.BF <- bayes_factor(BIC1 = grd.BIC_2, BIC2 = BIC_1)
   temp <- post_mod_prob(grd.BF)
@@ -418,7 +430,7 @@ get_zmat <- function(x, y, len.out = 100, lower = c(0.0001,-2), upper = c(5,2), 
   colnames(z_mat) <- g
   rownames(z_mat) <- d
 
-  print("get_zmat end")
+  # print("get_zmat end")
 
   return(z_mat)
 }
@@ -426,34 +438,34 @@ get_zmat <- function(x, y, len.out = 100, lower = c(0.0001,-2), upper = c(5,2), 
 
 
 plot_params2 <- function(x, y, len.out = 100,
-                        lower = c(0.0001,-2), upper = c(5,2),
-                        cont_levels = c(0.8, 0.9),
-                        sub = "",
-                        zlim = c(0,1),
-                        ttle_extra = "",
-                        ttle = "Posterior Model Probability of Calibration",
-                        contours_only = FALSE,
-                        add = FALSE,
-                        contour_color = "white",
-                        legend.lab = "",
-                        drawlabels = TRUE,
-                        xlab = "delta",
-                        ylab = "gamma",
-                        lwd=1,
-                        labcex=0.6,
-                        legend.args = list(las=180),
-                        legend.mar = 9, no_legend=FALSE,
-                        thin_to=NULL,
-                        thin_by=NULL,
-                        thin_percent=NULL,
-                        event=1,
-                        ...){
-  print("plot_params2 start")
+                         lower = c(0.0001,-2), upper = c(5,2),
+                         cont_levels = c(0.8, 0.9),
+                         sub = "",
+                         zlim = c(0,1),
+                         ttle_extra = "",
+                         ttle = "Posterior Model Probability of Calibration",
+                         contours_only = FALSE,
+                         add = FALSE,
+                         contour_color = "white",
+                         legend.lab = "",
+                         drawlabels = TRUE,
+                         xlab = "delta",
+                         ylab = "gamma",
+                         lwd=1,
+                         labcex=0.6,
+                         legend.args = list(las=180),
+                         legend.mar = 9, no_legend=FALSE,
+                         thin_to=NULL,
+                         thin_by=NULL,
+                         thin_percent=NULL,
+                         event=1,
+                         ...){
+  #print("plot_params2 start")
 
   # check y only has two values
   y <- ifelse(y == event, 1, 0)
 
-  rows <- 1:length(x)
+  #rows <- 1:length(x)
   if(!is.null(thin_to)){
     set.seed(0)
     rows <- sample(1:length(x), size=thin_to)
@@ -523,6 +535,6 @@ plot_params2 <- function(x, y, len.out = 100,
       stop("must provide contour levels")
     }
   }
-  print("plot_params2 end")
+  #print("plot_params2 end")
 
 }
