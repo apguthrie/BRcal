@@ -1,12 +1,15 @@
 # add option to pass args to nloptr
 # also return br probs (add flag to toggle this)
 # add option to see nlopt printing vs our own printing
-brcal <- function(x, y, t=0.95, x0=c(0.5,0.5), print_level=3, maxeval=300,
-                  xtol_rel_outer=1.0e-6, start_at_MLEs=TRUE,
+brcal <- function(x, y, t=0.95,
+                  start=NULL, start_at_MLEs=TRUE,
+                  tau=FALSE, event=1,
+                  maxeval=300,
+                  xtol_rel_outer=1.0e-6,
                   xtol_rel_inner=1.0e-6,
                   # algorithm="NLOPT_LD_SLSQP",
-                  check_derivatives=FALSE, tau=FALSE,
-                  event=1){
+                  check_derivatives=FALSE,
+                  print_level=3){
 
   # check y only has two values
   y <- ifelse(y == event, 1, 0)
@@ -150,5 +153,8 @@ brcal <- function(x, y, t=0.95, x0=c(0.5,0.5), print_level=3, maxeval=300,
 
   return(res)
 }
+
+
+
 
 
