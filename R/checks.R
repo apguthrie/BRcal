@@ -63,6 +63,8 @@ check_input_outcomes <- function(y, name="outcomes"){
 
 check_input_params <- function(params, name="params", tau=FALSE){
 
+  # print(paste0("params: delta = ", params[1], ", gamma = ", params[2], " in check_input_params"))
+
   # check if params is list
   if(is.list(params)){
     warning("argument params is a list, coerced to vector")
