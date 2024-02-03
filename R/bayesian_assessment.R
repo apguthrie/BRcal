@@ -4,7 +4,7 @@
 
 
 # Bayesian Calibration assessment function
-bayes_ms <- function(x, y, k = 2, params_null = c(1,1), params = NA, optim_details = FALSE,
+bayes_ms <- bayes_testing <- function(x, y, k = 2, params_null = c(1,1), params = NA, optim_details = FALSE,
                           lower = c(0.001, -5), upper = c(10,30),
                           event=1){
   # check y only has two values
@@ -130,3 +130,6 @@ bayes_ms_dev <- function(x, y, k = 2, params_null = c(1,1), params = NA, optim_d
 
   return(results)
 }
+
+# bayes_testing <- bayes_ms
+# bayes_testing_dev <- bayes_ms_dev
