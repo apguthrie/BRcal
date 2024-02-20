@@ -27,13 +27,13 @@ LLO <- function(p, delta, gamma){
   ##################
 
   # check input probs are valid
-  p <- check_input_probs(p, "p")
+  #p <- check_input_probs(p, "p")
 
   # check delta > 0 & numeric & size 1
-  check_input_delta(delta)
+  #check_input_delta(delta)
 
   # check gamma in Reals & numeric & size 1
-  check_input_gamma(gamma)
+  #check_input_gamma(gamma)
 
   ###################
   #  Function Code  #
