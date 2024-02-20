@@ -9,4 +9,4 @@ hockey <- read.csv("../ppc/hockey/data/compiled_NHL_pundit_data20_21_FULL.csv",
                                                                  max = max(.$HomeProb538))),
                    winner = Winner)
 
-usethis::use_data(hockey, overwrite = TRUE)
+usethis::use_data(hockey, overwrite = FALSE)
