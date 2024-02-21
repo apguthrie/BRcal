@@ -4,16 +4,18 @@
 \alias{LLO}
 \title{Linear Log Odds (LLO) Recalibration Function}
 \usage{
-LLO(p, delta, gamma)
+LLO(x, delta, gamma, ...)
 }
 \arguments{
-\item{p}{a numeric vector of probabilities to be LLO-adjusted. Must only
+\item{x}{a numeric vector of probabilities to be LLO-adjusted. Must only
 contain values in [0,1].}
 
 \item{delta}{numeric, must be > 0, parameter \eqn{\delta} in LLO
 recalibration function.}
 
 \item{gamma}{numeric, parameter \eqn{\gamma} in LLO recalibration function.}
+
+\item{...}{Additional arguments (for internal use only).}
 }
 \value{
 The LLO-adjusted vector of probabilities (ADD NOTATION FROM PAPER? OR KEEP IN DETAILS?)
@@ -22,6 +24,6 @@ The LLO-adjusted vector of probabilities (ADD NOTATION FROM PAPER? OR KEEP IN DE
 Description goes here.
 }
 \details{
-Details go here. NEED TO CITE TURNER? Consider removing functionality for
+Details go here. NEED TO CITE TURNER/Gonzalez & Wu? Consider removing functionality for
 lists/matrices (any other types?).
 }
