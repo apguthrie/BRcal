@@ -6,7 +6,7 @@
 #'
 #' Description goes here.
 #'
-#' Details go here. NEED TO CITE TURNER? Consider removing functionality for
+#' Details go here. NEED TO CITE TURNER/Gonzalez & Wu? Consider removing functionality for
 #' lists/matrices (any other types?).
 #'
 #' @param x a numeric vector of probabilities to be LLO-adjusted. Must only
@@ -14,18 +14,16 @@
 #' @param delta numeric, must be > 0, parameter \eqn{\delta} in LLO
 #'              recalibration function.
 #' @param gamma numeric, parameter \eqn{\gamma} in LLO recalibration function.
-#'
+#' @param ... Additional arguments (for internal use only).
 #' @return The LLO-adjusted vector of probabilities (ADD NOTATION FROM PAPER? OR KEEP IN DETAILS?)
 #' @export
 #'
 #' @examples
 LLO <- function(x, delta, gamma, ...){
-  # print("LLO")
 
   ##################
   #  Input Checks  #
   ##################
-
 
   if(!input_checks_off){
     # check input probs are valid
@@ -38,13 +36,11 @@ LLO <- function(x, delta, gamma, ...){
     check_input_gamma(gamma)
   }
 
-
   ###################
   #  Function Code  #
   ###################
 
   x_llo <- (delta * (x^gamma)) / ((delta * (x^gamma)) + ((1-x)^gamma))
-
 
   ###################
   #  Output Checks  #
@@ -54,66 +50,14 @@ LLO <- function(x, delta, gamma, ...){
     # check if return vector contains nans
     if(!check_noNaNs(x_llo)) warning("LLO return value contains NaNs")
 
-    # check if return vector contains - typically not possible
+    # check if return vector contains +/- Inf - typically not possible
     if(!check_noInfs(x_llo)) warning("LLO return value contains +/-Inf")
 
     # check x are probabilities in [0,1] - typically not possible to break
     if(!check_probs(x_llo[!is.na(x_llo)])) warning("LLO return value contains values outside of [0,1]")
-
   }
 
-
   return(x_llo)
-}
-
-
-#' Prelec Two Parameter Recalibration Function
-#'
-#' @param p a numeric vector of probabilities to be Prelec-adjusted. Must only
-#'          contain values in \[0,1\].
-#' @param alpha numeric, must be > 0, \eqn{\alpha} in Prelec two parameter function.
-#' @param beta numeric, must be > 0, \eqn{\beta} in Prelec two parameter function.
-#'
-#' @return
-#' @export
-#'
-#' @examples
-prelec <- function(p, alpha, beta){
-
-  ##################
-  #  Input Checks  #
-  ##################
-
-  # check input probs are valid
-  p <- check_input_probs(p, "p")
-
-  # check alpha > 0 & numeric & size 1
-  if(length(alpha) != 1) stop("argument alpha must be single value")
-  if(!is.numeric(alpha)) stop("argument alpha is not numeric type")
-  if(alpha <= 0) stop("argument alpha must be greater than 0")
-
-  # check beta > 0 & numeric & size 1
-  if(length(beta) != 1) stop("argument beta must be single value")
-  if(!is.numeric(beta)) stop("argument beta is not numeric type")
-  if(beta <= 0) stop("argument beta must be greater than 0")
-
-  ###################
-  #  Function Code  #
-  ###################
-
-  p_prelec <- exp(-beta * ((-log(p))^alpha))
-
-  ###################
-  #  Output Checks  #
-  ###################
-
-  # check if return vector contains nans
-  if(!check_noNaNs(p_prelec)) warning("return value contains NaNs")
-
-  # check if return vector contains Infs - typically not possible
-  if(!check_noInfs(p_prelec)) warning("return value contains +/-Inf")
-
-  return(p_prelec)
 }
 
 
@@ -356,4 +300,43 @@ LLO_LRT_dev <- function(x, y, params = c(1,1), optim_details = FALSE, start = c(
                     est_params = est_params)
   }
   return(results)
+}
+
+
+prelec <- function(p, alpha, beta){
+
+  ##################
+  #  Input Checks  #
+  ##################
+
+  # check input probs are valid
+  p <- check_input_probs(p, "p")
+
+  # check alpha > 0 & numeric & size 1
+  if(length(alpha) != 1) stop("argument alpha must be single value")
+  if(!is.numeric(alpha)) stop("argument alpha is not numeric type")
+  if(alpha <= 0) stop("argument alpha must be greater than 0")
+
+  # check beta > 0 & numeric & size 1
+  if(length(beta) != 1) stop("argument beta must be single value")
+  if(!is.numeric(beta)) stop("argument beta is not numeric type")
+  if(beta <= 0) stop("argument beta must be greater than 0")
+
+  ###################
+  #  Function Code  #
+  ###################
+
+  p_prelec <- exp(-beta * ((-log(p))^alpha))
+
+  ###################
+  #  Output Checks  #
+  ###################
+
+  # check if return vector contains nans
+  if(!check_noNaNs(p_prelec)) warning("return value contains NaNs")
+
+  # check if return vector contains Infs - typically not possible
+  if(!check_noInfs(p_prelec)) warning("return value contains +/-Inf")
+
+  return(p_prelec)
 }
