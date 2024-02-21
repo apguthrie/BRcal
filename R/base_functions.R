@@ -9,7 +9,7 @@
 #' Details go here. NEED TO CITE TURNER? Consider removing functionality for
 #' lists/matrices (any other types?).
 #'
-#' @param p a numeric vector of probabilities to be LLO-adjusted. Must only
+#' @param x a numeric vector of probabilities to be LLO-adjusted. Must only
 #'          contain values in \[0,1\].
 #' @param delta numeric, must be > 0, parameter \eqn{\delta} in LLO
 #'              recalibration function.
@@ -19,43 +19,51 @@
 #' @export
 #'
 #' @examples
-LLO <- function(p, delta, gamma){
+LLO <- function(x, delta, gamma, ...){
   # print("LLO")
 
   ##################
   #  Input Checks  #
   ##################
 
-  # check input probs are valid
-  #p <- check_input_probs(p, "p")
 
-  # check delta > 0 & numeric & size 1
-  #check_input_delta(delta)
+  if(!input_checks_off){
+    # check input probs are valid
+    x <- check_input_probs(x, "x")
 
-  # check gamma in Reals & numeric & size 1
-  #check_input_gamma(gamma)
+    # check delta > 0 & numeric & size 1
+    check_input_delta(delta)
+
+    # check gamma in Reals & numeric & size 1
+    check_input_gamma(gamma)
+  }
+
 
   ###################
   #  Function Code  #
   ###################
 
-  p_llo <- (delta * (p^gamma)) / ((delta * (p^gamma)) + ((1-p)^gamma))
+  x_llo <- (delta * (x^gamma)) / ((delta * (x^gamma)) + ((1-x)^gamma))
 
 
   ###################
   #  Output Checks  #
   ###################
 
-  # check if return vector contains nans
-  if(!check_noNaNs(p_llo)) warning("return value contains NaNs")
+  if(!output_checks_off){
+    # check if return vector contains nans
+    if(!check_noNaNs(x_llo)) warning("LLO return value contains NaNs")
 
-  # check if return vector contains - typically not possible
-  if(!check_noInfs(p_llo)) warning("return value contains +/-Inf")
+    # check if return vector contains - typically not possible
+    if(!check_noInfs(x_llo)) warning("LLO return value contains +/-Inf")
 
-  # check p are probabilities in [0,1] - typically not possible to break
-  if(!check_probs(p_llo[!is.na(p_llo)])) warning("return value contains values outside of [0,1]")
+    # check x are probabilities in [0,1] - typically not possible to break
+    if(!check_probs(x_llo[!is.na(x_llo)])) warning("LLO return value contains values outside of [0,1]")
 
-  return(p_llo)
+  }
+
+
+  return(x_llo)
 }
 
 
