@@ -14,7 +14,7 @@
 #' @param delta numeric, must be > 0, parameter \eqn{\delta} in LLO
 #'              recalibration function.
 #' @param gamma numeric, parameter \eqn{\gamma} in LLO recalibration function.
-#' @param ... Additional arguments (for internal use only).
+#' @param ... Additional arguments for internal use only.
 #' @return The LLO-adjusted vector of probabilities (ADD NOTATION FROM PAPER? OR KEEP IN DETAILS?)
 #' @export
 #'
@@ -24,7 +24,7 @@ LLO <- function(x, delta, gamma, ...){
   ##################
   #  Input Checks  #
   ##################
-
+  if(!exists("input_checks_off")){ input_checks_off <- FALSE }
   if(!input_checks_off){
     # check input probs are valid
     x <- check_input_probs(x, "x")
@@ -45,7 +45,7 @@ LLO <- function(x, delta, gamma, ...){
   ###################
   #  Output Checks  #
   ###################
-
+  if(!exists("output_checks_off")){ output_checks_off <- FALSE }
   if(!output_checks_off){
     # check if return vector contains nans
     if(!check_noNaNs(x_llo)) warning("LLO return value contains NaNs")
@@ -115,11 +115,10 @@ llo_lrt <- LLO_LRT <- function(x, y, params = c(1,1), optim_details = FALSE,
 }
 
 mle_recal <- function(x, y, probs_only=TRUE, optim_details = FALSE,
-                      start = c(0.5,0.5), lower = c(0.001, -5), upper = c(10,30),
-                      ...) {
+                      start = c(0.5,0.5), ...) {
   optLRT <- llo_optim(x, y, lower, upper, start, ...)
   est_params <- optLRT$par
-  new_probs <- LLO(x, est_params[1], est_params[2])
+  new_probs <- LLO(x=x, est_params[1], est_params[2], input_checks=FALSE)
   if(probs_only){
     return(new_probs)
   } else {
@@ -186,9 +185,9 @@ llo_lik <- function(params, x, y, log = FALSE, neg = FALSE, tau = FALSE){
   x <- ifelse(x > 0.9999999999999999, 0.9999999999999999, x)
 
   if(tau){
-    llo <- LLO(p = x, delta = exp(params[1]), gamma = params[2])
+    llo <- LLO(x = x, delta = exp(params[1]), gamma = params[2])
   } else {
-    llo <- LLO(p = x, delta = params[1], gamma = params[2])
+    llo <- LLO(x = x, delta = params[1], gamma = params[2])
   }
 
   llo <- ifelse(llo < (10^(-300)), (10^(-300)), llo)
@@ -261,45 +260,6 @@ llo_optim <- function(x, y, lower=c(0.0001, -15), upper=c(4e+08, 150),
   # print("llo_optim end")
 
   return(opt)
-}
-
-
-# Likelihood Ratio Test
-LLO_LRT_dev <- function(x, y, params = c(1,1), optim_details = FALSE, start = c(0.5,0.5), lower = c(0.001, -5), upper = c(10,30)){
-
-  # check params are of right length, right values
-
-  # check x's are between 0,1
-
-  # check y's are 0s or 1s
-
-  # check optim details are logical
-
-  # check start, lower, upper
-
-
-  top <- llo_lik(params, x, y, log = TRUE)
-  optLRT <- stats::optim(start, llo_optim_wrap, x=x, y=y, method = "Nelder-Mead",
-                         neg = TRUE, log = TRUE)
-  bottom <- -optLRT$value
-  est_params <- optLRT$par
-  val <- 2*(bottom-top)
-  pval <- 1-stats::pchisq(val, 2)
-
-  if(optim_details){
-    results <- list(test_stat = val,
-                    pval = pval,
-                    est_params = est_params,
-                    opt_value = bottom,
-                    opt_counts = optLRT$counts,
-                    opt_convergence = optLRT$convergence,
-                    opt_message = optLRT$message)
-  } else {
-    results <- list(test_stat = val,
-                    pval = pval,
-                    est_params = est_params)
-  }
-  return(results)
 }
 
 

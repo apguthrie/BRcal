@@ -243,10 +243,10 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
       temp <- data.frame(matrix(nrow=nplot, ncol=7))
       colnames(temp) <- c("probs", "outcome", "post", "pairing", "delta", "gamma", "label")
 
-      llo_probs <-  LLO(x, delta[i], gamma[i])
+      llo_probs <-  LLO(x=x, delta[i], gamma[i])
 
 
-      temp$probs <- LLO(x_thin, delta[i], gamma[i])
+      temp$probs <- LLO(x=x_thin, delta[i], gamma[i])
 
       bt <- bayes_ms(llo_probs, y)
 
@@ -388,7 +388,7 @@ get_zmat <- function(x, y, len.out = 100, lower = c(0.0001,-2), upper = c(5,2), 
 
   x0 <- x
   paramsM <- LLO_LRT(x0, y, optim_details=FALSE)$est_params
-  xM <- LLO(x0, delta=paramsM[1], gamma=paramsM[2])
+  xM <- LLO(x=x0, delta=paramsM[1], gamma=paramsM[2])
 
   grd.loglik <- c()
   optim.loglik <- c()
@@ -401,11 +401,11 @@ get_zmat <- function(x, y, len.out = 100, lower = c(0.0001,-2), upper = c(5,2), 
   for(i in 1:nrow(grd)){
 
     if(grd[i,2] == 0){
-      temp <- bayes_ms(LLO(x0, delta = grd[i,1], gamma = grd[i,2]), y)
+      temp <- bayes_ms(LLO(x=x0, delta = grd[i,1], gamma = grd[i,2]), y)
       BIC_1[i] <- temp$BIC_H0
       grd.BIC_2[i] <- temp$BIC_H1
     }else{
-      xg <- LLO(x0, delta = grd[i,1], gamma = grd[i,2])
+      xg <- LLO(x=x0, delta = grd[i,1], gamma = grd[i,2])
       xu <- unique(xM)[1:2]  # grab two unique xs
       uniq_inds <- c(which(xM == xu[1])[1], which(xM == xu[2])[1]) # find their indices (make sure only grab one index for each)
       start <- logit(xg[uniq_inds])

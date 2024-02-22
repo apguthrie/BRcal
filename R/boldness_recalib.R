@@ -28,7 +28,7 @@ brcal <- function(x, y, t=0.95,
       x[1] <- exp(x[1])
     )
     # this assumes x is vector?
-    probs_new <- LLO(probs, x[1], x[2])
+    probs_new <- LLO(x=probs, x[1], x[2])
     return(-stats::sd(probs_new))
   }
 
@@ -38,7 +38,7 @@ brcal <- function(x, y, t=0.95,
     )
 
     n <- length(probs)
-    probs_new <- LLO(probs, x[1], x[2])
+    probs_new <- LLO(x=probs, x[1], x[2])
     sdp <- stats::sd(probs_new)
     meanp <- mean(probs_new)
     xmxg <- (probs * (1-probs))^x[2]
@@ -62,7 +62,7 @@ brcal <- function(x, y, t=0.95,
     if(tau)(
       x[1] <- exp(x[1])
     )
-    probs_new <- LLO(probs, x[1], x[2])
+    probs_new <- LLO(x=probs, x[1], x[2])
     c1 <- bayes_ms(probs_new, outs)$posterior_model_prob * -1 + t
     return(c1)
   }
@@ -73,7 +73,7 @@ brcal <- function(x, y, t=0.95,
     )
 
     n <- length(probs)
-    probs_new <- LLO(probs, x[1], x[2])
+    probs_new <- LLO(x=probs, x[1], x[2])
     bt <- bayes_ms(probs_new, outs)
     pmp <- bt$posterior_model_prob
     pmp2 <- pmp^2
@@ -154,7 +154,7 @@ brcal <- function(x, y, t=0.95,
   l <- list(nloptr = res,
             BR_params = c(res$solution[1], res$solution[2]),
             sb = -res$objective,
-            probs = LLO(x, res$solution[1], res$solution[2]))
+            probs = LLO(x=x, res$solution[1], res$solution[2]))
 
   return(l)
 }
