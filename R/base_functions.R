@@ -221,43 +221,20 @@ llo_optim_wrap <- function(params, x, y, log = FALSE, neg = FALSE){
   return(result)
 }
 
-llo_optim <- function(x, y, lower=c(0.0001, -15), upper=c(4e+08, 150),
-                      start=c(0.5,0.5), tau=TRUE, ...){
-  # print("llo_optim start")
-  # print(paste0(tau, " llo_optim"))
+llo_optim <- function(x, y, start=c(0.5,0.5), tau=TRUE, ...){
 
+  # convert delta to tau
   if(tau){
-    lower[1] <- log(lower[1])
-    upper[1] <- log(upper[1])
     start[1] <- log(start[1])
   }
 
-  gradient <- function(params, x, y, tau, log=TRUE, neg=TRUE){
-    if(tau){
-      params[1] <- exp(params[1])
-    }
-    ddelta <- -sum((y / params[1]) - ((x^params[2])/(params[1] * x^params[2] + (1-x)^params[2])))
-    dgamma <- -sum(y * log(x) + log(1-x) - ((params[1] * log(x) * x^params[2] + log(1-x) * (1-x)^params[2])/(params[1] * x^params[2] + (1-x)^params[2])) - y * log(1-x))
-    return(c(ddelta, dgamma))
-  }
+   opt <- optim(par=start, fn=llo_lik, gr=nll_gradient,
+               ...,
+               x=x, y=y, neg = TRUE, log = TRUE, tau=tau)
 
-  # opt <- optim(par=start, fn=llo_lik, gr=gradient,
-  #              x=x, y=y,
-  #              method = "L-BFGS-B",
-  #              lower = lower, upper = upper, tau=tau, log = TRUE, neg = TRUE)
-  opt <- optim(start, llo_lik, x=x, y=y, method = "Nelder-Mead", ...,
-               neg = TRUE, log = TRUE, tau=tau)
-  # opt <- optim(start, llo_lik, x=x, y=y, method = "L-BFGS-B",
-  #              lower = c(-Inf, -Inf), upper = c(Inf, Inf), ...,
-  #              neg = TRUE, log = TRUE, tau=tau)
-  # print(paste0(tau, " llo_optim end"))
-  # print(paste0(opt$par, " llo_optim before"))
   if(tau){
     opt$par[1] <- exp(opt$par[1])
   }
-  # print(paste0(opt$par, " llo_optim after"))
-
-  # print("llo_optim end")
 
   return(opt)
 }
@@ -299,4 +276,16 @@ prelec <- function(p, alpha, beta){
   if(!check_noInfs(p_prelec)) warning("return value contains +/-Inf")
 
   return(p_prelec)
+}
+
+
+nll_gradient <- function(params, x, y, tau, log=TRUE, neg=TRUE){
+  if(tau){
+    params[1] <- exp(params[1])
+    ddelta <- -sum(y - ((params[1]* x^params[2])/(params[1] * x^params[2] + (1-x)^params[2])))
+  } else{
+    ddelta <- -sum((y / params[1]) - ((x^params[2])/(params[1] * x^params[2] + (1-x)^params[2])))
+  }
+  dgamma <- -sum(y * log(x) + log(1-x) - ((params[1] * log(x) * x^params[2] + log(1-x) * (1-x)^params[2])/(params[1] * x^params[2] + (1-x)^params[2])) - y * log(1-x))
+  return(c(ddelta, dgamma))
 }
