@@ -1,5 +1,5 @@
 Package: BRcal
-Title: What the Package Does (One Line, Title Case)
+Title: Boldness-Recalibration of Binary Events
 Version: 0.0.0.9000
 Authors@R: 
     c(person("Adeline P.", "Guthrie", , "apguthrie47@gmail.com", role = c("aut", "cre"),
