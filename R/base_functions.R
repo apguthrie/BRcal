@@ -86,12 +86,9 @@ llo_lrt <- LLO_LRT <- function(x, y, params = c(1,1), optim_details = FALSE,
   if(length(x) != length(y)) stop("x and y length differ")
 
   top <- llo_lik(params, x, y, log = TRUE)
-  # optLRT <- stats::optim(start, llo_lik, x=x, y=y, method = "L-BFGS-B",
-  #                 lower = lower, upper = upper, neg = TRUE, log = TRUE)
-  # optLRT <- stats::optim(start, llo_optim_wrap, x=x, y=y, method = "Nelder-Mead",
-  #                        neg = TRUE, log = TRUE)
+
   optLRT <- llo_optim(x, y, lower, upper, start, ...)
-  # print(paste0(optLRT$par, " LLO_LRT after llo_optim"))
+
   bottom <- -optLRT$value
   est_params <- optLRT$par
   val <- 2*(bottom-top)
@@ -207,19 +204,6 @@ llo_lik <- function(params, x, y, log = FALSE, neg = FALSE, tau = FALSE){
   return(result)
 }
 
-llo_optim_wrap <- function(params, x, y, log = FALSE, neg = FALSE){
-  # print("llo_optim_wrap")
-
-  if(params[1] <= 0){
-    result <- -9999
-    if(neg){
-      result <- -result
-    }
-  } else {
-    result <- llo_lik(params=params, x=x, y=y, log=log, neg=neg)
-  }
-  return(result)
-}
 
 llo_optim <- function(x, y, start=c(0.5,0.5), tau=TRUE, gr=nll_gradient, ...){
 
