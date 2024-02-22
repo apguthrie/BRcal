@@ -62,40 +62,55 @@ LLO <- function(x, delta, gamma, ...){
 
 
 # Likelihood Ratio Test
-llo_lrt <- LLO_LRT <- function(x, y, params = c(1,1), optim_details = FALSE,
-                    start = c(0.5,0.5), lower = c(0.001, -5), upper = c(10,30),
-                    ...){
-  # print("LLO_LRT")
-  # print(paste0(params, " LLO_LRT"))
-  # check params, start, lower, upper are of right length, right values
-  params <- check_input_params(params)
-  start <- check_input_params(start, name="start")
-  lower <- check_input_params(lower, name="lower")
-  upper <- check_input_params(upper, name="upper")
+llo_lrt <- function(x, y, params = c(1,1), optim_details = FALSE,
+                     ...){
 
-  # check x is vector, values in [0,1]
-  x <- check_input_probs(x, name="x")
+  ##################
+  #  Input Checks  #
+  ##################
+  if(!exists("input_checks_off")){ input_checks_off <- FALSE }
+  if(!input_checks_off){
 
-  # check y is vector, values are 0s or 1s
-  y <- check_input_outcomes(y, name="y")
+    # check params, start, lower, upper are of right length, right values
+    params <- check_input_params(params)
 
-  # check optim_details is logical
-  if(!is.logical(optim_details) & !(optim_details %in% c(0,1))) stop("argument log must be logical")
+    # check x is vector, values in [0,1]
+    x <- check_input_probs(x, name="x")
 
-  # check x and y are the same length
-  if(length(x) != length(y)) stop("x and y length differ")
+    # check y is vector, values are 0s or 1s
+    y <- check_input_outcomes(y, name="y")
 
+    # check optim_details is logical
+    if(!is.logical(optim_details) & !(optim_details %in% c(0,1))) stop("argument log must be logical")
+
+    # check x and y are the same length
+    if(length(x) != length(y)) stop("x and y length differ")
+  }
+
+  ###################
+  #  Function Code  #
+  ###################
+
+  # Numerator of test statistic
   top <- llo_lik(params, x, y, log = TRUE)
 
-  optLRT <- llo_optim(x, y, lower, upper, start, ...)
+  # Minimize log likelihood
+  optLRT <- llo_optim(x, y, ...)
 
+  # Denominator of test statistic
   bottom <- -optLRT$value
+
+  # Extract MLEs
   est_params <- optLRT$par
-  val <- 2*(bottom-top)
-  pval <- 1-stats::pchisq(val, 2)
+
+  # Calc test statistic
+  test_stat <- 2*(bottom-top)
+
+  # Calc p-value
+  pval <- 1-stats::pchisq(test_stat, 2)
 
   if(optim_details){
-    results <- list(test_stat = val,
+    results <- list(test_stat = test_stat,
                     pval = pval,
                     est_params = est_params,
                     opt_value = bottom,
@@ -103,11 +118,11 @@ llo_lrt <- LLO_LRT <- function(x, y, params = c(1,1), optim_details = FALSE,
                     opt_convergence = optLRT$convergence,
                     opt_message = optLRT$message)
   } else {
-    results <- list(test_stat = val,
+    results <- list(test_stat = test_stat,
                     pval = pval,
                     est_params = est_params)
   }
-  # print("LLO_LRT end")
+
   return(results)
 }
 
@@ -128,10 +143,11 @@ mle_recal <- function(x, y, probs_only=TRUE, optim_details = FALSE,
 #  Internal Functions                                #
 ######################################################
 
+# NEED TO MAKE NOT IN DOCUMENTATION ABOUT ROUNDING OFF
 to_logit <- logit <- function(p){
 
   # check input probs are valid
-  p <- check_input_probs(p, "p")
+  # p <- check_input_probs(p, "p")
 
   # better way to handle the rounding here? - check literature
   p <- ifelse(p < (10^(-300)), (10^(-300)), p)
@@ -151,9 +167,7 @@ llo_lik <- function(params, x, y, log = FALSE, neg = FALSE, tau = FALSE){
   ##################
   #  Input Checks  #
   ##################
-  # print("llo_lik")
-  # print(paste0(params, " llo_lik"))
-  # print(paste0(tau, " llo_lik"))
+
 
   # check params are of right length, right values
   #params <- check_input_params(params, tau=tau)
@@ -205,14 +219,18 @@ llo_lik <- function(params, x, y, log = FALSE, neg = FALSE, tau = FALSE){
 }
 
 
-llo_optim <- function(x, y, start=c(0.5,0.5), tau=TRUE, gr=nll_gradient, ...){
+llo_optim <- function(x, y, par=c(0.5,0.5), tau=TRUE, gr=nll_gradient, ...){
 
   # convert delta to tau
+  # NEED HANDELING FOR TAU = FALSE BC BOUND ON DELTA!
   if(tau){
-    start[1] <- log(start[1])
+    par[1] <- log(par[1])
+    if(exists("lower")){ lower[1] <- log(lower[1]) }
+    if(exists("upper")){ upper[1] <- log(upper[1]) }
   }
 
-   opt <- optim(par=start, fn=llo_lik,
+
+  opt <- optim(par=par, fn=llo_lik,
                ...,
                x=x, y=y, neg = TRUE, log = TRUE, tau=tau)
 
@@ -262,14 +280,19 @@ prelec <- function(p, alpha, beta){
   return(p_prelec)
 }
 
-
-nll_gradient <- function(params, x, y, tau, log=TRUE, neg=TRUE){
+# Gradient function for negative log likelihood
+# add options for non log or non neg? why?
+nll_gradient <- function(params, x, y, tau){
   if(tau){
     params[1] <- exp(params[1])
-    ddelta <- -sum(y - ((params[1]* x^params[2])/(params[1] * x^params[2] + (1-x)^params[2])))
+    ddelta <- -sum(y - ((params[1]* x^params[2])/
+                          (params[1] * x^params[2] + (1-x)^params[2])))
   } else{
-    ddelta <- -sum((y / params[1]) - ((x^params[2])/(params[1] * x^params[2] + (1-x)^params[2])))
+    ddelta <- -sum((y / params[1]) -
+                     ((x^params[2])/(params[1] * x^params[2] + (1-x)^params[2])))
   }
-  dgamma <- -sum(y * log(x) + log(1-x) - ((params[1] * log(x) * x^params[2] + log(1-x) * (1-x)^params[2])/(params[1] * x^params[2] + (1-x)^params[2])) - y * log(1-x))
+  dgamma <- -sum(y * log(x) + log(1-x) -
+                   ((params[1] * log(x) * x^params[2] + log(1-x) * (1-x)^params[2])/
+                      (params[1] * x^params[2] + (1-x)^params[2])) - y * log(1-x))
   return(c(ddelta, dgamma))
 }
