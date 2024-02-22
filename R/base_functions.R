@@ -221,14 +221,14 @@ llo_optim_wrap <- function(params, x, y, log = FALSE, neg = FALSE){
   return(result)
 }
 
-llo_optim <- function(x, y, start=c(0.5,0.5), tau=TRUE, ...){
+llo_optim <- function(x, y, start=c(0.5,0.5), tau=TRUE, gr=nll_gradient, ...){
 
   # convert delta to tau
   if(tau){
     start[1] <- log(start[1])
   }
 
-   opt <- optim(par=start, fn=llo_lik, gr=nll_gradient,
+   opt <- optim(par=start, fn=llo_lik,
                ...,
                x=x, y=y, neg = TRUE, log = TRUE, tau=tau)
 
