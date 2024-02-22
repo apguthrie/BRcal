@@ -5,17 +5,15 @@
 
 # Bayesian Calibration assessment function
 bayes_ms <- bayes_testing <- function(x, y, k = 2, params_null = c(1,1), params = NA, optim_details = FALSE,
-                          lower = c(0.001, -5), upper = c(10,30),
-                          event=1){
+                                      event=1, ...){
   # check y only has two values
   y <- ifelse(y == event, 1, 0)
 
-
   # BIC under null
-  BIC1 <- BIC_llo(x = x, y = y, k = 0, params = params_null, lower = lower, upper = upper)
+  BIC1 <- BIC_llo(x = x, y = y, k = 0, params = params_null)
 
   # BIC under alternative
-  temp <- BIC_llo(x = x, y = y, k = k, params = params, lower = lower, upper = upper)
+  temp <- BIC_llo(x = x, y = y, k = k, params = params, ...)
   BIC2 <- temp$BIC
 
 
@@ -27,17 +25,14 @@ bayes_ms <- bayes_testing <- function(x, y, k = 2, params_null = c(1,1), params 
 
   # Posterior Model Probabilities
   ## P(cal|data) = P(H0|data)
-  post1 <- post_mod_prob(BF = BF21)
-
-  ## P(not cal|data) = P(H1|data)
-  post2 <- 1-post1
+  post <- post_mod_prob(BF = BF21)
 
   if(anyNA(params)){
     est_params <- temp$est_params
     results <- list(BIC_H0 = BIC1,
                     BIC_H1 = BIC2,
                     BF = BF21,
-                    posterior_model_prob = post1,
+                    posterior_model_prob = post,
                     est_params = est_params)
   } else{
     results <- list(BIC_H0 = BIC1,
@@ -55,7 +50,7 @@ bayes_ms <- bayes_testing <- function(x, y, k = 2, params_null = c(1,1), params 
 ######################################################
 
 # BIC for this likelihood
-BIC_llo <- function(x, y, k, params = NA, lower = c(0.001, -5), upper = c(10,30)){
+BIC_llo <- function(x, y, k, params = NA, lower = c(0.001, -5), upper = c(10,30),...){
   n <- length(x)
   if(k == 0){
     #suppressWarnings(if(is.na(params)) stop("must specify null params when k = 0"))
@@ -67,7 +62,7 @@ BIC_llo <- function(x, y, k, params = NA, lower = c(0.001, -5), upper = c(10,30)
     #                   lower = lower, upper = upper)
     # optBayes <- stats::optim(c(0.5, 0.5), llo_optim_wrap, x=x, y=y, method = "Nelder-Mead",
     #                        neg = TRUE, log = TRUE)
-    optBayes <- llo_optim(x,y,lower,upper)
+    optBayes <- llo_optim(x,y, tau=TRUE, ...)
     max_lik <- -optBayes$value
     MLEs <- optBayes$par
     result <- list(BIC = k * log(n) - (2 * max_lik),
@@ -91,45 +86,3 @@ post_mod_prob <- function(BF){
 }
 
 
-bayes_ms_dev <- function(x, y, k = 2, params_null = c(1,1), params = NA, optim_details = FALSE, lower = c(0.001, -5), upper = c(10,30)){
-  # BIC under null
-  BIC1 <- BIC_llo_dev(x = x, y = y, k = 0, params = params_null, lower = lower, upper = upper)
-
-  # BIC under alternative
-  temp <- BIC_llo_dev(x = x, y = y, k = k, params = params, lower = lower, upper = upper)
-  BIC2 <- temp$BIC
-
-
-  # Bayes factors
-  ## Likelihood of h0/likelihood of h1
-  BF12 <- bayes_factor(BIC1 = BIC1, BIC2 = BIC2)
-  ## Likelihood of h1/likelihood of h0
-  BF21 <- 1/BF12
-
-  # Posterior Model Probabilities
-  ## P(cal|data) = P(H0|data)
-  post1 <- post_mod_prob(BF = BF21)
-
-  ## P(not cal|data) = P(H1|data)
-  post2 <- 1-post1
-
-  if(anyNA(params)){
-    est_params <- temp$est_params
-    results <- list(BIC_H0 = BIC1,
-                    BIC_H1 = BIC2,
-                    BF = BF21,
-                    posterior_model_prob = post1,
-                    est_params = est_params)
-  } else{
-    results <- list(BIC_H0 = BIC1,
-                    BIC_H1 = BIC2,
-                    BF = BF21,
-                    posterior_model_prob = post1,
-                    params = params)
-  }
-
-  return(results)
-}
-
-# bayes_testing <- bayes_ms
-# bayes_testing_dev <- bayes_ms_dev
