@@ -15,15 +15,16 @@ recalibration function.}
 
 \item{gamma}{numeric, parameter \eqn{\gamma} in LLO recalibration function.}
 
-\item{...}{Additional arguments (for internal use only).}
+\item{...}{Additional arguments for internal use only.}
 }
 \value{
-The LLO-adjusted vector of probabilities (ADD NOTATION FROM PAPER? OR KEEP IN DETAILS?)
+The LLO-adjusted vector of probabilities (ADD NOTATION FROM PAPER? OR
+KEEP IN DETAILS?)
 }
 \description{
 Description goes here.
 }
 \details{
-Details go here. NEED TO CITE TURNER/Gonzalez & Wu? Consider removing functionality for
-lists/matrices (any other types?).
+Details go here. NEED TO CITE TURNER/Gonzalez & Wu? Consider removing
+functionality for lists/matrices (any other types?).
 }

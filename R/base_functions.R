@@ -6,16 +6,17 @@
 #'
 #' Description goes here.
 #'
-#' Details go here. NEED TO CITE TURNER/Gonzalez & Wu? Consider removing functionality for
-#' lists/matrices (any other types?).
+#' Details go here. NEED TO CITE TURNER/Gonzalez & Wu? Consider removing
+#' functionality for lists/matrices (any other types?).
 #'
 #' @param x a numeric vector of probabilities to be LLO-adjusted. Must only
-#'          contain values in \[0,1\].
+#'   contain values in \[0,1\].
 #' @param delta numeric, must be > 0, parameter \eqn{\delta} in LLO
-#'              recalibration function.
+#'   recalibration function.
 #' @param gamma numeric, parameter \eqn{\gamma} in LLO recalibration function.
 #' @param ... Additional arguments for internal use only.
-#' @return The LLO-adjusted vector of probabilities (ADD NOTATION FROM PAPER? OR KEEP IN DETAILS?)
+#' @return The LLO-adjusted vector of probabilities (ADD NOTATION FROM PAPER? OR
+#'   KEEP IN DETAILS?)
 #' @export
 #'
 #' @examples
@@ -61,9 +62,27 @@ LLO <- function(x, delta, gamma, ...){
 }
 
 
-# Likelihood Ratio Test
-llo_lrt <- function(x, y, params = c(1,1), optim_details = FALSE,
-                     ...){
+#' Likelihood Ratio Test for Calibration \[NEED MORE\]
+#'
+#' @inheritParams LLO
+#' @param y a numeric vector of outcomes corresponding to probabilities in `x`.
+#'   Must only contain 0 or 1.
+#' @param optim_details Logical.  If `TRUE`, the list returned by `optim()` when
+#'   minimizing the negative log likelihood is also returned by `llo_lrt()`.
+#' @param ... Additional arguments to be passed to `optim()`.
+#'
+#' @return A list with the following attributes: \item{\code{test_stat}}{The
+#'   test statistic from the likelihood ratio test formed as FILL IN}
+#'   \item{\code{pval}}{The p-value from the likelihood ratio test.}
+#'   \item{\code{mles}}{Maximum likelihood estimates for $\delta$ and $\gamma$.}
+#'   \item{\code{optim_details}}{If `optim_details = TRUE`, the list returned by
+#'   `optim()` when minimizing the negative log likelihood, includes convergence
+#'   information, number of iterations, and achieved negative log likelihood
+#'   value and MLEs.}
+#' @export
+#'
+#' @examples
+llo_lrt <- function(x, y, optim_details = TRUE, ...){
 
   ##################
   #  Input Checks  #
@@ -71,13 +90,13 @@ llo_lrt <- function(x, y, params = c(1,1), optim_details = FALSE,
   if(!exists("input_checks_off")){ input_checks_off <- FALSE }
   if(!input_checks_off){
 
-    # check params, start, lower, upper are of right length, right values
-    params <- check_input_params(params)
+    # # check params, start, lower, upper are of right length, right values
+    # params <- check_input_params(params)
 
     # check x is vector, values in [0,1]
     x <- check_input_probs(x, name="x")
 
-    # check y is vector, values are 0s or 1s
+    # check y is vector, values are 0s or 1s - Relax this?
     y <- check_input_outcomes(y, name="y")
 
     # check optim_details is logical
@@ -92,7 +111,7 @@ llo_lrt <- function(x, y, params = c(1,1), optim_details = FALSE,
   ###################
 
   # Numerator of test statistic
-  top <- llo_lik(params, x, y, log = TRUE)
+  top <- llo_lik(c(1,1), x, y, log = TRUE)
 
   # Minimize log likelihood
   optLRT <- llo_optim(x, y, ...)
@@ -112,11 +131,8 @@ llo_lrt <- function(x, y, params = c(1,1), optim_details = FALSE,
   if(optim_details){
     results <- list(test_stat = test_stat,
                     pval = pval,
-                    est_params = est_params,
-                    opt_value = bottom,
-                    opt_counts = optLRT$counts,
-                    opt_convergence = optLRT$convergence,
-                    opt_message = optLRT$message)
+                    mles = est_params,
+                    optim_details = optLRT)
   } else {
     results <- list(test_stat = test_stat,
                     pval = pval,
