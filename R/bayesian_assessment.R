@@ -14,8 +14,7 @@
 #' @export
 #'
 #' @examples
-bayes_ms <- function(x, y, Pmc = 0.5, optim_details = TRUE,
-                                      event=1, ...){
+bayes_ms <- function(x, y, Pmc = 0.5, optim_details = TRUE, event=1, ...){
 
   ##################
   #  Input Checks  #
@@ -31,7 +30,7 @@ bayes_ms <- function(x, y, Pmc = 0.5, optim_details = TRUE,
   Pmc <- check_input_probs(Pmc, name="Pmc")
 
   # check optim_details is logical
-  if(!is.logical(optim_details) & !(optim_details %in% c(0,1))) stop("argument log must be logical")
+  if(!is.logical(optim_details) & !(optim_details %in% c(0,1))) stop("argument optim_details must be logical")
 
   # check x and y are the same length
   if(length(x) != length(y)) stop("x and y length differ")

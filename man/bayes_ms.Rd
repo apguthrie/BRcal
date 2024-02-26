@@ -18,6 +18,8 @@ Must only contain 0 or 1.}
 \item{optim_details}{Logical.  If \code{TRUE}, the list returned by \code{optim()} when
 minimizing the negative log likelihood is also returned by \code{llo_lrt()}.}
 
+\item{event}{Value in \code{y} that represents an "event".  Default value is 1.}
+
 \item{...}{Additional arguments to be passed to \code{optim()}.}
 }
 \description{
