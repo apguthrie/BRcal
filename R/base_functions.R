@@ -74,7 +74,7 @@ LLO <- function(x, delta, gamma, ...){
 #' @return A list with the following attributes: \item{\code{test_stat}}{The
 #'   test statistic from the likelihood ratio test formed as FILL IN}
 #'   \item{\code{pval}}{The p-value from the likelihood ratio test.}
-#'   \item{\code{mles}}{Maximum likelihood estimates for $\delta$ and $\gamma$.}
+#'   \item{\code{mles}}{Maximum likelihood estimates for \eqn{\delta} and \eqn{\gamma}.}
 #'   \item{\code{optim_details}}{If `optim_details = TRUE`, the list returned by
 #'   `optim()` when minimizing the negative log likelihood, includes convergence
 #'   information, number of iterations, and achieved negative log likelihood
@@ -142,9 +142,17 @@ llo_lrt <- function(x, y, optim_details = TRUE, ...){
   return(results)
 }
 
-mle_recal <- function(x, y, probs_only=TRUE, optim_details = FALSE,
-                      start = c(0.5,0.5), ...) {
-  optLRT <- llo_optim(x, y, lower, upper, start, ...)
+#' Title
+#'
+#' @inheritParams llo_lrt
+#' @param probs_only blah
+#'
+#' @return
+#' @export
+#'
+#' @examples
+mle_recal <- function(x, y, probs_only=TRUE, optim_details = TRUE, ...) {
+  optLRT <- llo_optim(x, y, lower, upper, ...)
   est_params <- optLRT$par
   new_probs <- LLO(x=x, est_params[1], est_params[2], input_checks=FALSE)
   if(probs_only){
