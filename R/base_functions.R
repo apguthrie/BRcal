@@ -69,6 +69,7 @@ LLO <- function(x, delta, gamma, ...){
 #'   Must only contain 0 or 1.
 #' @param optim_details Logical.  If `TRUE`, the list returned by `optim()` when
 #'   minimizing the negative log likelihood is also returned by `llo_lrt()`.
+#' @param event Value in `y` that represents an "event".  Default value is 1.
 #' @param ... Additional arguments to be passed to `optim()`.
 #'
 #' @return A list with the following attributes: \item{\code{test_stat}}{The
