@@ -75,7 +75,7 @@ LLO <- function(x, delta, gamma, ...){
 #' @return A list with the following attributes: \item{\code{test_stat}}{The
 #'   test statistic from the likelihood ratio test formed as FILL IN}
 #'   \item{\code{pval}}{The p-value from the likelihood ratio test.}
-#'   \item{\code{mles}}{Maximum likelihood estimates for \eqn{\delta} and
+#'   \item{\code{MLEs}}{Maximum likelihood estimates for \eqn{\delta} and
 #'   \eqn{\gamma}.}
 #'   \item{\code{optim_details}}{If `optim_details = TRUE`, the list returned by
 #'   `optim()` when minimizing the negative log likelihood, includes convergence
@@ -84,7 +84,7 @@ LLO <- function(x, delta, gamma, ...){
 #' @export
 #'
 #' @examples
-llo_lrt <- function(x, y, optim_details = TRUE, event = 1, ...){
+llo_lrt <- function(x, y, event = 1, optim_details = TRUE,  ...){
 
   ##################
   #  Input Checks  #
@@ -131,12 +131,12 @@ llo_lrt <- function(x, y, optim_details = TRUE, event = 1, ...){
   if(optim_details){
     results <- list(test_stat = test_stat,
                     pval = pval,
-                    mles = est_params,
+                    MLEs = est_params,
                     optim_details = optLRT)
   } else {
     results <- list(test_stat = test_stat,
                     pval = pval,
-                    est_params = est_params)
+                    MLEs = est_params)
   }
 
   return(results)
@@ -148,11 +148,23 @@ llo_lrt <- function(x, y, optim_details = TRUE, event = 1, ...){
 #' @param probs_only Logical.  If `TRUE`, `mle_recal()` returns only the vector
 #'   of MLE recalibrated probabilities.
 #'
-#' @return If `probs_only`
+#' @return If `probs_only==TRUE`, `mle_recal()`returns a vector of MLE
+#'   recalibrated probabilities.  Otherwise, `mle_recal()` returns a list with
+#'   the following attributes:
+#'   \item{\code{probs}}{The vector of MLE
+#'   recalibrated probabilities.}
+#'   \item{\code{MLEs}}{Maximum likelihood estimates for \eqn{\delta} and
+#'   \eqn{\gamma}.}
+#'   \item{\code{optim_details}}{If `optim_details = TRUE`, the list returned by
+#'   `optim()` when minimizing the negative log likelihood, includes convergence
+#'   information, number of iterations, and achieved negative log likelihood
+#'   value and MLEs.}
+#'
+#'
 #' @export
 #'
 #' @examples
-mle_recal <- function(x, y, probs_only=TRUE, optim_details = TRUE, event = 1, ...) {
+mle_recal <- function(x, y, probs_only=TRUE, event = 1, optim_details = TRUE, ...) {
 
   ##################
   #  Input Checks  #

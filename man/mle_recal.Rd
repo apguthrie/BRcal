@@ -4,7 +4,7 @@
 \alias{mle_recal}
 \title{Recalibration via Maximum Likelihood Estimates (MLEs)}
 \usage{
-mle_recal(x, y, probs_only = TRUE, optim_details = TRUE, event = 1, ...)
+mle_recal(x, y, probs_only = TRUE, event = 1, optim_details = TRUE, ...)
 }
 \arguments{
 \item{x}{a numeric vector of probabilities to be LLO-adjusted. Must only
@@ -16,12 +16,25 @@ Must only contain 0 or 1.}
 \item{probs_only}{Logical.  If \code{TRUE}, \code{mle_recal()} returns only the vector
 of MLE recalibrated probabilities.}
 
+\item{event}{Value in \code{y} that represents an "event".  Default value is 1.}
+
 \item{optim_details}{Logical.  If \code{TRUE}, the list returned by \code{optim()} when
 minimizing the negative log likelihood is also returned by \code{llo_lrt()}.}
 
-\item{event}{Value in \code{y} that represents an "event".  Default value is 1.}
-
 \item{...}{Additional arguments to be passed to \code{optim()}.}
+}
+\value{
+If \code{probs_only==TRUE}, \code{mle_recal()}returns a vector of MLE
+recalibrated probabilities.  Otherwise, \code{mle_recal()} returns a list with
+the following attributes:
+\item{\code{probs}}{The vector of MLE
+recalibrated probabilities.}
+\item{\code{MLEs}}{Maximum likelihood estimates for \eqn{\delta} and
+\eqn{\gamma}.}
+\item{\code{optim_details}}{If \code{optim_details = TRUE}, the list returned by
+\code{optim()} when minimizing the negative log likelihood, includes convergence
+information, number of iterations, and achieved negative log likelihood
+value and MLEs.}
 }
 \description{
 Recalibration via Maximum Likelihood Estimates (MLEs)
