@@ -82,29 +82,27 @@ LLO <- function(x, delta, gamma, ...){
 #' @export
 #'
 #' @examples
-llo_lrt <- function(x, y, optim_details = TRUE, ...){
+llo_lrt <- function(x, y, optim_details = TRUE, event = 1, ...){
 
   ##################
   #  Input Checks  #
   ##################
-  if(!exists("input_checks_off")){ input_checks_off <- FALSE }
-  if(!input_checks_off){
 
-    # # check params, start, lower, upper are of right length, right values
-    # params <- check_input_params(params)
+  # # check params, start, lower, upper are of right length, right values
+  # params <- check_input_params(params)
 
-    # check x is vector, values in [0,1]
-    x <- check_input_probs(x, name="x")
+  # check x is vector, values in [0,1]
+  x <- check_input_probs(x, name="x")
 
-    # check y is vector, values are 0s or 1s - Relax this?
-    y <- check_input_outcomes(y, name="y")
+  # check y is vector, values are 0s or 1s or can be converted using event
+  y <- check_input_outcomes(y, name="y", event=event)
 
-    # check optim_details is logical
-    if(!is.logical(optim_details) & !(optim_details %in% c(0,1))) stop("argument log must be logical")
+  # check optim_details is logical
+  if(!is.logical(optim_details) & !(optim_details %in% c(0,1))) stop("argument log must be logical")
 
-    # check x and y are the same length
-    if(length(x) != length(y)) stop("x and y length differ")
-  }
+  # check x and y are the same length
+  if(length(x) != length(y)) stop("x and y length differ")
+
 
   ###################
   #  Function Code  #
