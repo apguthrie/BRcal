@@ -17,45 +17,57 @@ check_noInfs <- function(x){
 
 # Checks input probs are:
 # - a vector (coerced to be if passed a list)
-check_input_probs <- function(x, name="probs"){
+check_input_probs <- function(x, name="x"){
 
-  # check if p is list
-  if(is.list(x)){
-    warning("argument ", name, " is a list, coerced to vector")
-    x <- unlist(x)
+  # check if x is 1D matrix
+  if(is.matrix(x)){
+    dims <- dim(x)
+    if(length(dims) == 2 & 1 %in% dims){
+      warning("argument ", name, " is a 1D matrix, coerced to vector")
+      x <- drop(x)
+    }
   }
 
-  # check p is vector
-  # if(!is.vector(x)) warning("argument ", name, " is ", class(x) ," type, not a
-  #                           vector; unexpected behavior may occur")
+  # check x is vector
+
   if(!is.vector(x)) stop("argument ", name, " is ", class(x) ," type, not a vector")
 
-  # check p is numeric
+  # check x is numeric
   if(!is.numeric(x)) stop("argument ", name, " is not numeric type")
 
-  # check p are probabilities in [0,1]
+  # check x are probabilities in [0,1]
   if(!check_probs(x)) stop("argument ", name, " contains values outside of [0,1]")
 
   return(x)
 }
 
-check_input_outcomes <- function(y, name="outcomes"){
+check_input_outcomes <- function(y, name="y", event=1){
 
-  # check if p is list
-  if(is.list(y)){
-    warning("argument ", name, " is a list, coerced to vector")
-    y <- unlist(y)
+  # check if y is 1D matrix
+  if(is.matrix(y)){
+    dims <- dim(y)
+    if(length(dims) == 2 & 1 %in% dims){
+      warning("argument ", name, " is a 1D matrix, coerced to vector")
+      y <- drop(y)
+    }
   }
 
-  # check p is vector
-  # if(!is.vector(y)) warning("argument ", name, " is ", class(y) ," type, not a
-  #                           vector; unexpected behavior may occur")
+  # check y is vector
   if(!is.vector(y)) stop("argument ", name, " is ", class(y) ," type, not a vector")
 
-  # check p is numeric
+  # check event is in y
+  if(!(event %in% y)) stop("argument event misspecified")
+
+  # check y only has two values
+  if(length(unique(y)) != 2) warning("argument ", name, " has ", length(unique(y)), " levels")
+
+  # Convert to 0, 1 if not already
+  y <- ifelse(y == event, 1, 0)
+
+  # check y is numeric (should always be true based on above line)
   if(!is.numeric(y)) stop("argument ", name, " is not numeric type")
 
-  # check p are probabilities in [0,1]
+  # check y is either 0 or 1 (should always be true based on above line)
   if(any(!(y %in% c(0,1)))) stop("argument ", name, " contains non 0 or 1 values")
 
   return(y)
