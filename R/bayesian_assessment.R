@@ -3,18 +3,29 @@
 ######################################################
 
 
-# Bayesian Calibration assessment function
-# IF ADDING OPT FOR DIFF NULL PARAMS, NEED TO RETURN THOSE AS WELL
-#' Title
+#' Bayesian Model Selection-based Calibration Assessment
 #'
 #' @inheritParams llo_lrt
 #' @param Pmc
 #'
-#' @return
+#' @return A list with the following attributes: \item{\code{test_stat}}{The
+#'   test statistic from the likelihood ratio test formed as FILL IN}
+#'   \item{\code{Pmc}}{The prior model probability for the calibrated model.}
+#'   \item{\code{BIC_Mc}}{The Bayesian Information Criteria (BIC) for the
+#'   calibrated model.} \item{\code{BIC_Mu}}{The Bayesian Information Criteria
+#'   (BIC) for the uncalibrated model.} \item{\code{BF}}{The Bayes Factor......
+#'   } \item{\code{posterior_model_prob}}{The Posterior model probability of the
+#'   calibrated model given the observed outcomes.}
+#'   \item{\code{MLEs}}{Maximum likelihood estimates for \eqn{\delta} and
+#'   \eqn{\gamma}.}
+#'   \item{\code{optim_details}}{If `optim_details = TRUE`, the list returned by
+#'   `optim()` when minimizing the negative log likelihood, includes convergence
+#'   information, number of iterations, and achieved negative log likelihood
+#'   value and MLEs.}
 #' @export
 #'
 #' @examples
-bayes_ms <- function(x, y, Pmc = 0.5, optim_details = TRUE, event=1, ...){
+bayes_ms <- function(x, y, Pmc = 0.5, event=1, optim_details = TRUE,  ...){
 
   ##################
   #  Input Checks  #

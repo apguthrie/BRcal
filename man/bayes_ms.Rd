@@ -2,9 +2,9 @@
 % Please edit documentation in R/bayesian_assessment.R
 \name{bayes_ms}
 \alias{bayes_ms}
-\title{Title}
+\title{Bayesian Model Selection-based Calibration Assessment}
 \usage{
-bayes_ms(x, y, Pmc = 0.5, optim_details = TRUE, event = 1, ...)
+bayes_ms(x, y, Pmc = 0.5, event = 1, optim_details = TRUE, ...)
 }
 \arguments{
 \item{x}{a numeric vector of probabilities to be LLO-adjusted. Must only
@@ -15,13 +15,29 @@ Must only contain 0 or 1.}
 
 \item{Pmc}{}
 
+\item{event}{Value in \code{y} that represents an "event".  Default value is 1.}
+
 \item{optim_details}{Logical.  If \code{TRUE}, the list returned by \code{optim()} when
 minimizing the negative log likelihood is also returned by \code{llo_lrt()}.}
 
-\item{event}{Value in \code{y} that represents an "event".  Default value is 1.}
-
 \item{...}{Additional arguments to be passed to \code{optim()}.}
 }
+\value{
+A list with the following attributes: \item{\code{test_stat}}{The
+test statistic from the likelihood ratio test formed as FILL IN}
+\item{\code{Pmc}}{The prior model probability for the calibrated model.}
+\item{\code{BIC_Mc}}{The Bayesian Information Criteria (BIC) for the
+calibrated model.} \item{\code{BIC_Mu}}{The Bayesian Information Criteria
+(BIC) for the uncalibrated model.} \item{\code{BF}}{The Bayes Factor......
+} \item{\code{posterior_model_prob}}{The Posterior model probability of the
+calibrated model given the observed outcomes.}
+\item{\code{MLEs}}{Maximum likelihood estimates for \eqn{\delta} and
+\eqn{\gamma}.}
+\item{\code{optim_details}}{If \code{optim_details = TRUE}, the list returned by
+\code{optim()} when minimizing the negative log likelihood, includes convergence
+information, number of iterations, and achieved negative log likelihood
+value and MLEs.}
+}
 \description{
-Title
+Bayesian Model Selection-based Calibration Assessment
 }
