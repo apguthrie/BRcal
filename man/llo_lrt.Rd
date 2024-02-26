@@ -24,7 +24,8 @@ minimizing the negative log likelihood is also returned by \code{llo_lrt()}.}
 A list with the following attributes: \item{\code{test_stat}}{The
 test statistic from the likelihood ratio test formed as FILL IN}
 \item{\code{pval}}{The p-value from the likelihood ratio test.}
-\item{\code{mles}}{Maximum likelihood estimates for \eqn{\delta} and \eqn{\gamma}.}
+\item{\code{mles}}{Maximum likelihood estimates for \eqn{\delta} and
+\eqn{\gamma}.}
 \item{\code{optim_details}}{If \code{optim_details = TRUE}, the list returned by
 \code{optim()} when minimizing the negative log likelihood, includes convergence
 information, number of iterations, and achieved negative log likelihood

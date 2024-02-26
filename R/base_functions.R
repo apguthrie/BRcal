@@ -75,7 +75,8 @@ LLO <- function(x, delta, gamma, ...){
 #' @return A list with the following attributes: \item{\code{test_stat}}{The
 #'   test statistic from the likelihood ratio test formed as FILL IN}
 #'   \item{\code{pval}}{The p-value from the likelihood ratio test.}
-#'   \item{\code{mles}}{Maximum likelihood estimates for \eqn{\delta} and \eqn{\gamma}.}
+#'   \item{\code{mles}}{Maximum likelihood estimates for \eqn{\delta} and
+#'   \eqn{\gamma}.}
 #'   \item{\code{optim_details}}{If `optim_details = TRUE`, the list returned by
 #'   `optim()` when minimizing the negative log likelihood, includes convergence
 #'   information, number of iterations, and achieved negative log likelihood
@@ -99,7 +100,7 @@ llo_lrt <- function(x, y, optim_details = TRUE, event = 1, ...){
   y <- check_input_outcomes(y, name="y", event=event)
 
   # check optim_details is logical
-  if(!is.logical(optim_details) & !(optim_details %in% c(0,1))) stop("argument log must be logical")
+  if(!is.logical(optim_details) & !(optim_details %in% c(0,1))) stop("argument optim_details must be logical")
 
   # check x and y are the same length
   if(length(x) != length(y)) stop("x and y length differ")
@@ -141,22 +142,56 @@ llo_lrt <- function(x, y, optim_details = TRUE, event = 1, ...){
   return(results)
 }
 
-#' Title
+#' Recalibration via Maximum Likelihood Estimates (MLEs)
 #'
 #' @inheritParams llo_lrt
-#' @param probs_only blah
+#' @param probs_only Logical.  If `TRUE`, `mle_recal()` returns only the vector
+#'   of MLE recalibrated probabilities.
 #'
-#' @return
+#' @return If `probs_only`
 #' @export
 #'
 #' @examples
-mle_recal <- function(x, y, probs_only=TRUE, optim_details = TRUE, ...) {
-  optLRT <- llo_optim(x, y, lower, upper, ...)
+mle_recal <- function(x, y, probs_only=TRUE, optim_details = TRUE, event = 1, ...) {
+
+  ##################
+  #  Input Checks  #
+  ##################
+
+  # check x is vector, values in [0,1]
+  x <- check_input_probs(x, name="x")
+
+  # check y is vector, values are 0s or 1s or can be converted using event
+  y <- check_input_outcomes(y, name="y", event=event)
+
+  # check optim_details is logical
+  if(!is.logical(optim_details) & !(optim_details %in% c(0,1))) stop("argument optim_details must be logical")
+
+  # check probs_only is logical
+  if(!is.logical(probs_only) & !(probs_only %in% c(0,1))) stop("argument probs_only must be logical")
+
+  # check probs_only & optim_details are NOT both true
+  if(probs_only & optim_details) warning("optim_details cannot be returned when probs_only is TRUE, print details instead")
+
+  # check x and y are the same length
+  if(length(x) != length(y)) stop("x and y length differ")
+
+
+  ###################
+  #  Function Code  #
+  ###################
+
+  optLRT <- llo_optim(x, y, ...)
   est_params <- optLRT$par
   new_probs <- LLO(x=x, est_params[1], est_params[2], input_checks=FALSE)
   if(probs_only){
+    if(optim_details) print(optLRT)
     return(new_probs)
-  } else {
+  } else if(optim_details){
+    return(list(probs = new_probs,
+                MLEs = est_params,
+                optim_details = optLRT))
+  } else{
     return(list(probs = new_probs,
                 MLEs = est_params))
   }
@@ -184,44 +219,16 @@ to_prob <- function(x){
 }
 
 # Likelihood
-# ADD OPTION TO HAVE ANY TWO LEVELS FOR y
 llo_lik <- function(params, x, y, log = FALSE, neg = FALSE, tau = FALSE){
-
-  ##################
-  #  Input Checks  #
-  ##################
-
-
-  # check params are of right length, right values
-  #params <- check_input_params(params, tau=tau)
-  # DONT CHECK HERE< it gets run too many times
-
-  # check x is vector, values in [0,1]
-  x <- check_input_probs(x, name="x")
-
-  # check y is vector, values are 0s or 1s
-  y <- check_input_outcomes(y, name="y")
-
-  # check x and y are the same length
-  if(length(x) != length(y)) stop("x and y length differ")
-
-  # check log, neg, and tau are logical - allow 0 or 1
-  if(!is.logical(log) & !(log %in% c(0,1))) stop("argument log must be logical")
-  if(!is.logical(neg) & !(neg %in% c(0,1))) stop("argument neg must be logical")
-  if(!is.logical(tau) & !(tau %in% c(0,1))) stop("argument tau must be logical")
-
-  ###################
-  #  Function Code  #
-  ###################
 
   # rounding off x's that are too close to zero or one
   x <- ifelse(x < (10^(-300)), (10^(-300)), x)
   x <- ifelse(x > 0.9999999999999999, 0.9999999999999999, x)
 
   if(tau){
-    llo <- LLO(x = x, delta = exp(params[1]), gamma = params[2])
+    llo <- LLO(x = x, delta = exp(params[1]), gamma = params[2], input_checks=FALSE)
   } else {
-    llo <- LLO(x = x, delta = params[1], gamma = params[2])
+    llo <- LLO(x = x, delta = params[1], gamma = params[2], input_checks=FALSE)
   }
 
   llo <- ifelse(llo < (10^(-300)), (10^(-300)), llo)
