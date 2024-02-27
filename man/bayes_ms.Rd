@@ -2,7 +2,7 @@
 % Please edit documentation in R/bayesian_assessment.R
 \name{bayes_ms}
 \alias{bayes_ms}
-\title{Bayesian Model Selection-based Calibration Assessment}
+\title{Bayesian Model Selection-Based Calibration Assessment}
 \usage{
 bayes_ms(x, y, Pmc = 0.5, event = 1, optim_details = TRUE, ...)
 }
@@ -13,7 +13,7 @@ contain values in [0,1].}
 \item{y}{a numeric vector of outcomes corresponding to probabilities in \code{x}.
 Must only contain 0 or 1.}
 
-\item{Pmc}{}
+\item{Pmc}{The prior model probability for the calibrated model \eqn{M_c}.}
 
 \item{event}{Value in \code{y} that represents an "event".  Default value is 1.}
 
@@ -23,14 +23,17 @@ minimizing the negative log likelihood is also returned by \code{llo_lrt()}.}
 \item{...}{Additional arguments to be passed to \code{optim()}.}
 }
 \value{
-A list with the following attributes: \item{\code{test_stat}}{The
-test statistic from the likelihood ratio test formed as FILL IN}
-\item{\code{Pmc}}{The prior model probability for the calibrated model.}
+A list with the following attributes:
+\item{\code{Pmc}}{The prior
+model probability for the calibrated model \eqn{M_c}.}
 \item{\code{BIC_Mc}}{The Bayesian Information Criteria (BIC) for the
-calibrated model.} \item{\code{BIC_Mu}}{The Bayesian Information Criteria
-(BIC) for the uncalibrated model.} \item{\code{BF}}{The Bayes Factor......
-} \item{\code{posterior_model_prob}}{The Posterior model probability of the
-calibrated model given the observed outcomes.}
+calibrated model \eqn{M_c}.}
+\item{\code{BIC_Mu}}{The Bayesian Information Criteria
+(BIC) for the uncalibrated model \eqn{M_u}.}
+\item{\code{BF}}{The Bayes Factor of uncalibrated model over calibrated
+model.}
+\item{\code{posterior_model_prob}}{The posterior model probability of the
+calibrated model \eqn{M_c} given the observed outcomes \code{y}, i.e. \eqn{P(M_c|y)}.}
 \item{\code{MLEs}}{Maximum likelihood estimates for \eqn{\delta} and
 \eqn{\gamma}.}
 \item{\code{optim_details}}{If \code{optim_details = TRUE}, the list returned by
@@ -39,5 +42,17 @@ information, number of iterations, and achieved negative log likelihood
 value and MLEs.}
 }
 \description{
-Bayesian Model Selection-based Calibration Assessment
+Perform Bayesian model selection-based calibration assessment as specified in
+Guthrie and Franck (2024).
+}
+\details{
+Compares a well calibrated model, \eqn{M_c} where \eqn{\delta = \gamma = 1}
+to an uncalibrated model, \eqn{M_u} where \eqn{\delta>0, \gamma \in
+\mathbb{R}}.
+
+The Bayes Factor...
+}
+\references{
+Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
+for Binary Event Predictions. \emph{arxiv}.
 }

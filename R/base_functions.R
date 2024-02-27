@@ -62,8 +62,12 @@ LLO <- function(x, delta, gamma, ...){
 }
 
 
-#' Likelihood Ratio Test for Calibration \[NEED MORE\]
+#' Likelihood Ratio Test for Calibration
 #'
+#' Perform a likelihood ratio test for calibration as specified in Guthrie and
+#' Franck (2024).
+#'
+#' Comapre
 #' @inheritParams LLO
 #' @param y a numeric vector of outcomes corresponding to probabilities in `x`.
 #'   Must only contain 0 or 1.
@@ -72,8 +76,9 @@ LLO <- function(x, delta, gamma, ...){
 #' @param event Value in `y` that represents an "event".  Default value is 1.
 #' @param ... Additional arguments to be passed to `optim()`.
 #'
-#' @return A list with the following attributes: \item{\code{test_stat}}{The
-#'   test statistic from the likelihood ratio test formed as FILL IN}
+#' @return A list with the following attributes:
+#'   \item{\code{test_stat}}{The test statistic from the likelihood ratio test
+#'   formed as \eqn{-2 - log()}}
 #'   \item{\code{pval}}{The p-value from the likelihood ratio test.}
 #'   \item{\code{MLEs}}{Maximum likelihood estimates for \eqn{\delta} and
 #'   \eqn{\gamma}.}
@@ -82,6 +87,9 @@ LLO <- function(x, delta, gamma, ...){
 #'   information, number of iterations, and achieved negative log likelihood
 #'   value and MLEs.}
 #' @export
+#'
+#' @references Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
+#'   for Binary Event Predictions. \emph{arxiv}.
 #'
 #' @examples
 llo_lrt <- function(x, y, event = 1, optim_details = TRUE,  ...){

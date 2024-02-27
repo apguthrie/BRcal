@@ -2,7 +2,7 @@
 % Please edit documentation in R/base_functions.R
 \name{llo_lrt}
 \alias{llo_lrt}
-\title{Likelihood Ratio Test for Calibration [NEED MORE]}
+\title{Likelihood Ratio Test for Calibration}
 \usage{
 llo_lrt(x, y, event = 1, optim_details = TRUE, ...)
 }
@@ -21,8 +21,9 @@ minimizing the negative log likelihood is also returned by \code{llo_lrt()}.}
 \item{...}{Additional arguments to be passed to \code{optim()}.}
 }
 \value{
-A list with the following attributes: \item{\code{test_stat}}{The
-test statistic from the likelihood ratio test formed as FILL IN}
+A list with the following attributes:
+\item{\code{test_stat}}{The test statistic from the likelihood ratio test
+formed as \eqn{-2 - log()}}
 \item{\code{pval}}{The p-value from the likelihood ratio test.}
 \item{\code{MLEs}}{Maximum likelihood estimates for \eqn{\delta} and
 \eqn{\gamma}.}
@@ -32,5 +33,13 @@ information, number of iterations, and achieved negative log likelihood
 value and MLEs.}
 }
 \description{
-Likelihood Ratio Test for Calibration [NEED MORE]
+Perform a likelihood ratio test for calibration as specified in Guthrie and
+Franck (2024).
+}
+\details{
+Comapre
+}
+\references{
+Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
+for Binary Event Predictions. \emph{arxiv}.
 }
