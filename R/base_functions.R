@@ -14,39 +14,36 @@
 #' @param delta numeric, must be > 0, parameter \eqn{\delta} in LLO
 #'   recalibration function.
 #' @param gamma numeric, parameter \eqn{\gamma} in LLO recalibration function.
-#' @param ... Additional arguments for internal use only.
 #' @return The LLO-adjusted vector of probabilities (ADD NOTATION FROM PAPER? OR
 #'   KEEP IN DETAILS?)
 #' @export
 #'
 #' @examples
-LLO <- function(x, delta, gamma, ...){
+LLO <- function(x, delta, gamma){
 
   ##################
   #  Input Checks  #
   ##################
-  if(!exists("input_checks_off")){ input_checks_off <- FALSE }
-  if(!input_checks_off){
-    # check input probs are valid
-    x <- check_input_probs(x, "x")
 
-    # check delta > 0 & numeric & size 1
-    check_input_delta(delta)
+  # check input probs are valid
+  x <- check_input_probs(x, "x")
 
-    # check gamma in Reals & numeric & size 1
-    check_input_gamma(gamma)
-  }
+  # check delta > 0 & numeric & size 1
+  check_input_delta(delta)
+
+  # check gamma in Reals & numeric & size 1
+  check_input_gamma(gamma)
 
   ###################
   #  Function Code  #
   ###################
 
-  x_llo <- (delta * (x^gamma)) / ((delta * (x^gamma)) + ((1-x)^gamma))
+  x_llo <- LLO_internal(x=x, delta=delta, gamma=gamma)
 
   ###################
   #  Output Checks  #
   ###################
-  if(!exists("output_checks_off")){ output_checks_off <- FALSE }
+  if(!("output_checks_off" %in% names(list(...)))){ output_checks_off <- FALSE }
   if(!output_checks_off){
     # check if return vector contains nans
     if(!check_noNaNs(x_llo)) warning("LLO return value contains NaNs")
@@ -203,7 +200,7 @@ mle_recal <- function(x, y, probs_only=TRUE, event = 1, optim_details = TRUE, ..
 
   optLRT <- llo_optim(x, y, ...)
   est_params <- optLRT$par
-  new_probs <- LLO(x=x, est_params[1], est_params[2], input_checks=FALSE)
+  new_probs <- LLO_internal(x=x, est_params[1], est_params[2])
   if(probs_only){
     if(optim_details) print(optLRT)
     return(new_probs)
@@ -220,6 +217,11 @@ mle_recal <- function(x, y, probs_only=TRUE, event = 1, optim_details = TRUE, ..
 ######################################################
 #  Internal Functions                                #
 ######################################################
+
+LLO_internal <- function(x, delta, gamma){
+  (delta * (x^gamma)) / ((delta * (x^gamma)) + ((1-x)^gamma))
+}
+
 
 # NEED TO MAKE NOT IN DOCUMENTATION ABOUT ROUNDING OFF
 to_logit <- logit <- function(p){
@@ -246,9 +248,9 @@ llo_lik <- function(params, x, y, log = FALSE, neg = FALSE, tau = FALSE){
   x <- ifelse(x > 0.9999999999999999, 0.9999999999999999, x)
 
   if(tau){
-    llo <- LLO(x = x, delta = exp(params[1]), gamma = params[2], input_checks=FALSE)
+    llo <- LLO_internal(x = x, delta = exp(params[1]), gamma = params[2])
   } else {
-    llo <- LLO(x = x, delta = params[1], gamma = params[2], input_checks=FALSE)
+    llo <- LLO_internal(x = x, delta = params[1], gamma = params[2])
   }
 
   llo <- ifelse(llo < (10^(-300)), (10^(-300)), llo)
@@ -275,10 +277,9 @@ llo_optim <- function(x, y, par=c(0.5,0.5), tau=TRUE, gr=nll_gradient, ...){
   # NEED HANDELING FOR TAU = FALSE BC BOUND ON DELTA!
   if(tau){
     par[1] <- log(par[1])
-    if(exists("lower")){ lower[1] <- log(lower[1]) }
-    if(exists("upper")){ upper[1] <- log(upper[1]) }
+    if("lower" %in% names(list(...))){ lower[1] <- log(lower[1]) }
+    if("upper" %in% names(list(...))){ upper[1] <- log(upper[1]) }
   }
-
 
   opt <- optim(par=par, fn=llo_lik,
                ...,

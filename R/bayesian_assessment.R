@@ -67,6 +67,63 @@ bayes_ms <- function(x, y, Pmc = 0.5, event=1, optim_details = TRUE,  ...){
   #  Function Code  #
   ###################
 
+  results <- bayes_ms_internal(x=x, y=y, Pmc=Pmc, optim_details=optim_details, ...)
+  # n <- length(x)
+  # params_null <- c(1,1)
+  #
+  # # BIC under null (well calibrated model Mc)
+  # # BIC_Mc <- BIC_llo(x = x, y = y, k = 0, params = params_null)
+  # BIC_Mc <- -2*llo_lik(params = params_null, x = x, y = y, log = TRUE)
+  #
+  # # Maximize likelihood
+  # optimlik <- llo_optim(x,y, tau=TRUE, ...)
+  # max_lik <- -optimlik$value
+  # MLEs <- optimlik$par
+  #
+  # # BIC under alternative (uncalibrated model Mu)
+  # BIC_Mu <- 2 * log(n) - (2 * max_lik)
+  # # temp <- BIC_llo(x = x, y = y, k = 2, params = NA, ...)
+  # # BIC_Mu <- temp$BIC
+  #
+  # # Bayes factors
+  # ## Likelihood of h1/likelihood of h0
+  # # BF_uc <- 1/bayes_factor(BIC1 = BIC1, BIC2 = BIC2)
+  # BF_uc <- exp(-(1/2) * (BIC_Mu - BIC_Mc))
+  #
+  #
+  # # Posterior Model Probabilities
+  # ## P(cal|data) = P(H0|data) = P(Mc|data)
+  # # post <- post_mod_prob(BF = BF_uc, Pmc = Pmc)
+  # Pmu <- 1 - Pmc
+  # post <- 1/(1+(BF_uc*(Pmu/Pmc)))
+  #
+  # # Return Value
+  # if(optim_details){
+  #   results <- list(Pmc = Pmc,
+  #                   BIC_Mc = BIC_Mc,
+  #                   BIC_Mu = BIC_Mu,
+  #                   BF = BF_uc,
+  #                   posterior_model_prob = post,
+  #                   MLEs = MLEs,
+  #                   optim_details = optimlik)
+  # } else {
+  #   results <- list(Pmc = Pmc,
+  #                   BIC_Mc = BIC_Mc,
+  #                   BIC_Mu = BIC_Mu,
+  #                   BF = BF_uc,
+  #                   posterior_model_prob = post,
+  #                   MLEs = MLEs)
+  # }
+
+
+  return(results)
+}
+
+######################################################
+#  Internal Functions                                #
+######################################################
+
+bayes_ms_internal <- function(x, y, Pmc = 0.5, optim_details = TRUE,  ...){
   n <- length(x)
   params_null <- c(1,1)
 
@@ -113,14 +170,8 @@ bayes_ms <- function(x, y, Pmc = 0.5, event=1, optim_details = TRUE,  ...){
                     posterior_model_prob = post,
                     MLEs = MLEs)
   }
-
-
   return(results)
 }
-
-######################################################
-#  Internal Functions                                #
-######################################################
 
 # BIC for this likelihood
 # BIC_llo <- function(x, y, k, params = NA, ...){
