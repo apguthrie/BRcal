@@ -4,7 +4,7 @@
 \alias{LLO}
 \title{Linear Log Odds (LLO) Recalibration Function}
 \usage{
-LLO(x, delta, gamma, ...)
+LLO(x, delta, gamma)
 }
 \arguments{
 \item{x}{a numeric vector of probabilities to be LLO-adjusted. Must only
@@ -14,8 +14,6 @@ contain values in [0,1].}
 recalibration function.}
 
 \item{gamma}{numeric, parameter \eqn{\gamma} in LLO recalibration function.}
-
-\item{...}{Additional arguments for internal use only.}
 }
 \value{
 The LLO-adjusted vector of probabilities (ADD NOTATION FROM PAPER? OR
