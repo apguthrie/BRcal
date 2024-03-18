@@ -43,17 +43,16 @@ LLO <- function(x, delta, gamma){
   ###################
   #  Output Checks  #
   ###################
-  if(!("output_checks_off" %in% names(list(...)))){ output_checks_off <- FALSE }
-  if(!output_checks_off){
-    # check if return vector contains nans
-    if(!check_noNaNs(x_llo)) warning("LLO return value contains NaNs")
 
-    # check if return vector contains +/- Inf - typically not possible
-    if(!check_noInfs(x_llo)) warning("LLO return value contains +/-Inf")
+  # check if return vector contains nans
+  if(!check_noNaNs(x_llo)) warning("LLO return value contains NaNs")
 
-    # check x are probabilities in [0,1] - typically not possible to break
-    if(!check_probs(x_llo[!is.na(x_llo)])) warning("LLO return value contains values outside of [0,1]")
-  }
+  # check if return vector contains +/- Inf - typically not possible
+  if(!check_noInfs(x_llo)) warning("LLO return value contains +/-Inf")
+
+  # check x are probabilities in [0,1] - typically not possible to break
+  if(!check_probs(x_llo[!is.na(x_llo)])) warning("LLO return value contains values outside of [0,1]")
+
 
   return(x_llo)
 }
