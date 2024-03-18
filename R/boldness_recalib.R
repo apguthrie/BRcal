@@ -7,15 +7,35 @@
 # Tell them which params will be overwritten no matter what they say
 # suppress nloprt output by default, add in details that if choose to print, will be in terms of tau (if that's what the bakeoff says)
 # otherwise report everything in terms of delta
-brcal <- function(x, y, t=0.95, Pmc=0.5, event=1, start_at_MLEs=TRUE,
-                  x0=NULL, lb=NULL, ub=NULL,
-                  maxeval=300,
-                  xtol_rel_outer=1.0e-6,
-                  xtol_rel_inner=1.0e-6,
-                  check_derivatives=FALSE,
-                  print_level=3, ...){
 
-  tau <- FALSE
+#' Boldness Recalibration for Binary Events
+#'
+#' @inheritParams bayes_ms
+#' @param start_at_MLEs Logical. If TRUE, the optimizer will start at
+#'   \eqn{\delta} and \eqn{x_0} = the maximum likelihood estimates for
+#'   \eqn{\delta} and \eqn{\gamma}. Otherwise, the user must specify
+#'   \eqn{\delta} and \eqn{x_0}.
+#' @param x0 Vector with starting locations for \eqn{\delta} and \eqn{\gamma}.  This argument is ignored when start_at_MLEs = TRUE.
+#' @param lb Vector with lower bounds for \eqn{\delta} and \eqn{\gamma}.
+#' @param ub Vector with upper bounds for \eqn{\delta} and \eqn{\gamma}.
+#' @param maxeval
+#' @param maxtime
+#' @param xtol_rel
+#' @param print_level
+#' @param opts list with options to be passed to `nloptr`.  See the documentation for `nloptr()` for details.
+#'
+#' @return
+#' @export
+#'
+#' @examples
+brcal <- function(x, y, t=0.95, Pmc=0.5, tau=FALSE, event=1,
+                  start_at_MLEs=TRUE, x0=NULL,
+                  lb=NULL, ub=NULL,
+                  maxeval=500, maxtime=NULL,
+                  xtol_rel=1.0e-6,
+                  print_level=3,
+                  opts=NULL){
+
 
   ##################
   #  Input Checks  #
@@ -43,13 +63,20 @@ brcal <- function(x, y, t=0.95, Pmc=0.5, event=1, start_at_MLEs=TRUE,
     stop("argument start_at_MLEs must be logical")
   }
 
+  # check x0 is specified if start_at_MLEs is not
+  if(!start_at_MLEs){
+    if(is.null(x0)) stop("must specify x0 when start_at_MLEs=FALSE")
+
+    # check x0
+    x0 <- check_input_probs(x0, name="x0")
+  }
 
   ###################
   #  Function Code  #
   ###################
 
   if(start_at_MLEs){
-    bt <- bayes_ms(x,y)
+    bt <- bayes_ms_internal(x,y)
     x0 <- bt$MLEs
   }
 
@@ -57,27 +84,28 @@ brcal <- function(x, y, t=0.95, Pmc=0.5, event=1, start_at_MLEs=TRUE,
     x0[1] <- log(x0[1])
   }
 
-  lower <- c(0.0001, -15)
-  upper <- c(4e+08, 150)
 
-  if(tau){
-    lower[1] <- log(lower[1])
-    upper[1] <- log(upper[1])
-  }
 
   if(exists("opts")){
 
+    if("eval_f" %in% names(opts$local_opts)){
+      opts$local_opts$eval_f <- obj_f
+    }
     if("eval_grad_f" %in% names(opts$local_opts)){
-
+      opts$local_opts$eval_grad_f <- obj_grad_f
+    }
+    if("eval_g_ineq" %in% names(opts$local_opts)){
+      opts$local_opts$eval_g_ineq <- constr_g
+    }
+    if("eval_jac_g_ineq" %in% names(opts$local_opts)){
+      opts$local_opts$eval_jac_g_ineq <- constr_grad_g
     }
 
-
-    # NEED TO OVERWRITE USER SPECIFIED gradients
     res <- nloptr::nloptr(x0 = x0,
-                          eval_f = eval_f,
-                          eval_grad_f = eval_grad_f,
-                          eval_g_ineq = eval_g,
-                          eval_jac_g_ineq  = eval_grad_g,
+                          eval_f = obj_f,
+                          eval_grad_f = obj_grad_f,
+                          eval_g_ineq = constr_g,
+                          eval_jac_g_ineq  = constr_grad_g,
                           lb = lb,
                           ub = ub,
                           opts = opts,
@@ -89,46 +117,31 @@ brcal <- function(x, y, t=0.95, Pmc=0.5, event=1, start_at_MLEs=TRUE,
   } else{
 
     res <- nloptr::nloptr(x0 = x0,
-                          eval_f = eval_f,
-                          eval_grad_f = eval_grad_f,
-                          eval_g_ineq = eval_g,
-                          eval_jac_g_ineq  = eval_grad_g,
+                          eval_f = obj_f,
+                          eval_grad_f = obj_grad_f,
+                          eval_g_ineq = constr_g,
+                          eval_jac_g_ineq = constr_grad_g,
                           lb = lb,
                           ub = ub,
                           opts = list(algorithm = "NLOPT_LD_AUGLAG",
                                       maxeval = maxeval,
-                                      xtol_rel = xtol_rel_outer,
+                                      maxtime = maxtime,
+                                      xtol_rel = xtol_rel,
                                       print_level = print_level,
-                                      #xtol_abs1 = 1e-4,
                                       local_opts = list(
                                         algorithm = "NLOPT_LD_SLSQP",
                                         lb = lb,
                                         ub = ub,
-                                        eval_grad_f = eval_grad_f,
-                                        eval_jac_g_ineq  = eval_grad_g,
-                                        #xtol_abs1 = 1e-4,
-                                        xtol_rel = xtol_rel_inner
-                                      )),
+                                        eval_grad_f = obj_grad_f,
+                                        eval_jac_g_ineq = constr_grad_g,
+                                        xtol_rel = xtol_rel)),
                           probs = x,
                           outs = y,
                           t = t,
                           tau = tau,
                           Pmc = Pmc)
   }
-  # res <- nloptr::nloptr(x0 = x0,
-  #                       eval_f = eval_f,
-  #                       eval_grad_f = eval_grad_f,
-  #                       lb = c(0.0001, -15),
-  #                       ub = c(Inf, 1074),
-  #                       eval_g_ineq = eval_g,
-  #                       eval_jac_g_ineq  = eval_grad_g,
-  #                       opts = list("algorithm"=algorithm,
-  #                                   "xtol_rel"=xtol_rel,
-  #                                   "print_level"=print_level,
-  #                                   "maxeval"=maxeval, "check_derivatives"=check_derivatives),
-  #                       probs = x,
-  #                       outs = y,
-  #                       t = t)
+
 
   if(tau){
     res$solution[1] <- exp(res$solution[1])
@@ -147,7 +160,7 @@ brcal <- function(x, y, t=0.95, Pmc=0.5, event=1, start_at_MLEs=TRUE,
 #  Internal Functions                                #
 ######################################################
 
-eval_f <- function(x, probs, outs, t, tau, Pmc){
+obj_f <- function(x, probs, outs, t, tau, Pmc){
   if(tau)(
     x[1] <- exp(x[1])
   )
@@ -156,7 +169,7 @@ eval_f <- function(x, probs, outs, t, tau, Pmc){
   return(-stats::sd(probs_new))
 }
 
-eval_grad_f <- function(x, probs, outs, t, tau, Pmc){
+obj_grad_f <- function(x, probs, outs, t, tau, Pmc){
   if(tau)(
     x[1] <- exp(x[1])
   )
@@ -182,7 +195,7 @@ eval_grad_f <- function(x, probs, outs, t, tau, Pmc){
   return(grad_obj)
 }
 
-eval_g <- function(x, probs, outs, t, tau, Pmc){
+constr_g <- function(x, probs, outs, t, tau, Pmc){
   if(tau)(
     x[1] <- exp(x[1])
   )
@@ -191,7 +204,7 @@ eval_g <- function(x, probs, outs, t, tau, Pmc){
   return(c1)
 }
 
-eval_grad_g <- function(x, probs, outs, t, tau, Pmc){
+constr_grad_g <- function(x, probs, outs, t, tau, Pmc){
   if(tau)(
     x[1] <- exp(x[1])
   )

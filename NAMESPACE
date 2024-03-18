@@ -2,5 +2,6 @@
 
 export(LLO)
 export(bayes_ms)
+export(brcal)
 export(llo_lrt)
 export(mle_recal)
