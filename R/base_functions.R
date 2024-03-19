@@ -167,6 +167,9 @@ llo_lrt <- function(x, y, event = 1, optim_details = TRUE,  ...){
 #'
 #' @export
 #'
+#' @references Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
+#'   for Binary Event Predictions. \emph{arxiv}.
+#'
 #' @examples
 mle_recal <- function(x, y, probs_only=TRUE, event = 1, optim_details = TRUE, ...) {
 
