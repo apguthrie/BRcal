@@ -39,3 +39,7 @@ value and MLEs.}
 \description{
 Recalibration via Maximum Likelihood Estimates (MLEs)
 }
+\references{
+Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
+for Binary Event Predictions. \emph{arxiv}.
+}
