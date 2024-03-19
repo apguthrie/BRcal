@@ -1,38 +1,84 @@
-# add option to pass args to nloptr
-# also return br probs (add flag to toggle this)
+
+# also return br probs (add flag to toggle this?)
 # add option to see nlopt printing vs our own printing
 # NOTE THAT EVERYTHING IS PRINTED IN TERMS OF TAU (use a message?)
 
-# Let users specify opts or lb/ub
-# Tell them which params will be overwritten no matter what they say
 # suppress nloprt output by default, add in details that if choose to print, will be in terms of tau (if that's what the bakeoff says)
 # otherwise report everything in terms of delta
 
 #' Boldness Recalibration for Binary Events
 #'
-#' @inheritParams bayes_ms
-#' @param start_at_MLEs Logical. If TRUE, the optimizer will start at
-#'   \eqn{\delta} and \eqn{x_0} = the maximum likelihood estimates for
-#'   \eqn{\delta} and \eqn{\gamma}. Otherwise, the user must specify
-#'   \eqn{\delta} and \eqn{x_0}.
-#' @param x0 Vector with starting locations for \eqn{\delta} and \eqn{\gamma}.  This argument is ignored when start_at_MLEs = TRUE.
-#' @param lb Vector with lower bounds for \eqn{\delta} and \eqn{\gamma}.
-#' @param ub Vector with upper bounds for \eqn{\delta} and \eqn{\gamma}.
-#' @param maxeval
-#' @param maxtime
-#' @param xtol_rel
-#' @param print_level
-#' @param opts list with options to be passed to `nloptr`.  See the documentation for `nloptr()` for details.
+#' Perform Bayesian boldness-recalibration as specified in Guthrie and Franck
+#' (2024).
 #'
-#' @return
+#'
+#' NEED TO CITE NLOPTR & ALGS, mention default algs and such,
+#'
+#' When `tau=TRUE`, the optimization routine operates relative to \eqn{\tau =
+#' log(\delta)} instead of \eqn{\delta}.  Specification of start location `x0`
+#' and bounds `lb`, `ub` should still be specified in terms of \eqn{\delta}. The
+#' `brcal` function will automatically convert from \eqn{\delta} to \eqn{\tau}.
+#' The returned values in ...
+#'
+#' For more control over the optimization routine conducted by `nloptr()`, the
+#' user may specify their own options via the `opts` argument. See the
+#' documentation for `nloptr()` for full details. Note that any objective,
+#' constraint, or gradient functions specified by the user will be overwritten
+#' by those specified in this package.
+#'
+#' @inheritParams bayes_ms
+#' @param t Desired level of calibration in \[0,1\].
+#' @param tau Logical.  If `TRUE`, the optimization operates on \eqn{\tau =
+#'   log(\delta)} instead of \eqn{\delta}. See details.
+#' @param start_at_MLEs Logical. If `TRUE`, the optimizer will start at
+#'   \eqn{x_0} = the maximum likelihood estimates for \eqn{\delta} and
+#'   \eqn{\gamma}. Otherwise, the user must specify \eqn{x_0}.
+#' @param x0 Vector with starting locations for \eqn{\delta} and \eqn{\gamma}.
+#'   This argument is ignored when start_at_MLEs = TRUE.
+#' @param lb Vector with lower bounds for \eqn{\delta} and \eqn{\gamma}. Use
+#'   `-Inf` to indicate no lower bound.
+#' @param ub Vector with upper bounds for \eqn{\delta} and \eqn{\gamma}. Use
+#'   `Inf` to indicate no upper bound.
+#' @param maxeval Value passed to `nloptr()` to stop optimization when the
+#'   number of function evaluations exceeds `maxeval`.
+#' @param maxtime Value passed to `nloptr()` to stop optimization when
+#'   evaluation time (in seconds) exceeds `maxtime`.
+#' @param xtol_rel_inner Value passed to `nloptr()` to stop the inner
+#'   optimization routine when the parameter estimates for \eqn{\delta} and
+#'   \eqn{\gamma} change by less than `xtol_rel_inner`.
+#' @param xtol_rel_outer Value passed to `nloptr()` to stop the outer
+#'   optimization routine when the parameter estimates for \eqn{\delta} and
+#'   \eqn{\gamma} change by less than `xtol_rel_inner`.
+#' @param print_level Value passed to `nloptr()` to control how much output is
+#'   printed during optimization. Default is to print the most information
+#'   allowable by `nloptr()`. Specify `0` to suppress all output.
+#' @param opts List with options to be passed to `nloptr`.  See details.
+#'
+#' @return A list with the following attributes:
+#'   \item{\code{nloptr}}{The list returned by `nloptr()` including convergence
+#'   information, number of iterations, and more.}
+#'   \item{\code{Pmc}}{The prior model probability for the calibrated model
+#'   \eqn{M_c} specified in function call.}
+#'   \item{\code{t}}{Desired level of
+#'   calibration in \[0,1\] specified in function call.}
+#'   \item{\code{BR_params}}{(100\eqn{*}t)% Boldness-recalibration estimates for \eqn{\delta} and
+#'   \eqn{\gamma}.}
+#'   \item{\code{sb}}{The Bayesian Information Criteria (BIC) for the
+#'   calibrated model \eqn{M_c}.}
+#'   \item{\code{probs}}{Vector of (100\eqn{*}t)% boldness-recalibrated
+#'   probabilities.}
 #' @export
+#'
+#' @references Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
+#'   for Binary Event Predictions. \emph{arxiv}.
 #'
 #' @examples
 brcal <- function(x, y, t=0.95, Pmc=0.5, tau=FALSE, event=1,
                   start_at_MLEs=TRUE, x0=NULL,
-                  lb=NULL, ub=NULL,
+                  lb=c(0.00001, -Inf), ub=c(Inf, Inf),
                   maxeval=500, maxtime=NULL,
-                  xtol_rel=1.0e-6,
+                  xtol_rel_inner=1.0e-6,
+                  xtol_rel_outer=1.0e-6,
                   print_level=3,
                   opts=NULL){
 
@@ -44,7 +90,7 @@ brcal <- function(x, y, t=0.95, Pmc=0.5, tau=FALSE, event=1,
   # check x is vector, values in [0,1]
   x <- check_input_probs(x, name="x")
 
-  # check y is vector, values are 0s or 1s - Relax this?
+  # check y is vector, values are 0s or 1s
   y <- check_input_outcomes(y, name="y", event=event)
 
   # check x and y are the same length
@@ -68,7 +114,8 @@ brcal <- function(x, y, t=0.95, Pmc=0.5, tau=FALSE, event=1,
     if(is.null(x0)) stop("must specify x0 when start_at_MLEs=FALSE")
 
     # check x0
-    x0 <- check_input_probs(x0, name="x0")
+    x0 <- check_input_params(x0, name="x0")
+
   }
 
   ###################
@@ -84,9 +131,35 @@ brcal <- function(x, y, t=0.95, Pmc=0.5, tau=FALSE, event=1,
     x0[1] <- log(x0[1])
   }
 
+  # print(missing(opts))
 
-
-  if(exists("opts")){
+  if(missing(opts)){
+    # print("inside opts ifelse")
+    res <- nloptr::nloptr(x0 = x0,
+                          eval_f = obj_f,
+                          eval_grad_f = obj_grad_f,
+                          eval_g_ineq = constr_g,
+                          eval_jac_g_ineq = constr_grad_g,
+                          lb = lb,
+                          ub = ub,
+                          opts = list(algorithm = "NLOPT_LD_AUGLAG",
+                                      maxeval = maxeval,
+                                      maxtime = maxtime,
+                                      xtol_rel = xtol_rel_outer,
+                                      print_level = print_level,
+                                      local_opts = list(
+                                        algorithm = "NLOPT_LD_SLSQP",
+                                        lb = lb,
+                                        ub = ub,
+                                        eval_grad_f = obj_grad_f,
+                                        eval_jac_g_ineq = constr_grad_g,
+                                        xtol_rel = xtol_rel_inner)),
+                          probs = x,
+                          outs = y,
+                          t = t,
+                          tau = tau,
+                          Pmc = Pmc)
+  } else {
 
     if("eval_f" %in% names(opts$local_opts)){
       opts$local_opts$eval_f <- obj_f
@@ -114,32 +187,6 @@ brcal <- function(x, y, t=0.95, Pmc=0.5, tau=FALSE, event=1,
                           t = t,
                           tau = tau,
                           Pmc = Pmc)
-  } else{
-
-    res <- nloptr::nloptr(x0 = x0,
-                          eval_f = obj_f,
-                          eval_grad_f = obj_grad_f,
-                          eval_g_ineq = constr_g,
-                          eval_jac_g_ineq = constr_grad_g,
-                          lb = lb,
-                          ub = ub,
-                          opts = list(algorithm = "NLOPT_LD_AUGLAG",
-                                      maxeval = maxeval,
-                                      maxtime = maxtime,
-                                      xtol_rel = xtol_rel,
-                                      print_level = print_level,
-                                      local_opts = list(
-                                        algorithm = "NLOPT_LD_SLSQP",
-                                        lb = lb,
-                                        ub = ub,
-                                        eval_grad_f = obj_grad_f,
-                                        eval_jac_g_ineq = constr_grad_g,
-                                        xtol_rel = xtol_rel)),
-                          probs = x,
-                          outs = y,
-                          t = t,
-                          tau = tau,
-                          Pmc = Pmc)
   }
 
 
@@ -148,6 +195,8 @@ brcal <- function(x, y, t=0.95, Pmc=0.5, tau=FALSE, event=1,
   }
 
   l <- list(nloptr = res,
+            Pmc = Pmc,
+            t=t,
             BR_params = c(res$solution[1], res$solution[2]),
             sb = -res$objective,
             probs = LLO_internal(x=x, res$solution[1], res$solution[2]))

@@ -13,11 +13,12 @@ brcal(
   event = 1,
   start_at_MLEs = TRUE,
   x0 = NULL,
-  lb = NULL,
-  ub = NULL,
+  lb = c(1e-05, -Inf),
+  ub = c(Inf, Inf),
   maxeval = 500,
   maxtime = NULL,
-  xtol_rel = 1e-06,
+  xtol_rel_inner = 1e-06,
+  xtol_rel_outer = 1e-06,
   print_level = 3,
   opts = NULL
 )
@@ -29,23 +30,83 @@ contain values in [0,1].}
 \item{y}{a numeric vector of outcomes corresponding to probabilities in \code{x}.
 Must only contain 0 or 1.}
 
+\item{t}{Desired level of calibration in [0,1].}
+
 \item{Pmc}{The prior model probability for the calibrated model \eqn{M_c}.}
+
+\item{tau}{Logical.  If \code{TRUE}, the optimization operates on \eqn{\tau =
+log(\delta)} instead of \eqn{\delta}. See details.}
 
 \item{event}{Value in \code{y} that represents an "event".  Default value is 1.}
 
-\item{start_at_MLEs}{Logical. If TRUE, the optimizer will start at
-\eqn{\delta} and \eqn{x_0} = the maximum likelihood estimates for
-\eqn{\delta} and \eqn{\gamma}. Otherwise, the user must specify
-\eqn{\delta} and \eqn{x_0}.}
+\item{start_at_MLEs}{Logical. If \code{TRUE}, the optimizer will start at
+\eqn{x_0} = the maximum likelihood estimates for \eqn{\delta} and
+\eqn{\gamma}. Otherwise, the user must specify \eqn{x_0}.}
 
-\item{x0}{Vector with starting locations for \eqn{\delta} and \eqn{\gamma}.  This argument is ignored when start_at_MLEs = TRUE.}
+\item{x0}{Vector with starting locations for \eqn{\delta} and \eqn{\gamma}.
+This argument is ignored when start_at_MLEs = TRUE.}
 
-\item{lb}{Vector with lower bounds for \eqn{\delta} and \eqn{\gamma}.}
+\item{lb}{Vector with lower bounds for \eqn{\delta} and \eqn{\gamma}. Use
+\code{-Inf} to indicate no lower bound.}
 
-\item{ub}{Vector with upper bounds for \eqn{\delta} and \eqn{\gamma}.}
+\item{ub}{Vector with upper bounds for \eqn{\delta} and \eqn{\gamma}. Use
+\code{Inf} to indicate no upper bound.}
 
-\item{opts}{list with options to be passed to \code{nloptr}.  See the documentation for \code{nloptr()} for details.}
+\item{maxeval}{Value passed to \code{nloptr()} to stop optimization when the
+number of function evaluations exceeds \code{maxeval}.}
+
+\item{maxtime}{Value passed to \code{nloptr()} to stop optimization when
+evaluation time (in seconds) exceeds \code{maxtime}.}
+
+\item{xtol_rel_inner}{Value passed to \code{nloptr()} to stop the inner
+optimization routine when the parameter estimates for \eqn{\delta} and
+\eqn{\gamma} change by less than \code{xtol_rel_inner}.}
+
+\item{xtol_rel_outer}{Value passed to \code{nloptr()} to stop the outer
+optimization routine when the parameter estimates for \eqn{\delta} and
+\eqn{\gamma} change by less than \code{xtol_rel_inner}.}
+
+\item{print_level}{Value passed to \code{nloptr()} to control how much output is
+printed during optimization. Default is to print the most information
+allowable by \code{nloptr()}. Specify \code{0} to suppress all output.}
+
+\item{opts}{List with options to be passed to \code{nloptr}.  See details.}
+}
+\value{
+A list with the following attributes:
+\item{\code{nloptr}}{The list returned by \code{nloptr()} including convergence
+information, number of iterations, and more.}
+\item{\code{Pmc}}{The prior model probability for the calibrated model
+\eqn{M_c} specified in function call.}
+\item{\code{t}}{Desired level of
+calibration in [0,1] specified in function call.}
+\item{\code{BR_params}}{(100\eqn{*}t)\% Boldness-recalibration estimates for \eqn{\delta} and
+\eqn{\gamma}.}
+\item{\code{sb}}{The Bayesian Information Criteria (BIC) for the
+calibrated model \eqn{M_c}.}
+\item{\code{probs}}{Vector of (100\eqn{*}t)\% boldness-recalibrated
+probabilities.}
 }
 \description{
-Boldness Recalibration for Binary Events
+Perform Bayesian boldness-recalibration as specified in Guthrie and Franck
+(2024).
+}
+\details{
+NEED TO CITE NLOPTR & ALGS, mention default algs and such,
+
+When \code{tau=TRUE}, the optimization routine operates relative to \eqn{\tau =
+log(\delta)} instead of \eqn{\delta}.  Specification of start location \code{x0}
+and bounds \code{lb}, \code{ub} should still be specified in terms of \eqn{\delta}. The
+\code{brcal} function will automatically convert from \eqn{\delta} to \eqn{\tau}.
+The returned values in ...
+
+For more control over the optimization routine conducted by \code{nloptr()}, the
+user may specify their own options via the \code{opts} argument. See the
+documentation for \code{nloptr()} for full details. Note that any objective,
+constraint, or gradient functions specified by the user will be overwritten
+by those specified in this package.
+}
+\references{
+Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
+for Binary Event Predictions. \emph{arxiv}.
 }
