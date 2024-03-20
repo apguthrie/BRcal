@@ -200,6 +200,41 @@ mle_recal <- function(x, y, probs_only=TRUE, event = 1, optim_details = TRUE, ..
   #  Function Code  #
   ###################
 
+  # optLRT <- llo_optim(x, y, ...)
+  # est_params <- optLRT$par
+  # new_probs <- LLO_internal(x=x, est_params[1], est_params[2])
+  # if(probs_only){
+  #   if(optim_details) print(optLRT)
+  #   return(new_probs)
+  # } else if(optim_details){
+  #   return(list(probs = new_probs,
+  #               MLEs = est_params,
+  #               optim_details = optLRT))
+  # } else{
+  #   return(list(probs = new_probs,
+  #               MLEs = est_params))
+  # }
+
+  val <- mle_recal_internal(x=x, y=y, probs_only=probs_only, optim_details=optim_details, ...)
+  return(val)
+}
+
+######################################################
+#  Internal Functions                                #
+######################################################
+
+LLO_internal <- function(x, delta, gamma){
+  (delta * (x^gamma)) / ((delta * (x^gamma)) + ((1-x)^gamma))
+}
+
+
+mle_recal_internal <- function(x, y, probs_only=TRUE, optim_details = TRUE, ...) {
+
+
+  ###################
+  #  Function Code  #
+  ###################
+
   optLRT <- llo_optim(x, y, ...)
   est_params <- optLRT$par
   new_probs <- LLO_internal(x=x, est_params[1], est_params[2])
@@ -215,15 +250,6 @@ mle_recal <- function(x, y, probs_only=TRUE, event = 1, optim_details = TRUE, ..
                 MLEs = est_params))
   }
 }
-
-######################################################
-#  Internal Functions                                #
-######################################################
-
-LLO_internal <- function(x, delta, gamma){
-  (delta * (x^gamma)) / ((delta * (x^gamma)) + ((1-x)^gamma))
-}
-
 
 # NEED TO MAKE NOT IN DOCUMENTATION ABOUT ROUNDING OFF
 to_logit <- logit <- function(p){
