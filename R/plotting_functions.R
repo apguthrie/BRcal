@@ -1,25 +1,353 @@
+######################################################
+#  External Functions (Version 1)                    #
+######################################################
+
+#' Draw image plot of posterior model probability surface.
+#'
+#' Function to plot the posterior model probability of the given set of
+#' probabilities, `x`, after LLO-adjustment via a grid of uniformly spaced set
+#' of \eqn{\delta} and \eqn{\gamma} values with optional contours.
+#'
+#' mention different functions being used under the hood (image, image.plot,
+#' contour) gamma = 0 will be approx???, option for contours only, addtnal
+#' options, suggestions for setting k and bounds, how to use z ad return_z
+#' efficiently, citations, add capability for points at B-R params????
+#'
+#' @inheritParams bayes_ms
+#' @param z Matrix returned by previous call to `plot_params()` containing
+#'   posterior model probabilities across k\eqn{\times}k grid of \eqn{\delta}
+#'   and \eqn{\gamma}. Assumes `z` was constructed using the same `k`, `dlim`,
+#'   and `glim` as the current function call.
+#' @param t_levels Vector of desired level(s) of calibration at which to plot
+#'   contours.
+#' @param k The number of uniformly spaced \eqn{\delta} and \eqn{\gamma} values
+#'   used to construct the k\eqn{\times}k grid.
+#' @param dlim Vector with bounds for \eqn{\delta}, must be finite.
+#' @param glim Vector with bounds for \eqn{\gamma}, must be finite.
+#' @param zlim Vector with bounds for posterior probability of calibration, must
+#'   be in \[0,1\].
+#' @param return_z Logical.  If `TRUE`, the matrix of posterior model
+#'   probabilities across the specified k\eqn{\times}k grid of \eqn{\delta} and
+#'   \eqn{\gamma} will be returned.
+#' @param thin_to When non-null, the observations in (x,y) are randomly sampled
+#'   without replacement to form a set of size `thin_to`.
+#' @param thin_percent When non-null, the observations in (x,y) are randomly
+#'   sampled without replacement to form a set that is `thin_percent`\% of the
+#'   original size of (x,y).
+#' @param thin_by When non-null, the observations in (x,y) are thinned by
+#'   selecting every `thin_by` observation.
+#' @param contours_only Logical.  If `TRUE`, only the contours at the specified
+#'   `t_levels` will be plotted with no color for the posterior model
+#'   probability across the k\eqn{\times}k grid of \eqn{\delta} and
+#'   \eqn{\gamma}.
+#' @param main Plot title.
+#' @param xlab Label for x-axis.
+#' @param ylab Label for x-axis.
+#' @param drawlabels Logical.  If `TRUE`, the contour labels will be plotted
+#'   with the corresponding contours passed to `contour()`.
+#' @param contour_color Color of the contours and their labels passed to
+#'   `contour()`.
+#' @param labcex Size of contour labels passed to `contour()`.
+#' @param lwd Linewidth of contours passed to `contour()`.
+#' @param ... Additional arguments to be passed to `image`, `image.plot`, and
+#'   `contour`.
+#'
+#' @return If `return_z = TRUE`, a list with the following attributes is
+#'   returned: \item{\code{z}}{Matrix containing posterior model probabilities
+#'   across k\eqn{\times}k grid of uniformly spaced values of \eqn{\delta} and \eqn{\gamma}
+#'   in the specified ranges `dlim` and `glim`, respectively.}
+#'   \item{\code{dlim}}{Vector with bounds for
+#'   \eqn{\delta} used to construct z.}
+#'   \item{\code{glim}}{Vector with bounds for \eqn{\gamma} used to construct
+#'   z.}
+#'   \item{\code{k}}{The number of uniformly spaced \eqn{\delta} and \eqn{\gamma} values used to construct
+#'   z}
+#' @export
+#'
+#' @examples
+plot_params <- function(x, y, z=NULL, t_levels = c(0.8, 0.9),
+                        Pmc = 0.5, event=1,
+                        k = 100,
+                        # lb = c(0.0001,-2),
+                        # ub = c(5,2),
+                        dlim = c(0.0001,5),
+                        glim = c(0.0001,5),
+                        zlim = c(0,1),
+                        return_z = TRUE,
+                        thin_to=NULL,
+                        thin_percent=NULL,
+                        thin_by=NULL,
+                        contours_only = FALSE,
+                        # no_legend=FALSE,
+                        main="Posterior Model Probability of Calibration",
+                        xlab = "delta",
+                        ylab = "gamma",
+                        drawlabels = TRUE,
+                        contour_color = "white",
+                        labcex=0.6,
+                        lwd=1,
+                        # legend.args = list(las=180),
+                        # legend.mar = 9,
+                        # legend.lab = "",
+                        ...){
+
+  ##################
+  #  Input Checks  #
+  ##################
+
+  # check x is vector, values in [0,1]
+  x <- check_input_probs(x, name="x")
+
+  # check y is vector, values are 0s or 1s
+  y <- check_input_outcomes(y, name="y", event=event)
+
+  # check x and y are the same length
+  if(length(x) != length(y)) stop("x and y length differ")
+
+  # CHECK z
+  # need to check contents, row and col names, match with specified grid size
+
+
+  # check k
+  if(!is.numeric(k)) stop("k must be numeric")
+  if(k < 2) stop("k must be greater than 1")
+  if(is.infinite(k)) stop("k must be finite")
+
+  # check t_levels are valid calibration probs
+  t_levels <- check_input_probs(t_levels, name="t_levels")
+
+  # check Pmc is valid prior model prob
+  Pmc <- check_input_probs(Pmc, name="Pmc")
+
+  # check upper and lower bounds
+  # lb <- check_input_params(lb, name="lb")
+  # ub <- check_input_params(ub, name="ub")
+  check_input_delta(dlim[1], name="dlim[1]")
+  check_input_delta(dlim[2], name="dlim[2]")
+  check_input_gamma(glim[1], name="glim[1]")
+  check_input_gamma(glim[2], name="glim[2]")
+
+
+  # check return_z is logical
+  if(!is.logical(return_z) & !(return_z %in% c(0,1))){
+    stop("argument return_z must be logical")
+  }
+
+  # ADD MORE AFTER DECIDE ON PARAMS
+
+  ###################
+  #  Function Code  #
+  ###################
+
+  #print("plot_params2 start")
+  # lower <- lb
+  # upper <- ub
+
+  if(is.null(z)) {
+    if(!is.null(thin_to)){
+      set.seed(0)
+      rows <- sample(1:length(x), size=thin_to)
+    } else if (!is.null(thin_percent)){
+      set.seed(0)
+      rows <- sample(1:length(x), size=length(x)*thin_percent)
+    } else if (!is.null(thin_by)){
+      rows <- seq(1,length(x),thin_by)
+    }  else{
+      rows <- 1:length(x)
+    }
+
+    x <- x[rows]
+    y <- y[rows]
+
+    # z <- get_zmat(x=x, y=y, Pmc=Pmc, len.out=len.out, lower=lower, upper=upper)
+    z <- get_zmat(x=x, y=y, Pmc=Pmc, len.out=k, lower=c(dlim[1], glim[1]), upper=c(dlim[2], glim[2]))
+
+  }
+
+  # get max z value
+  max_z <- max(z[!is.na(z)])
+
+  # set up delta and gamma vectors
+  g <- as.numeric(colnames(z))
+  d <- as.numeric(rownames(z))
+
+  # if(anyNA(lower)){
+  #   lower <- c(min(d), min(g))
+  # }
+  # if(anyNA(upper)){
+  #   upper <- c(max(d), max(g))
+  # }
+
+  if(anyNA(dlim)){
+    dlim <- c(min(d), max(d))
+  }
+  if(anyNA(glim)){
+    glim <- c(min(g), max(g))
+  }
+
+
+  if(!contours_only){
+
+
+    fields::image.plot(x = d, y = g, z = z,
+                       xlim = dlim, ylim = glim, zlim = zlim,
+                       main = main,
+                       xlab = xlab,
+                       ylab = ylab,
+                       ...)
+    # plus contours if specified
+    if(!anyNA(t_levels)){
+      contour(x = d, y = g, z = z,  add = TRUE, levels = t_levels, col = contour_color,
+              drawlabels = drawlabels, lwd=lwd, ...)
+    }
+
+
+    # just plot contours
+  }else{
+    if(!anyNA(t_levels)){
+      contour(x = d, y = g, z = z,
+              xlim = dlim, ylim = glim, zlim = zlim,
+             levels = t_levels, col = contour_color,
+              main = main,
+              xlab = xlab,
+              ylab = ylab,
+              drawlabels = drawlabels, lwd=lwd,  ...)
+    } else {
+      stop("must provide contour levels when contours_only = TRUE")  # move this check up!
+    }
+  }
+  #print("plot_params2 end")
+
+  if(return_z){
+    return(list(z = z,
+                dlim = dlim,
+                glim = glim,
+                k = k))
+  }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+######################################################
+#  Internal Functions                                #
+######################################################
+
+# Function to get matrix of posterior model probabilities across delta/gamma grid
+get_zmat <- function(x, y, Pmc=0.5, len.out = 100, lower = c(0.0001,-2), upper = c(5,2)){
+  # print("get_zmat start")
+
+
+  # Set up grid of Delta (d) and Gamma (g)
+  d <- seq(lower[1], upper[1], length.out = len.out)
+  g <- seq(lower[2], upper[2], length.out = len.out)
+  grd <- expand.grid(d,g)
+
+  #print(d)
+  #print(g)
+
+  # starting xs
+  x0 <- x
+  n <- length(x0)
+
+  # MLE recalibrate
+  xM <- mle_recal_internal(x0, y, optim_details = FALSE, probs_only = TRUE)
+
+  # paramsM <- bayes_ms_internal(x0, y, optim_details=FALSE)$MLEs
+  # xM <- LLO(x=x0, delta=paramsM[1], gamma=paramsM[2])
+
+  # Set up storage
+  grd.loglik <- c()
+  optim.loglik <- c()
+  BIC_1 <- c()
+  grd.BIC_2 <- c()
+  optim.BIC_2 <- c()
+
+  # Loop over grid of delta/gamma vals
+  for(i in 1:nrow(grd)){
+
+    if(grd[i,2] == 0){  # WHAT IS THIS???
+      temp <- bayes_ms_internal(LLO_internal(x=x0, delta = grd[i,1], gamma = grd[i,2]), y, Pmc=Pmc)
+      BIC_1[i] <- temp$BIC_Mc
+      grd.BIC_2[i] <- temp$BIC_Mu
+    }else{
+      # LLO-adjust based on current grid params
+      xg <- LLO_internal(x=x0, delta = grd[i,1], gamma = grd[i,2])
+
+      # grab two unique xs
+      xu <- unique(xM)[1:2]
+
+      # find their indices (make sure only grab one index for each)
+      uniq_inds <- c(which(xM == xu[1])[1], which(xM == xu[2])[1])
+
+      # Use point slope formula
+      start <- logit(xg[uniq_inds])
+      goal <- logit(xM[uniq_inds])
+      b <- (goal[2] - goal[1]) / (start[2] - start[1])
+      a <- goal[2] - b*start[2]
+      # print(paste0("a=", a, ", b=", b, ", exp(a)=", exp(a)))
+      # print(paste0("delta=", grd[i,1], ", gamma=", grd[i,2]))
+
+      # Get BIC for calibrated model
+      BIC_1[i] <- (-2)*llo_lik(params=c(1,1), x=xg, y=y, log=TRUE)
+
+      # Get BIC for uncalibrated model
+      grd.loglik[i] <- llo_lik(params=c(exp(a),b), x=xg, y=y, log=TRUE)
+      grd.BIC_2[i] <- 2*log(n) - 2*grd.loglik[i]
+    }
+  }
+
+  # Get Bayes Factor and posterior model prob of calibration
+  grd.BF <- exp(-(1/2) * (grd.BIC_2 - BIC_1)) #bayes_factor(BIC1 = grd.BIC_2, BIC2 = BIC_1)
+  Pmu <- 1 - Pmc
+  posts <- 1/(1+(grd.BF*(Pmu/Pmc))) #post_mod_prob(grd.BF)
+
+  # Reshape vector of posterior model probs into matrix for plotting
+  z_mat <- matrix(posts, nrow = length(d), ncol = length(g))
+  colnames(z_mat) <- g
+  rownames(z_mat) <- d
+
+  # print("get_zmat end")
+
+  return(z_mat)
+}
+
 
 # Function to make contour plot
 
-plot_params <- function(z, len.out = 100,
-                        lower = c(0.0001,-2), upper = c(5,2),
-                        cont_levels = c(0.8, 0.9),
-                        sub = "",
-                        zlim = c(0,1),
-                        ttle_extra = "",
-                        ttle = "Posterior Model Probability of Calibration",
-                        contours_only = FALSE,
-                        add = FALSE,
-                        contour_color = "white",
-                        legend.lab = "",
-                        drawlabels = TRUE,
-                        xlab = "delta",
-                        ylab = "gamma",
-                        lwd=1,
-                        labcex=0.6,
-                        legend.args = list(las=180),
-                        legend.mar = 9, no_legend=FALSE,
-                        ...){
+plot_params_OLD <- function(z, len.out = 100,
+                            lower = c(0.0001,-2), upper = c(5,2),
+                            cont_levels = c(0.8, 0.9),
+                            sub = "",
+                            zlim = c(0,1),
+                            ttle_extra = "",
+                            ttle = "Posterior Model Probability of Calibration",
+                            contours_only = FALSE,
+                            add = FALSE,
+                            contour_color = "white",
+                            legend.lab = "",
+                            drawlabels = TRUE,
+                            xlab = "delta",
+                            ylab = "gamma",
+                            lwd=1,
+                            labcex=0.6,
+                            legend.args = list(las=180),
+                            legend.mar = 9, no_legend=FALSE,
+                            ...){
   #library(fields)
   max_z <- max(z[!is.na(z)])
 
@@ -366,7 +694,7 @@ lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot",
 }
 
 # Function to get matrix of posterior model probabilities across delta/gamma grid
-get_zmat <- function(x, y, len.out = 100, lower = c(0.0001,-2), upper = c(5,2), event=1){
+get_zmat_OLD <- function(x, y, len.out = 100, lower = c(0.0001,-2), upper = c(5,2), event=1){
   # print("get_zmat start")
   # check y only has two values
   y <- ifelse(y == event, 1, 0)
