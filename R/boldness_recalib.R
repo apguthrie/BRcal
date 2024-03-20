@@ -96,13 +96,16 @@ brcal <- function(x, y, t=0.95, Pmc=0.5, tau=FALSE, event=1,
   # check x and y are the same length
   if(length(x) != length(y)) stop("x and y length differ")
 
+  # check t is valid calibration prob
+  t <- check_input_probs(t, name="t")
+
   # check Pmc is valid prior model prob
   Pmc <- check_input_probs(Pmc, name="Pmc")
 
-  # # check optim_details is logical
-  # if(!is.logical(optim_details) & !(optim_details %in% c(0,1))){
-  #   stop("argument optim_details must be logical")
-  # }
+  # check tau is logical
+  if(!is.logical(tau) & !(tau %in% c(0,1))){
+    stop("argument tau must be logical")
+  }
 
   # check start_at_MLEs is logical
   if(!is.logical(start_at_MLEs) & !(start_at_MLEs %in% c(0,1))){
@@ -115,8 +118,11 @@ brcal <- function(x, y, t=0.95, Pmc=0.5, tau=FALSE, event=1,
 
     # check x0
     x0 <- check_input_params(x0, name="x0")
-
   }
+
+  # check upper and lower bounds
+  lb <- check_input_params(lb, name="lb")
+  ub <- check_input_params(ub, name="ub")
 
   ###################
   #  Function Code  #
