@@ -135,6 +135,8 @@ brcal <- function(x, y, t=0.95, Pmc=0.5, tau=FALSE, event=1,
 
   if(tau){
     x0[1] <- log(x0[1])
+    lb[1] <- log(lb[1])
+    ub[1] <- log(ub[1])
   }
 
   # print(missing(opts))
