@@ -3,6 +3,7 @@
 export(LLO)
 export(bayes_ms)
 export(brcal)
+export(lineplot)
 export(llo_lrt)
 export(mle_recal)
 export(plot_params)
