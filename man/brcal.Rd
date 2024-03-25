@@ -92,21 +92,40 @@ Perform Bayesian boldness-recalibration as specified in Guthrie and Franck
 (2024).
 }
 \details{
-NEED TO CITE NLOPTR & ALGS, mention default algs and such,
+By default, this function uses the Augmented Lagrangian Algorithm (AUGLAG)
+(Conn et. al. 1991, Birgin and Martinez 2008) as the outer optimization routine
+and Sequential Least-Squares Quadratic Programming (SLSQP) (Dieter 1988, Dieter 1994)
+as the inner optimization routine.
+
+For more control over the optimization routine conducted by \code{nloptr()}, the
+user may specify their own options via the \code{opts} argument.  Note that any objective,
+constraint, or gradient functions specified by the user will be overwritten
+by those specified in this package. See the documentation for \code{nloptr()} and
+the NLopt website for full details (\url{https://nlopt.readthedocs.io/en/latest/}).
 
 When \code{tau=TRUE}, the optimization routine operates relative to \eqn{\tau =
 log(\delta)} instead of \eqn{\delta}.  Specification of start location \code{x0}
 and bounds \code{lb}, \code{ub} should still be specified in terms of \eqn{\delta}. The
 \code{brcal} function will automatically convert from \eqn{\delta} to \eqn{\tau}.
-The returned values in ...
-
-For more control over the optimization routine conducted by \code{nloptr()}, the
-user may specify their own options via the \code{opts} argument. See the
-documentation for \code{nloptr()} for full details. Note that any objective,
-constraint, or gradient functions specified by the user will be overwritten
-by those specified in this package.
+In the returned list, \code{BR_params} will always report in terms of \eqn{\delta}.
+However, \code{nloptr} will reflect whichever scale \code{nloptr()} optimized on.
 }
 \references{
 Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
 for Binary Event Predictions. \emph{arxiv}.
+
+Conn, A. R., Gould, N. I. M., and Toint, P. L. (1991) A globally convergent augmented
+Lagrangian algorithm for optimization with general constraints and simple bounds,
+\emph{SIAM Journal of Numerical Analysis} vol. 28, no. 2, p. 545-572.
+
+Birgin, E. G., and Martínez, J. M. (2008) Improving ultimate convergence of
+an augmented Lagrangian method, \emph{Optimization Methods and Software}
+vol. 23, no. 2, p. 177-195.
+
+Kraft, D. (1988) A software package for sequential quadratic programming",
+\emph{Technical Report} DFVLR-FB 88-28, Institut für Dynamik der Flugsysteme,
+Oberpfaffenhofen.
+
+Kraft, D. (1994) Algorithm 733: TOMP–Fortran modules for optimal control
+calculations, \emph{ACM Transactions on Mathematical Software}, vol. 20, no. 3, pp. 262-281 .
 }
