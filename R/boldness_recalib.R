@@ -81,6 +81,8 @@
 #' @references Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
 #'   for Binary Event Predictions. \emph{arxiv}.
 #'
+#'   Johnson, S. G., The NLopt nonlinear-optimization package, <https://nlopt.readthedocs.io/en/latest/>.
+#'
 #'   Conn, A. R., Gould, N. I. M., and Toint, P. L. (1991) A globally convergent augmented
 #'   Lagrangian algorithm for optimization with general constraints and simple bounds,
 #'   \emph{SIAM Journal of Numerical Analysis} vol. 28, no. 2, p. 545-572.

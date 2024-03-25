@@ -117,3 +117,7 @@ Function to plot the posterior model probability of the given set of
 probabilities, \code{x}, after LLO-adjustment via a grid of uniformly spaced set
 of \eqn{\delta} and \eqn{\gamma} values with optional contours.
 }
+\references{
+Nychka,D., Furrer, R., Paige, J., Sain, S. (2021). fields: Tools for
+spatial data. R package version 15.2, \url{https://github.com/dnychka/fieldsRPackage}.
+}

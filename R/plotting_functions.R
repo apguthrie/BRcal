@@ -69,6 +69,9 @@
 #' @importFrom graphics contour
 #' @importFrom fields image.plot
 #'
+#' @references Nychka,D., Furrer, R., Paige, J., Sain, S. (2021). fields: Tools for
+#' spatial data. R package version 15.2, <https://github.com/dnychka/fieldsRPackage>.
+#'
 #' @examples
 plot_params <- function(x, y, z=NULL, t_levels = c(0.8, 0.9),
                         Pmc = 0.5, event=1,
@@ -258,6 +261,9 @@ plot_params <- function(x, y, z=NULL, t_levels = c(0.8, 0.9),
 #' @export
 #'
 #' @import ggplot2
+#'
+#' @references Wickham, H. (2016) ggplot2: Elegant Graphics for Data Analysis.
+#'  Springer-Verlag New York.
 #'
 #' @examples
 lineplot <- function(x, y, t_levels=NULL, df=NULL,

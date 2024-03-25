@@ -91,3 +91,7 @@ Otherwise just the \code{ggplot} object of the plot is returned.
 \description{
 Lineplot for LLO-adjusted Probability Predictions
 }
+\references{
+Wickham, H. (2016) ggplot2: Elegant Graphics for Data Analysis.
+Springer-Verlag New York.
+}
