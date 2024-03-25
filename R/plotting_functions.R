@@ -11,7 +11,8 @@
 #' mention different functions being used under the hood (image, image.plot,
 #' contour) gamma = 0 will be approx???, option for contours only, addtnal
 #' options, suggestions for setting k and bounds, how to use z ad return_z
-#' efficiently, citations, add capability for points at B-R params????
+#' efficiently, citations, add capability for points at B-R params???? Note
+#' calculations will change with thinning and is generally not recommended
 #'
 #' @inheritParams bayes_ms
 #' @param z Matrix returned by previous call to `plot_params()` containing
@@ -78,46 +79,31 @@ plot_params <- function(x, y, z=NULL, t_levels = c(0.8, 0.9),
                         thin_percent=NULL,
                         thin_by=NULL,
                         contours_only = FALSE,
-                        # no_legend=FALSE,
                         main="Posterior Model Probability of Calibration",
                         xlab = "delta",
                         ylab = "gamma",
+                        legend.lab = "",
                         drawlabels = TRUE,
                         contour_color = "white",
                         labcex=0.6,
                         lwd=1,
-                        # legend.args = list(las=180),
-                        # legend.mar = 9,
-                        # legend.lab = "",
                         ...){
 
   ##################
   #  Input Checks  #
   ##################
 
-  # check x is vector, values in [0,1]
-  x <- check_input_probs(x, name="x")
-
-  # check y is vector, values are 0s or 1s
-  y <- check_input_outcomes(y, name="y", event=event)
-
-  # check x and y are the same length
-  if(length(x) != length(y)) stop("x and y length differ")
+  # check either x and y or df are specified
+  if(is.null(z) & (is.null(x) | is.null(y))) stop("must specify either x and y or z")
 
   # CHECK z
   # need to check contents, row and col names, match with specified grid size
 
 
-  # check k
-  if(!is.numeric(k)) stop("k must be numeric")
-  if(k < 2) stop("k must be greater than 1")
-  if(is.infinite(k)) stop("k must be finite")
 
   # check t_levels are valid calibration probs
   t_levels <- check_input_probs(t_levels, name="t_levels")
 
-  # check Pmc is valid prior model prob
-  Pmc <- check_input_probs(Pmc, name="Pmc")
 
   # check upper and lower bounds
   # lb <- check_input_params(lb, name="lb")
@@ -135,13 +121,30 @@ plot_params <- function(x, y, z=NULL, t_levels = c(0.8, 0.9),
 
   # ADD MORE AFTER DECIDE ON PARAMS
 
+  if(is.null(z)) {
+    # check x is vector, values in [0,1]
+    x <- check_input_probs(x, name="x")
+
+    # check y is vector, values are 0s or 1s
+    y <- check_input_outcomes(y, name="y", event=event)
+
+    # check x and y are the same length
+    if(length(x) != length(y)) stop("x and y length differ")
+
+    # check Pmc is valid prior model prob
+    Pmc <- check_input_probs(Pmc, name="Pmc")
+
+    # check k
+    if(!is.numeric(k)) stop("k must be numeric")
+    if(k < 2) stop("k must be greater than 1")
+    if(is.infinite(k)) stop("k must be finite")
+  }
+
+
   ###################
   #  Function Code  #
   ###################
 
-  #print("plot_params2 start")
-  # lower <- lb
-  # upper <- ub
 
   if(is.null(z)) {
     if(!is.null(thin_to)){
@@ -194,11 +197,13 @@ plot_params <- function(x, y, z=NULL, t_levels = c(0.8, 0.9),
                        main = main,
                        xlab = xlab,
                        ylab = ylab,
+                       legend.args = legend.args,
+                       legend.lab =  legend.lab,
                        ...)
     # plus contours if specified
     if(!anyNA(t_levels)){
       contour(x = d, y = g, z = z,  add = TRUE, levels = t_levels, col = contour_color,
-              drawlabels = drawlabels, lwd=lwd, ...)
+              drawlabels = drawlabels, lwd=lwd, labcex=labcex, ...)
     }
 
 
@@ -207,11 +212,11 @@ plot_params <- function(x, y, z=NULL, t_levels = c(0.8, 0.9),
     if(!anyNA(t_levels)){
       contour(x = d, y = g, z = z,
               xlim = dlim, ylim = glim, zlim = zlim,
-             levels = t_levels, col = contour_color,
+              levels = t_levels, col = contour_color,
               main = main,
               xlab = xlab,
               ylab = ylab,
-              drawlabels = drawlabels, lwd=lwd,  ...)
+              drawlabels = drawlabels, lwd=lwd, labcex=labcex, ...)
     } else {
       stop("must provide contour levels when contours_only = TRUE")  # move this check up!
     }
@@ -229,6 +234,169 @@ plot_params <- function(x, y, z=NULL, t_levels = c(0.8, 0.9),
 
 
 
+# start with simple version that you pass x and y that automatically returns OG, MLE, and desired B-R levels
+# see lineplot_dev in plotting_functions_old
+# add option to control # decimal places printed in pmp
+# add option to thin after the fact?
+# add checks for graphing params
+
+#' Lineplot for LLO-adjusted Probability Predictions
+#'
+#' @inheritParams plot_params
+#' @param df Dataframe returned by previous call to lineplot() specially
+#'   formatted for use in this function. Only used for faster plotting when
+#'   making minor cosmetic changes to a previous call.
+#' @param return_df Logical.  If `TRUE`, the dataframe used to build this plot
+#'   will be returned.
+#' @param title Plot title.
+#' @param pt_size Size of plotted points passed to `geom_point()`.
+#' @param ln_size Linewidth of connecting lines passed to `geom_line()`.
+#' @param pt_alpha Transparency of plotted point passed to `geom_point()`.
+#' @param ln_alpha Transparency of connecting lines passed to `geom_line()`.
+#' @param font_base Base font size for `ggplot()`.
+#' @param ylim Vector with bounds for y-axis, must be in \[0,1\].
+#' @param breaks Locations along y-axis at which to draw horizontal guidelines,
+#'   passed to `scale_y_continous()`.
+#'
+#' @return If `return_df = TRUE`, a list with the folling attributes is
+#'   returned: \item{\code{plot}}{A `ggplot` object showing how the predicted
+#'   probabilities under MLE recalibration and specified levels of
+#'   boldness-recalibration.}
+#'   \item{\code{df}}{Dataframe used to create `plot`, specially
+#'   formatted for use in `lineplot()`.}
+#'   Otherwise just the `ggplot` object of the plot is returned.
+#' @export
+#'
+#' @examples
+lineplot <- function(x, y, t_levels=NULL, df=NULL,
+                     Pmc = 0.5, event=1, return_df=TRUE,
+                     title="Line Plot", ylab="Probability",
+                     xlab = "Posterior Model Probability",
+                     pt_size = 1.5, ln_size = 0.5,
+                     pt_alpha = 0.35, ln_alpha = 0.25, font_base = 10,
+                     ylim=c(0,1), breaks=seq(0,1,by=0.2), thin_to=NULL,
+                     thin_percent=NULL, thin_by=NULL){
+
+  ##################
+  #  Input Checks  #
+  ##################
+
+  # check either x and y or df are specified
+  if(is.null(df) & (is.null(x) | is.null(y))) stop("must specify either x and y or df")
+
+  if(is.null(df)){
+
+    # check x is vector, values in [0,1]
+    x <- check_input_probs(x, name="x")
+
+    # check y is vector, values are 0s or 1s
+    y <- check_input_outcomes(y, name="y", event=event)
+
+    # check x and y are the same length
+    if(length(x) != length(y)) stop("x and y length differ")
+
+    # check t is valid calibration prob
+    if(!is.null(t_levels)){  t_levels <- check_input_probs(t_levels, name="t_levels")}
+
+    # check Pmc is valid prior model prob
+    Pmc <- check_input_probs(Pmc, name="Pmc")
+
+    # CHECK GRAPHING PARAMS
+
+
+    ###################
+    #  Function Code  #
+    ###################
+
+    rows <- 1:length(x)
+
+    if(!is.null(thin_to)){
+      set.seed(0)
+      rows <- sample(1:length(x), size=thin_to)
+    } else if (!is.null(thin_percent)){
+      set.seed(0)
+      rows <- sample(1:length(x), size=length(x)*thin_percent)
+    } else if (!is.null(thin_by)){
+      rows <- seq(1,length(x),thin_by)
+    }  else{
+      rows <- 1:length(x)
+    }
+
+    x_plot <- x[rows]
+    y_plot <- y[rows]
+
+    nplot <- length(x_plot)
+
+    # create empty DF
+    df <- data.frame(matrix(nrow=nplot, ncol=5))
+    colnames(df) <- c("probs", "outcome", "post", "pairing", "label")
+
+    pairs <- 1:length(x_plot)
+
+    # Original Set
+    df$probs <- x_plot
+    df$outcome <- y_plot
+    # use full set to get MLEs & posterior model prob, but only plot thinned set
+    bt <- bayes_ms(x, y)
+    df$post <- bt$posterior_model_prob
+    df$pairing <- pairs
+    df$label <- paste0("Original \n(",  round(bt$posterior_model_prob,5), ")")
+
+
+    temp  <- data.frame(matrix(nrow=nplot, ncol=5))
+    colnames(temp) <- c("probs", "outcome", "post", "pairing", "label")
+
+    # MLE recalibrate
+    temp$probs <- LLO(x_plot, bt$MLEs[1], bt$MLEs[2])
+    temp$outcome <- y_plot
+    bt_mle <- bayes_ms(LLO(x, bt$MLEs[1], bt$MLEs[2]), y)
+    temp$post <- round(bt_mle$posterior_model_prob,5)
+    temp$pairing <- pairs
+    temp$label <- paste0("MLE Recal. \n(",  round(bt_mle$posterior_model_prob, 5), ")")
+    df <- rbind(df, temp)
+
+    # Boldness-recalibrate at given levels
+    # loop over t values
+    for(i in 1:length(t_levels)){
+      br <- brcal(x, y, t_levels[i], Pmc=Pmc, x0 = c(bt$MLEs[1], bt$MLEs[2]),
+                  start_at_MLEs=FALSE, print_level=0)
+      temp$probs <- LLO(x=x_plot, delta=br$BR_params[1], gamma=br$BR_params[2])
+      temp$outcome <- y_plot
+      bt_br <- bayes_ms(LLO(x, br$BR_params[1], br$BR_params[2]), y)
+      temp$post <- bt_br$posterior_model_prob
+      temp$pairing <- pairs
+      temp$label <- paste0(round(t_levels[i]*100,0), "% B-R\n(",  round(bt_br$posterior_model_prob, 5), ")")
+      df <- rbind(df, temp)
+    }
+  }
+
+  df$outcome <- factor(df$outcome)
+  ulabs <- unique(df$label)
+  df$label <- factor(df$label, levels=c(unique(df$label)))
+
+  lines <- ggplot(data = df, mapping = aes(x = label, y = probs)) +
+    geom_point(aes(color = outcome), alpha = pt_alpha, size = pt_size,
+               show.legend = FALSE) +
+    geom_line(aes(group=pairing, color = outcome), size = ln_size, alpha = ln_alpha,
+              show.legend = FALSE) +
+    labs(x = xlab,
+         y = ylab) +
+    ggtitle(title) +
+    theme_bw(base_size = font_base) +
+    scale_y_continuous(breaks = breaks,
+                       limits = ylim,
+                       expand = c(0, 0))+
+    scale_color_manual(values = c("red", "blue")) +
+    scale_x_discrete(expand = c(0, 0.075)) +
+    theme(axis.text.x = element_text(hjust=0.75))
+
+  if(return_df){
+    return(list(plot=lines,
+                df=df))
+  }
+
+  return(lines)
+}
 
 
 
@@ -326,543 +494,3 @@ get_zmat <- function(x, y, Pmc=0.5, len.out = 100, lower = c(0.0001,-2), upper =
   return(z_mat)
 }
 
-
-# Function to make contour plot
-
-plot_params_OLD <- function(z, len.out = 100,
-                            lower = c(0.0001,-2), upper = c(5,2),
-                            cont_levels = c(0.8, 0.9),
-                            sub = "",
-                            zlim = c(0,1),
-                            ttle_extra = "",
-                            ttle = "Posterior Model Probability of Calibration",
-                            contours_only = FALSE,
-                            add = FALSE,
-                            contour_color = "white",
-                            legend.lab = "",
-                            drawlabels = TRUE,
-                            xlab = "delta",
-                            ylab = "gamma",
-                            lwd=1,
-                            labcex=0.6,
-                            legend.args = list(las=180),
-                            legend.mar = 9, no_legend=FALSE,
-                            ...){
-  #library(fields)
-  max_z <- max(z[!is.na(z)])
-
-  if(anyNA(lower)){
-    lower <- c(min(d), min(g))
-  }
-  if(anyNA(upper)){
-    upper <- c(max(d), max(g))
-  }
-
-  g <- as.numeric(colnames(z))
-  d <- as.numeric(rownames(z))
-
-  if(!contours_only){
-
-    if(no_legend){
-      image(d, g, z, zlim = zlim, xlim = c(lower[1], upper[1]), ylim = c(lower[2], upper[2]),
-            main = paste0(ttle, ttle_extra),
-            xlab = xlab,
-            ylab = ylab,
-            sub = sub, ...)
-      if(!anyNA(cont_levels)){
-        contour(d, g, z, add = TRUE, levels = cont_levels, col = contour_color,
-                drawlabels = drawlabels, lwd=lwd, labcex=labcex)
-      }
-    }else{
-
-      fields::image.plot(d, g, z, zlim = zlim, xlim = c(lower[1], upper[1]), ylim = c(lower[2], upper[2]),
-                         main = paste0(ttle, ttle_extra),
-                         xlab = xlab,
-                         ylab = ylab,
-                         sub = sub,
-                         legend.mar = legend.mar,
-                         legend.lab = legend.lab,
-                         legend.args = legend.args, ...)
-      if(!anyNA(cont_levels)){
-        contour(d, g, z, add = TRUE, levels = cont_levels, col = contour_color,
-                drawlabels = drawlabels, lwd=lwd, labcex=labcex)
-      }
-    }
-  }else{
-    if(!anyNA(cont_levels)){
-      contour(d, g, z, add = add, levels = cont_levels, col = contour_color,
-              zlim = zlim, xlim = c(lower[1], upper[1]), ylim = c(lower[2], upper[2]),
-              main = paste0(ttle, ttle_extra),
-              xlab = xlab,
-              ylab = ylab,
-              sub = sub, drawlabels = drawlabels, lwd=lwd, labcex=labcex, ...)
-    } else {
-      stop("must provide contour levels")
-    }
-  }
-}
-
-
-lineplot <- function(df, ttle="Line Plot", ylab="Probability", xlab = "Posterior Model Probability",
-                     font_size_lp=5,
-                     outside_only = FALSE, pt_size = 0.75, ln_size = 0.25,
-                     pt_alpha = 0.35, ln_alpha = 0.25, font_base = 10,
-                     ylim=c(0,1), breaks=seq(0,1,by=0.2)){
-  font_size_lp <- font_base
-
-  #requireNamespace(ggplot2)
-
-  if(!outside_only){
-
-    lines <- ggplot(data = df, mapping = aes(x = post, y = probs)) +
-      geom_point(aes(color = outcome), alpha = pt_alpha, size = pt_size,
-                 show.legend = FALSE) +
-      geom_line(aes(group=pairing, color = outcome), size = ln_size, alpha = ln_alpha,
-                show.legend = FALSE) +
-      labs(x = xlab,
-           y = ylab) +
-      ggtitle(ttle) +
-      theme_bw(base_size = font_size_lp) +
-      scale_y_continuous(breaks = breaks,
-                         limits = ylim,
-                         expand = c(0, 0))+
-      scale_color_manual(values = c("blue", "red")) +
-      scale_x_discrete(expand = c(0, 0.075))
-    # theme(axis.title.x = element_blank(),
-    #       axis.title.y = element_blank())
-    # theme(axis.title.x = element_text(size = font_size_lp),
-    #       axis.title.y = element_text(size = font_size_lp),
-    #       axis.text = element_text(size = font_size_lp),
-    #       title = element_text(size = font_size_lp))
-  } else {
-
-    lines <- ggplot(data = df, mapping = aes(x = post, y = probs)) +
-      geom_point(aes(color = pundit), alpha = pt_alpha, size = pt_size,
-                 show.legend = FALSE) +
-      geom_line(aes(group=c(pairing,pundit), color = pundit), size = ln_size, alpha = ln_alpha,
-                show.legend = FALSE) +
-      labs(x = xlab,
-           y = ylab) +
-      ggtitle(ttle) +
-      theme_bw() +
-      scale_y_continuous(breaks = breaks,
-                         limits = ylim,
-                         expand = c(0, 0))+
-      scale_color_manual(values = c("black", "red", "blue")) +
-      scale_x_discrete(expand = c(0, 0.075)) +
-      theme(axis.title.x = element_text(size = font_size_lp),
-            axis.title.y = element_text(size = font_size_lp),
-            axis.text = element_text(size = font_size_lp),
-            title = element_text(size = font_size_lp))
-  }
-  return(lines)
-
-}
-
-lineplot_dev <- function(x, y, t=NULL, delta=NULL, gamma=NULL, ttle="Line Plot", ylab="Probability",
-                         xlab = "Posterior Model Probability",
-                         font_size_lp=5,
-                         outside_only = FALSE, pt_size = 1.5, ln_size = 0.5,
-                         pt_alpha = 0.35, ln_alpha = 0.25, font_base = 10,
-                         ylim=c(0,1), breaks=seq(0,1,by=0.2), thin_to=NULL,
-                         thin_percent=NULL, thin_by=NULL, pmp_label=FALSE, deciles=FALSE,event=1){
-  # check y only has two values
-  y <- ifelse(y == event, 1, 0)
-
-  # check validity of x,y inputs
-
-  # numeric
-  if(any(class(x) != "numeric")) stop("x must be non-empty numeric vector")
-  if(any(!(class(y) %in% c("integer","numeric")))) stop("y must be non-empty numeric vector")
-
-  # same length
-  if(length(x) != length(y)) stop("x and y must be the same length")
-
-  # y binary
-  if(any(!(y %in% c(0,1)))) stop('y must be numeric vector of 1s (event) and 0s (nonevent)')
-
-  # x between 0,1
-  if(any((x < 0 | x > 1))) stop('x must be numeric vector in [0,1]')
-
-
-  # check that EITHER t or delta and gamma are specified
-
-  if(is.null(delta) != is.null(gamma)) stop('delta and gamma must either both be specified or NULL')
-
-  if(is.null(delta) & is.null(t)) stop('EITHER t OR delta and gamma must be specified, both are NULL')
-
-  if(!is.null(t) & !is.null(delta)) stop('EITHER t OR delta and gamma must be specified, both are specified')
-
-
-  # When delta & gamma are specified....
-  if(!is.null(delta)){
-    # check validity of delta, gamma
-    # numeric
-    if(any(class(delta) != "numeric")) stop("delta must be non-empty numeric vector")
-    if(any(class(gamma) != "numeric")) stop("gamma must be non-empty numeric vector")
-
-    # same length
-    if(length(delta) != length(gamma)) stop("delta and gamma must be the same length")
-
-    # correct range for delta
-    # Gamma is fine without checking because we've already checked it's numeric vector which can only hold real numbers
-    if(any(delta <= 0)) stop("delta must be greater than 0")
-
-    # ADD THINNING
-    if(!is.null(thin_to) & !is.null(thin_percent)) warning('both thin_to and thin_by specified, thin_by ignored')
-
-    if(length(x) > 5000 & is.null(thin_to) & is.null(thin_percent)) warning('plotting may be slow due to large x, considering using thin_to or thin_by')
-
-    if(!is.null(thin_to)){
-      set.seed(0)
-      rows <- sample(1:length(x), size=thin_to)
-    } else if (!is.null(thin_percent)){
-      set.seed(0)
-      rows <- sample(1:length(x), size=length(x)*thin_percent)
-    } else if (!is.null(thin_by)){
-      rows <- seq(1,length(x),thin_by)
-    }  else{
-      rows <- 1:length(x)
-    }
-
-    if (deciles){
-      x_thin <- quantile(x,seq(0,1,.1))
-      y_thin <- rep(1, length(x_thin))
-      nplot <- length(x_thin)
-    } else{
-      nplot <- length(rows)
-      x_thin <- x[rows]
-      y_thin <- y[rows]
-    }
-
-    df <- data.frame(matrix(nrow=nplot, ncol=7))
-    colnames(df) <- c("probs", "outcome", "post", "pairing", "delta", "gamma", "label")
-
-
-    # for original
-    bt <- bayes_ms(x, y)
-    df$probs <- x_thin
-    df$outcome <- factor(y_thin, levels = c("1", "0"))
-    df$post <- rep(bt$posterior_model_prob, nplot)
-    df$pairing <- factor(seq(1, nplot))
-    df$delta <- df$gamma  <-  rep(1, nplot)
-
-    if(pmp_label){
-      if(round(df$post[1],4)==0){
-        post = "0.0000"
-      } else {
-        post <- as.character(round(df$post, 4))
-      }
-      df$label <- paste0("Original \n(", post ,")")
-
-    } else {
-      df$label <- paste0(as.character(round(df$post, 5)), "\n (Original)")
-
-    }
-
-    #df$label[1:nplot] <- rep(paste0("Original \n (",
-    #                                as.character(post), ")"), nplot)  # NEED TO FINISH THIS
-
-    # NEED TO MAKE LAST PART A FACTOR AND DECIDE ON LABELS - later
-
-    # for all sets of passed delta, gamma
-    # recalibrate, then pass to bayes_ms
-    for(i in 1:length(delta)){
-      temp <- data.frame(matrix(nrow=nplot, ncol=7))
-      colnames(temp) <- c("probs", "outcome", "post", "pairing", "delta", "gamma", "label")
-
-      llo_probs <-  LLO(x=x, delta[i], gamma[i])
-
-
-      temp$probs <- LLO(x=x_thin, delta[i], gamma[i])
-
-      bt <- bayes_ms(llo_probs, y)
-
-      temp$outcome <- factor(y_thin, levels = c("1", "0"))
-      temp$post <- rep(bt$posterior_model_prob, nplot)
-      temp$pairing <- factor(seq(1, nplot))
-      temp$delta <- rep(delta[i], nplot)
-      temp$gamma <- rep(gamma[i], nplot)
-
-      if(pmp_label){
-        # NEED TO GENERALIZE! usee t instead
-        if(i==1){
-          lab <- "MLE Recalib."
-          post <- as.character(round(temp$post, 4))
-        }else if(i==2){
-          lab <- "95% B-R"
-          post <- "0.9500"
-        }
-
-        temp$label <- paste0(lab, " \n(", post,")")
-
-      } else {
-        temp$label <- paste0(as.character(round(temp$post, 5)), "\n delta=", round(delta[i],3), "\n gamma=", round(gamma[i],3))
-
-      }
-
-      df <- rbind(df, temp)
-    }
-
-    df$label <- factor(df$label,
-                       levels = unique(df$label))
-
-  }
-
-
-  # When t is specified...
-  # check validity of t
-  if(!is.null(t)){
-    # numeric
-    if(any(class(t) != "numeric")) stop("t must be non-empty numeric vector")
-
-    # correct range for t
-    if(any(!(t < 0 | t > 1))) stop('x must be numeric vector in [0,1]')
-  }
-
-  # CHECK GRAPHING PARAMS
-
-
-
-
-
-  font_size_lp <- font_base
-
-  library(ggplot2)
-
-  if(deciles){
-    lines <- ggplot(data = df, mapping = aes(x = label, y = probs)) +
-      geom_point(color = "black", alpha = pt_alpha, size = pt_size,
-                 show.legend = FALSE) +
-      geom_line(aes(group=pairing), size = ln_size, alpha = ln_alpha,
-                show.legend = FALSE, color="black") +
-      labs(x = xlab,
-           y = ylab) +
-      ggtitle(ttle) +
-      theme_bw(base_size = font_size_lp) +
-      scale_y_continuous(breaks = breaks,
-                         limits = ylim,
-                         expand = c(0, 0))+
-      #scale_color_manual(values = c("blue", "red")) +
-      scale_x_discrete(expand = c(0, 0.075))
-  } else if(!outside_only){
-
-    lines <- ggplot(data = df, mapping = aes(x = label, y = probs)) +
-      geom_point(aes(color = outcome), alpha = pt_alpha, size = pt_size,
-                 show.legend = FALSE) +
-      geom_line(aes(group=pairing, color = outcome), size = ln_size, alpha = ln_alpha,
-                show.legend = FALSE) +
-      labs(x = xlab,
-           y = ylab) +
-      ggtitle(ttle) +
-      theme_bw(base_size = font_size_lp) +
-      scale_y_continuous(breaks = breaks,
-                         limits = ylim,
-                         expand = c(0, 0))+
-      scale_color_manual(values = c("blue", "red")) +
-      scale_x_discrete(expand = c(0, 0.075)) +
-      theme(axis.text.x = element_text(hjust=0.75))
-    # theme(axis.title.x = element_blank(),
-    #       axis.title.y = element_blank())
-    # theme(axis.title.x = element_text(size = font_size_lp),
-    #       axis.title.y = element_text(size = font_size_lp),
-    #       axis.text = element_text(size = font_size_lp),
-    #       title = element_text(size = font_size_lp))
-  } else {
-
-    lines <- ggplot(data = df, mapping = aes(x = post, y = probs)) +
-      geom_point(aes(color = pundit), alpha = pt_alpha, size = pt_size,
-                 show.legend = FALSE) +
-      geom_line(aes(group=c(pairing,pundit), color = pundit), size = ln_size, alpha = ln_alpha,
-                show.legend = FALSE) +
-      labs(x = xlab,
-           y = ylab) +
-      ggtitle(ttle) +
-      theme_bw() +
-      scale_y_continuous(breaks = breaks,
-                         limits = ylim,
-                         expand = c(0, 0))+
-      scale_color_manual(values = c("black", "red", "blue")) +
-      scale_x_discrete(expand = c(0, 0.075)) +
-      theme(axis.title.x = element_text(size = font_size_lp),
-            axis.title.y = element_text(size = font_size_lp),
-            axis.text = element_text(size = font_size_lp),
-            title = element_text(size = font_size_lp))
-  }
-  #return(list(plot=lines, df=df))
-  return(lines)
-}
-
-# Function to get matrix of posterior model probabilities across delta/gamma grid
-get_zmat_OLD <- function(x, y, len.out = 100, lower = c(0.0001,-2), upper = c(5,2), event=1){
-  # print("get_zmat start")
-  # check y only has two values
-  y <- ifelse(y == event, 1, 0)
-
-  # Set up grid of Delta (d) and Gamma (g)
-  d <- seq(lower[1], upper[1], length.out = len.out)
-  g <- seq(lower[2], upper[2], length.out = len.out)
-  grd <- expand.grid(d,g)
-
-  #print(d)
-  #print(g)
-  # Loop through grid points to get posterior model probability
-  #temp <- c()
-  # for(i in 1:nrow(grd)){
-  #   x_new <- LLO(x, delta = grd[i,1], gamma = grd[i,2])   # LLO adjust probs FIRST based on grid point
-  #   pmp <- bayes_ms(x_new, y)$posterior_model_prob   # Get posterior model prob
-  #   temp <- c(temp, pmp)
-  # }
-
-  x0 <- x
-  paramsM <- LLO_LRT(x0, y, optim_details=FALSE)$est_params
-  xM <- LLO(x=x0, delta=paramsM[1], gamma=paramsM[2])
-
-  grd.loglik <- c()
-  optim.loglik <- c()
-  BIC_1 <- c()
-  grd.BIC_2 <- c()
-  optim.BIC_2 <- c()
-
-  n <- length(x0)
-
-  for(i in 1:nrow(grd)){
-
-    if(grd[i,2] == 0){
-      temp <- bayes_ms(LLO(x=x0, delta = grd[i,1], gamma = grd[i,2]), y)
-      BIC_1[i] <- temp$BIC_H0
-      grd.BIC_2[i] <- temp$BIC_H1
-    }else{
-      xg <- LLO(x=x0, delta = grd[i,1], gamma = grd[i,2])
-      xu <- unique(xM)[1:2]  # grab two unique xs
-      uniq_inds <- c(which(xM == xu[1])[1], which(xM == xu[2])[1]) # find their indices (make sure only grab one index for each)
-      start <- logit(xg[uniq_inds])
-      goal <- logit(xM[uniq_inds])
-      b <- (goal[2] - goal[1]) / (start[2] - start[1])
-      a <- goal[2] - b*start[2]
-      # print(paste0("a=", a, ", b=", b, ", exp(a)=", exp(a)))
-      # print(paste0("delta=", grd[i,1], ", gamma=", grd[i,2]))
-      grd.loglik[i] <- llo_lik(params=c(exp(a),b), x=xg, y=y, log=TRUE)
-      BIC_1[i] <- (-2)*llo_lik(params=c(1,1), x=xg, y=y, log=TRUE)
-      grd.BIC_2[i] <- 2*log(n) - 2*grd.loglik[i]
-    }
-  }
-
-
-  grd.BF <- bayes_factor(BIC1 = grd.BIC_2, BIC2 = BIC_1)
-  temp <- post_mod_prob(grd.BF)
-
-
-  # Reshape vector of posterior model probs into matrix for plotting
-  z_mat <- matrix(temp, nrow = length(d), ncol = length(g))
-  colnames(z_mat) <- g
-  rownames(z_mat) <- d
-
-  # print("get_zmat end")
-
-  return(z_mat)
-}
-
-
-
-plot_params2 <- function(x, y, len.out = 100,
-                         lower = c(0.0001,-2), upper = c(5,2),
-                         cont_levels = c(0.8, 0.9),
-                         sub = "",
-                         zlim = c(0,1),
-                         ttle_extra = "",
-                         ttle = "Posterior Model Probability of Calibration",
-                         contours_only = FALSE,
-                         add = FALSE,
-                         contour_color = "white",
-                         legend.lab = "",
-                         drawlabels = TRUE,
-                         xlab = "delta",
-                         ylab = "gamma",
-                         lwd=1,
-                         labcex=0.6,
-                         legend.args = list(las=180),
-                         legend.mar = 9, no_legend=FALSE,
-                         thin_to=NULL,
-                         thin_by=NULL,
-                         thin_percent=NULL,
-                         event=1,
-                         ...){
-  #print("plot_params2 start")
-
-  # check y only has two values
-  y <- ifelse(y == event, 1, 0)
-
-  #rows <- 1:length(x)
-  if(!is.null(thin_to)){
-    set.seed(0)
-    rows <- sample(1:length(x), size=thin_to)
-  } else if (!is.null(thin_percent)){
-    set.seed(0)
-    rows <- sample(1:length(x), size=length(x)*thin_percent)
-  } else if (!is.null(thin_by)){
-    rows <- seq(1,length(x),thin_by)
-  }  else{
-    rows <- 1:length(x)
-  }
-
-  x <- x[rows]
-  y <- y[rows]
-
-  z <- get_zmat(x=x, y=y, len.out=len.out, lower=lower, upper=upper)
-
-  #library(fields)
-  max_z <- max(z[!is.na(z)])
-
-  if(anyNA(lower)){
-    lower <- c(min(d), min(g))
-  }
-  if(anyNA(upper)){
-    upper <- c(max(d), max(g))
-  }
-
-  g <- as.numeric(colnames(z))
-  d <- as.numeric(rownames(z))
-
-  if(!contours_only){
-
-    if(no_legend){
-      image(d, g, z, zlim = zlim, xlim = c(lower[1], upper[1]), ylim = c(lower[2], upper[2]),
-            main = paste0(ttle, ttle_extra),
-            xlab = xlab,
-            ylab = ylab,
-            sub = sub, ...)
-      if(!anyNA(cont_levels)){
-        contour(d, g, z, add = TRUE, levels = cont_levels, col = contour_color,
-                drawlabels = drawlabels, lwd=lwd, labcex=labcex)
-      }
-    }else{
-
-      fields::image.plot(d, g, z, zlim = zlim, xlim = c(lower[1], upper[1]), ylim = c(lower[2], upper[2]),
-                         main = paste0(ttle, ttle_extra),
-                         xlab = xlab,
-                         ylab = ylab,
-                         sub = sub,
-                         legend.mar = legend.mar,
-                         legend.lab = legend.lab,
-                         legend.args = legend.args, ...)
-      if(!anyNA(cont_levels)){
-        contour(d, g, z, add = TRUE, levels = cont_levels, col = contour_color,
-                drawlabels = drawlabels, lwd=lwd, labcex=labcex)
-      }
-    }
-  }else{
-    if(!anyNA(cont_levels)){
-      contour(d, g, z, add = add, levels = cont_levels, col = contour_color,
-              zlim = zlim, xlim = c(lower[1], upper[1]), ylim = c(lower[2], upper[2]),
-              main = paste0(ttle, ttle_extra),
-              xlab = xlab,
-              ylab = ylab,
-              sub = sub, drawlabels = drawlabels, lwd=lwd, labcex=labcex, ...)
-    } else {
-      stop("must provide contour levels")
-    }
-  }
-  #print("plot_params2 end")
-
-}
