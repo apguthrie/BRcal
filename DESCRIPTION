@@ -2,10 +2,8 @@ Package: BRcal
 Title: Boldness-Recalibration of Binary Events
 Version: 0.0.0.9000
 Authors@R: 
-    c(person("Adeline P.", "Guthrie", , "apguthrie47@gmail.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID")),
-      person("Christopher T.", "Franck", , "chfranck@vt.edu", role = c("aut"),
-           comment = c(ORCID = "YOUR-ORCID-ID")))
+    c(person("Adeline P.", "Guthrie", , "apguthrie47@gmail.com", role = c("aut", "cre")),
+      person("Christopher T.", "Franck", , "chfranck@vt.edu", role = c("aut")))
 Description: This package facilitates boldness-recalibration at a user specified 
              level of calibration via the `brcal()` function. Supporting functions 
              to assess calibration via Bayesian and Frequentists approaches, 
