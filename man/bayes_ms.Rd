@@ -49,8 +49,6 @@ Guthrie and Franck (2024).
 Compares a well calibrated model, \eqn{M_c} where \eqn{\delta = \gamma = 1}
 to an uncalibrated model, \eqn{M_u} where \eqn{\delta>0, \gamma \in
 \mathbb{R}}.
-
-The Bayes Factor...
 }
 \references{
 Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
