@@ -6,7 +6,12 @@ Authors@R:
            comment = c(ORCID = "YOUR-ORCID-ID")),
       person("Christopher T.", "Franck", , "chfranck@vt.edu", role = c("aut"),
            comment = c(ORCID = "YOUR-ORCID-ID")))
-Description: What the package does (one paragraph).
+Description: This package facilitates boldness-recalibration at a user specified 
+             level of calibration via the `brcal()` function. Supporting functions 
+             to assess calibration via Bayesian and Frequentists approaches, 
+             MLE recalibration, LLO-adjust via any specified
+             parameters, and visualize results are also provided.   
+             See Guthrie & Franck (2024) for methodological details.
 License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
     license
 Encoding: UTF-8
