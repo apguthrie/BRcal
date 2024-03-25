@@ -37,7 +37,7 @@ information, number of iterations, and achieved negative log likelihood
 value and MLEs.}
 }
 \description{
-Recalibration via Maximum Likelihood Estimates (MLEs)
+MLE recalibrate as specified in Guthrie and Franck (2024).
 }
 \references{
 Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration

@@ -4,19 +4,24 @@
 
 #' Linear Log Odds (LLO) Recalibration Function
 #'
-#' Description goes here.
-#'
-#' Details go here. NEED TO CITE TURNER/Gonzalez & Wu? Consider removing
-#' functionality for lists/matrices (any other types?).
+#' LLO-adjust predicted probabilities based on specified \eqn{\delta} and
+#' \eqn{\gamma}.
 #'
 #' @param x a numeric vector of probabilities to be LLO-adjusted. Must only
 #'   contain values in \[0,1\].
 #' @param delta numeric, must be > 0, parameter \eqn{\delta} in LLO
 #'   recalibration function.
 #' @param gamma numeric, parameter \eqn{\gamma} in LLO recalibration function.
-#' @return The LLO-adjusted vector of probabilities (ADD NOTATION FROM PAPER? OR
-#'   KEEP IN DETAILS?)
+#' @return Vector of LLO-adjusted probabilities via specified \eqn{\delta} and
+#'   \eqn{\gamma}.
 #' @export
+#'
+#' @references Turner, B., Steyvers, M., Merkle, E., Budescu, D., and Wallsten,
+#'   T. (2014) Forecast aggregation via recalibration, \emph{Machine Learning}
+#'   95, 261–289.
+#'
+#'   Gonzalez, R., and Wu, G. (1999), On the shape of probability
+#'   weighting function, \emph{Cognitive Psychology} 38, 129–66.
 #'
 #' @examples
 LLO <- function(x, delta, gamma){
@@ -63,7 +68,6 @@ LLO <- function(x, delta, gamma){
 #' Perform a likelihood ratio test for calibration as specified in Guthrie and
 #' Franck (2024).
 #'
-#' Comapre
 #' @inheritParams LLO
 #' @param y a numeric vector of outcomes corresponding to probabilities in `x`.
 #'   Must only contain 0 or 1.
@@ -147,6 +151,8 @@ llo_lrt <- function(x, y, event = 1, optim_details = TRUE,  ...){
 }
 
 #' Recalibration via Maximum Likelihood Estimates (MLEs)
+#'
+#' MLE recalibrate as specified in Guthrie and Franck (2024).
 #'
 #' @inheritParams llo_lrt
 #' @param probs_only Logical.  If `TRUE`, `mle_recal()` returns only the vector

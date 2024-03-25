@@ -36,9 +36,6 @@ value and MLEs.}
 Perform a likelihood ratio test for calibration as specified in Guthrie and
 Franck (2024).
 }
-\details{
-Comapre
-}
 \references{
 Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
 for Binary Event Predictions. \emph{arxiv}.

@@ -16,13 +16,18 @@ recalibration function.}
 \item{gamma}{numeric, parameter \eqn{\gamma} in LLO recalibration function.}
 }
 \value{
-The LLO-adjusted vector of probabilities (ADD NOTATION FROM PAPER? OR
-KEEP IN DETAILS?)
+Vector of LLO-adjusted probabilities via specified \eqn{\delta} and
+\eqn{\gamma}.
 }
 \description{
-Description goes here.
+LLO-adjust predicted probabilities based on specified \eqn{\delta} and
+\eqn{\gamma}.
 }
-\details{
-Details go here. NEED TO CITE TURNER/Gonzalez & Wu? Consider removing
-functionality for lists/matrices (any other types?).
+\references{
+Turner, B., Steyvers, M., Merkle, E., Budescu, D., and Wallsten,
+T. (2014) Forecast aggregation via recalibration, \emph{Machine Learning}
+95, 261–289.
+
+Gonzalez, R., and Wu, G. (1999), On the shape of probability
+weighting function, \emph{Cognitive Psychology} 38, 129–66.
 }
