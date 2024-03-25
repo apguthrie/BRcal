@@ -98,9 +98,6 @@ llo_lrt <- function(x, y, event = 1, optim_details = TRUE,  ...){
   #  Input Checks  #
   ##################
 
-  # # check params, start, lower, upper are of right length, right values
-  # params <- check_input_params(params)
-
   # check x is vector, values in [0,1]
   x <- check_input_probs(x, name="x")
 
@@ -206,21 +203,6 @@ mle_recal <- function(x, y, probs_only=TRUE, event = 1, optim_details = TRUE, ..
   #  Function Code  #
   ###################
 
-  # optLRT <- llo_optim(x, y, ...)
-  # est_params <- optLRT$par
-  # new_probs <- LLO_internal(x=x, est_params[1], est_params[2])
-  # if(probs_only){
-  #   if(optim_details) print(optLRT)
-  #   return(new_probs)
-  # } else if(optim_details){
-  #   return(list(probs = new_probs,
-  #               MLEs = est_params,
-  #               optim_details = optLRT))
-  # } else{
-  #   return(list(probs = new_probs,
-  #               MLEs = est_params))
-  # }
-
   val <- mle_recal_internal(x=x, y=y, probs_only=probs_only, optim_details=optim_details, ...)
   return(val)
 }
@@ -257,11 +239,8 @@ mle_recal_internal <- function(x, y, probs_only=TRUE, optim_details = TRUE, ...)
   }
 }
 
-# NEED TO MAKE NOT IN DOCUMENTATION ABOUT ROUNDING OFF
+# NEED TO MAKE NOTE IN DOCUMENTATION ABOUT ROUNDING OFF
 to_logit <- logit <- function(p){
-
-  # check input probs are valid
-  # p <- check_input_probs(p, "p")
 
   # better way to handle the rounding here? - check literature
   p <- ifelse(p < (10^(-300)), (10^(-300)), p)
