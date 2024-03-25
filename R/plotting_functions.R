@@ -2,17 +2,17 @@
 #  External Functions (Version 1)                    #
 ######################################################
 
+# mention different functions being used under the hood (image, image.plot,
+# contour) gamma = 0 will be approx???, option for contours only, addtnal
+# options, suggestions for setting k and bounds, how to use z ad return_z
+# efficiently, citations, add capability for points at B-R params???? Note
+# calculations will change with thinning and is generally not recommended
+
 #' Draw image plot of posterior model probability surface.
 #'
 #' Function to plot the posterior model probability of the given set of
 #' probabilities, `x`, after LLO-adjustment via a grid of uniformly spaced set
 #' of \eqn{\delta} and \eqn{\gamma} values with optional contours.
-#'
-#' mention different functions being used under the hood (image, image.plot,
-#' contour) gamma = 0 will be approx???, option for contours only, addtnal
-#' options, suggestions for setting k and bounds, how to use z ad return_z
-#' efficiently, citations, add capability for points at B-R params???? Note
-#' calculations will change with thinning and is generally not recommended
 #'
 #' @inheritParams bayes_ms
 #' @param z Matrix returned by previous call to `plot_params()` containing
@@ -397,17 +397,6 @@ lineplot <- function(x, y, t_levels=NULL, df=NULL,
 
   return(lines)
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 

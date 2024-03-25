@@ -115,10 +115,3 @@ Function to plot the posterior model probability of the given set of
 probabilities, \code{x}, after LLO-adjustment via a grid of uniformly spaced set
 of \eqn{\delta} and \eqn{\gamma} values with optional contours.
 }
-\details{
-mention different functions being used under the hood (image, image.plot,
-contour) gamma = 0 will be approx???, option for contours only, addtnal
-options, suggestions for setting k and bounds, how to use z ad return_z
-efficiently, citations, add capability for points at B-R params???? Note
-calculations will change with thinning and is generally not recommended
-}
