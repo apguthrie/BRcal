@@ -44,6 +44,7 @@
 #' @param main Plot title.
 #' @param xlab Label for x-axis.
 #' @param ylab Label for x-axis.
+#' @param legend.lab Label for legend.
 #' @param drawlabels Logical.  If `TRUE`, the contour labels will be plotted
 #'   with the corresponding contours passed to `contour()`.
 #' @param contour_color Color of the contours and their labels passed to

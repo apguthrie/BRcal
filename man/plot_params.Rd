@@ -85,6 +85,8 @@ probability across the k\eqn{\times}k grid of \eqn{\delta} and
 
 \item{ylab}{Label for x-axis.}
 
+\item{legend.lab}{Label for legend.}
+
 \item{drawlabels}{Logical.  If \code{TRUE}, the contour labels will be plotted
 with the corresponding contours passed to \code{contour()}.}
 
