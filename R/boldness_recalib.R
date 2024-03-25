@@ -74,6 +74,10 @@
 #'   probabilities.}
 #' @export
 #'
+#' @importFrom stats sd
+#' @importFrom stats optim
+#' @importFrom nloptr nloptr
+#'
 #' @references Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
 #'   for Binary Event Predictions. \emph{arxiv}.
 #'

@@ -66,12 +66,13 @@
 #'   z}
 #' @export
 #'
+#' @importFrom graphics contour
+#' @importFrom fields image.plot
+#'
 #' @examples
 plot_params <- function(x, y, z=NULL, t_levels = c(0.8, 0.9),
                         Pmc = 0.5, event=1,
                         k = 100,
-                        # lb = c(0.0001,-2),
-                        # ub = c(5,2),
                         dlim = c(0.0001,5),
                         glim = c(0.0001,5),
                         zlim = c(0,1),
@@ -101,14 +102,11 @@ plot_params <- function(x, y, z=NULL, t_levels = c(0.8, 0.9),
   # need to check contents, row and col names, match with specified grid size
 
 
-
   # check t_levels are valid calibration probs
   t_levels <- check_input_probs(t_levels, name="t_levels")
 
 
   # check upper and lower bounds
-  # lb <- check_input_params(lb, name="lb")
-  # ub <- check_input_params(ub, name="ub")
   check_input_delta(dlim[1], name="dlim[1]")
   check_input_delta(dlim[2], name="dlim[2]")
   check_input_gamma(glim[1], name="glim[1]")
@@ -163,7 +161,6 @@ plot_params <- function(x, y, z=NULL, t_levels = c(0.8, 0.9),
     x <- x[rows]
     y <- y[rows]
 
-    # z <- get_zmat(x=x, y=y, Pmc=Pmc, len.out=len.out, lower=lower, upper=upper)
     z <- get_zmat(x=x, y=y, Pmc=Pmc, len.out=k, lower=c(dlim[1], glim[1]), upper=c(dlim[2], glim[2]))
 
   }
@@ -174,13 +171,6 @@ plot_params <- function(x, y, z=NULL, t_levels = c(0.8, 0.9),
   # set up delta and gamma vectors
   g <- as.numeric(colnames(z))
   d <- as.numeric(rownames(z))
-
-  # if(anyNA(lower)){
-  #   lower <- c(min(d), min(g))
-  # }
-  # if(anyNA(upper)){
-  #   upper <- c(max(d), max(g))
-  # }
 
   if(anyNA(dlim)){
     dlim <- c(min(d), max(d))
@@ -198,7 +188,6 @@ plot_params <- function(x, y, z=NULL, t_levels = c(0.8, 0.9),
                        main = main,
                        xlab = xlab,
                        ylab = ylab,
-                       legend.args = legend.args,
                        legend.lab =  legend.lab,
                        ...)
     # plus contours if specified
@@ -267,6 +256,8 @@ plot_params <- function(x, y, z=NULL, t_levels = c(0.8, 0.9),
 #'   formatted for use in `lineplot()`.}
 #'   Otherwise just the `ggplot` object of the plot is returned.
 #' @export
+#'
+#' @import ggplot2
 #'
 #' @examples
 lineplot <- function(x, y, t_levels=NULL, df=NULL,
@@ -375,10 +366,12 @@ lineplot <- function(x, y, t_levels=NULL, df=NULL,
   ulabs <- unique(df$label)
   df$label <- factor(df$label, levels=c(unique(df$label)))
 
-  lines <- ggplot(data = df, mapping = aes(x = label, y = probs)) +
-    geom_point(aes(color = outcome), alpha = pt_alpha, size = pt_size,
+  lines <- ggplot2::ggplot(data = df, mapping = aes_string(x = "label", y = "probs")) +
+    geom_point(aes_string(color = "outcome"),
+               alpha = pt_alpha, size = pt_size,
                show.legend = FALSE) +
-    geom_line(aes(group=pairing, color = outcome), size = ln_size, alpha = ln_alpha,
+    geom_line(aes_string(group = "pairing", color = "outcome"),
+              size = ln_size, alpha = ln_alpha,
               show.legend = FALSE) +
     labs(x = xlab,
          y = ylab) +

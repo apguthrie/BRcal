@@ -86,6 +86,9 @@ LLO <- function(x, delta, gamma){
 #'   `optim()` when minimizing the negative log likelihood, includes convergence
 #'   information, number of iterations, and achieved negative log likelihood
 #'   value and MLEs.}
+#'
+#' @importFrom stats optim
+#'
 #' @export
 #'
 #' @references Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
@@ -167,6 +170,7 @@ llo_lrt <- function(x, y, event = 1, optim_details = TRUE,  ...){
 #'   information, number of iterations, and achieved negative log likelihood
 #'   value and MLEs.}
 #'
+#' @importFrom stats optim
 #'
 #' @export
 #'

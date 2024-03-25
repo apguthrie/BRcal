@@ -20,7 +20,10 @@ RoxygenNote: 7.2.3
 Depends: 
     R (>= 2.10)
 LazyData: true
+Imports: 
+    nloptr,
+    fields,
+    ggplot2
 Suggests: 
-    ggplot2,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
