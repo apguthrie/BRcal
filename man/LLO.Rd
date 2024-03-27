@@ -23,11 +23,25 @@ Vector of LLO-adjusted probabilities via specified \eqn{\delta} and
 LLO-adjust predicted probabilities based on specified \eqn{\delta} and
 \eqn{\gamma}.
 }
+\details{
+The Linear Log Odds (LLO) recalibration function is defined as
+\eqn{c(x_i;\delta, \gamma) = \frac{\delta x_i^\gamma}{\delta x_i^\gamma +
+(1-x_i)^\gamma}}
+}
+\examples{
+# Create vector of 10 probability predictions
+x <- runif(10)
+
+# LLO-adjust via delta = 2, gamma = 3
+x_llo <- LLO(x, 2, 3)
+
+plot(x, x_llo)
+}
 \references{
 Turner, B., Steyvers, M., Merkle, E., Budescu, D., and Wallsten,
 T. (2014) Forecast aggregation via recalibration, \emph{Machine Learning}
 95, 261–289.
 
-Gonzalez, R., and Wu, G. (1999), On the shape of probability
-weighting function, \emph{Cognitive Psychology} 38, 129–66.
+Gonzalez, R., and Wu, G. (1999), On the shape of probability weighting
+function, \emph{Cognitive Psychology} 38, 129–66.
 }
