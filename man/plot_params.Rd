@@ -16,6 +16,7 @@ plot_params(
   glim = c(1e-04, 5),
   zlim = c(0, 1),
   return_z = TRUE,
+  epsilon = .Machine$double.eps,
   thin_to = NULL,
   thin_percent = NULL,
   thin_by = NULL,
@@ -63,6 +64,11 @@ be in [0,1].}
 \item{return_z}{Logical.  If \code{TRUE}, the matrix of posterior model
 probabilities across the specified k\eqn{\times}k grid of \eqn{\delta} and
 \eqn{\gamma} will be returned.}
+
+\item{epsilon}{Amount by which probabilities are pushed away from 0 or 1
+boundary for numerical stability. If a value in \code{x} < \code{epsilon}, it will be
+replaced with \code{epsilon}.  If a value in \code{x} > \code{1-epsilon}, that value will
+be replaced with \code{1-epsilon}.}
 
 \item{thin_to}{When non-null, the observations in (x,y) are randomly sampled
 without replacement to form a set of size \code{thin_to}.}
@@ -118,6 +124,7 @@ probabilities, \code{x}, after LLO-adjustment via a grid of uniformly spaced set
 of \eqn{\delta} and \eqn{\gamma} values with optional contours.
 }
 \references{
-Nychka,D., Furrer, R., Paige, J., Sain, S. (2021). fields: Tools for
-spatial data. R package version 15.2, \url{https://github.com/dnychka/fieldsRPackage}.
+Nychka,D., Furrer, R., Paige, J., Sain, S. (2021). fields: Tools
+for spatial data. R package version 15.2,
+\url{https://github.com/dnychka/fieldsRPackage}.
 }

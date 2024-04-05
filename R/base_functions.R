@@ -256,12 +256,15 @@ mle_recal_internal <- function(x, y, probs_only=TRUE, optim_details = TRUE, ...)
 }
 
 # NEED TO MAKE NOTE IN DOCUMENTATION ABOUT ROUNDING OFF
-to_logit <- logit <- function(p){
+to_logit <- logit <- function(p, epsilon=.Machine$double.eps){
 
   # better way to handle the rounding here? - check literature
-  p <- ifelse(p < (10^(-300)), (10^(-300)), p) # technically -323 is smallest we can go...
-  p <- ifelse(p > 0.9999999999999999, 0.9999999999999999, p)
+  # p <- ifelse(p < (10^(-300)), (10^(-300)), p) # technically -323 is smallest we can go...
+  # p <- ifelse(p > 0.9999999999999999, 0.9999999999999999, p)
 
+  p <- ifelse(p < 0 + epsilon, 0 + epsilon, p) 
+  p <- ifelse(p > 1 - epsilon, 1 - epsilon, p)
+  
   return(log(p/(1-p)))
 }
 
@@ -270,11 +273,11 @@ to_prob <- function(x){
 }
 
 # Likelihood
-llo_lik <- function(params, x, y, log = FALSE, neg = FALSE, tau = FALSE){
+llo_lik <- function(params, x, y, log = FALSE, neg = FALSE, tau = FALSE, epsilon=.Machine$double.eps){
 
   # rounding off x's that are too close to zero or one
-  x <- ifelse(x < (10^(-300)), (10^(-300)), x)
-  x <- ifelse(x > 0.9999999999999999, 0.9999999999999999, x)
+  x <- ifelse(x < 0 + epsilon, 0 + epsilon, x) 
+  x <- ifelse(x > 1 - epsilon, 1 - epsilon, x)
 
   if(tau){
     llo <- LLO_internal(x = x, delta = exp(params[1]), gamma = params[2])
@@ -282,8 +285,8 @@ llo_lik <- function(params, x, y, log = FALSE, neg = FALSE, tau = FALSE){
     llo <- LLO_internal(x = x, delta = params[1], gamma = params[2])
   }
 
-  llo <- ifelse(llo < (10^(-300)), (10^(-300)), llo)
-  llo <- ifelse(llo > 0.9999999999999999, 0.9999999999999999, llo)
+  llo <- ifelse(llo < 0 + epsilon, 0 + epsilon, llo) 
+  llo <- ifelse(llo > 1 - epsilon, 1 - epsilon, llo)
 
 
   if(log){
@@ -301,7 +304,7 @@ llo_lik <- function(params, x, y, log = FALSE, neg = FALSE, tau = FALSE){
 
 
 llo_optim <- function(x, y, par=c(0.5,0.5), tau=TRUE, gr=nll_gradient, ...){
-
+  
   # convert delta to tau
   # NEED HANDELING FOR TAU = FALSE BC BOUND ON DELTA!
   if(tau){
