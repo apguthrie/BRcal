@@ -8,8 +8,9 @@
 #' \eqn{\gamma}.
 #'
 #' The Linear Log Odds (LLO) recalibration function is defined as
-#' \eqn{c(x_i;\delta, \gamma) = \frac{\delta x_i^\gamma}{\delta x_i^\gamma +
-#' (1-x_i)^\gamma}}
+#' \deqn{c(x_i;\delta, \gamma) = \frac{\delta x_i^\gamma}{\delta x_i^\gamma +
+#' (1-x_i)^\gamma}} where \eqn{\mathbf{x}} is the vector of predicted probabilities 
+#' to be LLO-adjusted via \eqn{\delta > 0} and \eqn{\gamma \in \mathbb{R}}.
 #'
 #' @param x a numeric vector of probabilities to be LLO-adjusted. Must only
 #'   contain values in \[0,1\].
@@ -28,12 +29,12 @@
 #'   function, \emph{Cognitive Psychology} 38, 129–66.
 #'
 #' @examples
-#' # Create vector of 10 probability predictions
-#' x <- runif(10)
-#' 
+#' # Create vector of 100 probability predictions
+#' x <- runif(100)
+#'
 #' # LLO-adjust via delta = 2, gamma = 3
 #' x_llo <- LLO(x, 2, 3)
-#' 
+#'
 #' plot(x, x_llo)
 LLO <- function(x, delta, gamma){
 
@@ -258,7 +259,7 @@ mle_recal_internal <- function(x, y, probs_only=TRUE, optim_details = TRUE, ...)
 to_logit <- logit <- function(p){
 
   # better way to handle the rounding here? - check literature
-  p <- ifelse(p < (10^(-300)), (10^(-300)), p)
+  p <- ifelse(p < (10^(-300)), (10^(-300)), p) # technically -323 is smallest we can go...
   p <- ifelse(p > 0.9999999999999999, 0.9999999999999999, p)
 
   return(log(p/(1-p)))

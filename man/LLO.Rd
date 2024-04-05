@@ -25,12 +25,13 @@ LLO-adjust predicted probabilities based on specified \eqn{\delta} and
 }
 \details{
 The Linear Log Odds (LLO) recalibration function is defined as
-\eqn{c(x_i;\delta, \gamma) = \frac{\delta x_i^\gamma}{\delta x_i^\gamma +
-(1-x_i)^\gamma}}
+\deqn{c(x_i;\delta, \gamma) = \frac{\delta x_i^\gamma}{\delta x_i^\gamma +
+(1-x_i)^\gamma}} where \eqn{\mathbf{x}} is the vector of predicted probabilities
+to be LLO-adjusted via \eqn{\delta > 0} and \eqn{\gamma \in \mathbb{R}}.
 }
 \examples{
-# Create vector of 10 probability predictions
-x <- runif(10)
+# Create vector of 100 probability predictions
+x <- runif(100)
 
 # LLO-adjust via delta = 2, gamma = 3
 x_llo <- LLO(x, 2, 3)
