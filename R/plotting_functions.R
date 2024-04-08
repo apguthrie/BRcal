@@ -31,10 +31,6 @@
 #' @param return_z Logical.  If `TRUE`, the matrix of posterior model
 #'   probabilities across the specified k\eqn{\times}k grid of \eqn{\delta} and
 #'   \eqn{\gamma} will be returned.
-#' @param epsilon Amount by which probabilities are pushed away from 0 or 1
-#'   boundary for numerical stability. If a value in `x` < `epsilon`, it will be
-#'   replaced with `epsilon`.  If a value in `x` > `1-epsilon`, that value will
-#'   be replaced with `1-epsilon`.
 #' @param thin_to When non-null, the observations in (x,y) are randomly sampled
 #'   without replacement to form a set of size `thin_to`.
 #' @param thin_percent When non-null, the observations in (x,y) are randomly

@@ -37,40 +37,40 @@
 #'
 #' plot(x, x_llo)
 LLO <- function(x, delta, gamma){
-
+  
   ##################
   #  Input Checks  #
   ##################
-
+  
   # check input probs are valid
   x <- check_input_probs(x, "x")
-
+  
   # check delta > 0 & numeric & size 1
   check_input_delta(delta)
-
+  
   # check gamma in Reals & numeric & size 1
   check_input_gamma(gamma)
-
+  
   ###################
   #  Function Code  #
   ###################
-
+  
   x_llo <- LLO_internal(x=x, delta=delta, gamma=gamma)
-
+  
   ###################
   #  Output Checks  #
   ###################
-
+  
   # check if return vector contains nans
   if(!check_noNaNs(x_llo)) warning("LLO return value contains NaNs")
-
+  
   # check if return vector contains +/- Inf - typically not possible
   if(!check_noInfs(x_llo)) warning("LLO return value contains +/-Inf")
-
+  
   # check x are probabilities in [0,1] - typically not possible to break
   if(!check_probs(x_llo[!is.na(x_llo)])) warning("LLO return value contains values outside of [0,1]")
-
-
+  
+  
   return(x_llo)
 }
 
@@ -86,6 +86,10 @@ LLO <- function(x, delta, gamma){
 #' @param optim_details Logical.  If `TRUE`, the list returned by `optim()` when
 #'   minimizing the negative log likelihood is also returned by `llo_lrt()`.
 #' @param event Value in `y` that represents an "event".  Default value is 1.
+#' @param epsilon Amount by which probabilities are pushed away from 0 or 1
+#'   boundary for numerical stability. If a value in `x` < `epsilon`, it will be
+#'   replaced with `epsilon`.  If a value in `x` > `1-epsilon`, that value will
+#'   be replaced with `1-epsilon`.
 #' @param ... Additional arguments to be passed to `optim()`.
 #'
 #' @return A list with the following attributes:
@@ -107,47 +111,47 @@ LLO <- function(x, delta, gamma){
 #'   for Binary Event Predictions. \emph{arxiv}.
 #'
 #' @examples
-llo_lrt <- function(x, y, event = 1, optim_details = TRUE,  ...){
-
+llo_lrt <- function(x, y, event = 1, optim_details = TRUE, epsilon=.Machine$double.eps,  ...){
+  
   ##################
   #  Input Checks  #
   ##################
-
+  
   # check x is vector, values in [0,1]
   x <- check_input_probs(x, name="x")
-
+  
   # check y is vector, values are 0s or 1s or can be converted using event
   y <- check_input_outcomes(y, name="y", event=event)
-
+  
   # check optim_details is logical
   if(!is.logical(optim_details) & !(optim_details %in% c(0,1))) stop("argument optim_details must be logical")
-
+  
   # check x and y are the same length
   if(length(x) != length(y)) stop("x and y length differ")
-
-
+  
+  
   ###################
   #  Function Code  #
   ###################
-
+  
   # Numerator of test statistic
-  top <- llo_lik(c(1,1), x, y, log = TRUE)
-
+  top <- llo_lik(c(1,1), x, y, log = TRUE, epsilon=epsilon)
+  
   # Minimize log likelihood
   optLRT <- llo_optim(x, y, ...)
-
+  
   # Denominator of test statistic
   bottom <- -optLRT$value
-
+  
   # Extract MLEs
   est_params <- optLRT$par
-
+  
   # Calc test statistic
   test_stat <- 2*(bottom-top)
-
+  
   # Calc p-value
   pval <- 1-stats::pchisq(test_stat, 2)
-
+  
   if(optim_details){
     results <- list(test_stat = test_stat,
                     pval = pval,
@@ -158,7 +162,7 @@ llo_lrt <- function(x, y, event = 1, optim_details = TRUE,  ...){
                     pval = pval,
                     MLEs = est_params)
   }
-
+  
   return(results)
 }
 
@@ -191,34 +195,34 @@ llo_lrt <- function(x, y, event = 1, optim_details = TRUE,  ...){
 #'
 #' @examples
 mle_recal <- function(x, y, probs_only=TRUE, event = 1, optim_details = TRUE, ...) {
-
+  
   ##################
   #  Input Checks  #
   ##################
-
+  
   # check x is vector, values in [0,1]
   x <- check_input_probs(x, name="x")
-
+  
   # check y is vector, values are 0s or 1s or can be converted using event
   y <- check_input_outcomes(y, name="y", event=event)
-
+  
   # check optim_details is logical
   if(!is.logical(optim_details) & !(optim_details %in% c(0,1))) stop("argument optim_details must be logical")
-
+  
   # check probs_only is logical
   if(!is.logical(probs_only) & !(probs_only %in% c(0,1))) stop("argument probs_only must be logical")
-
+  
   # check probs_only & optim_details are NOT both true
   if(probs_only & optim_details) warning("optim_details cannot be returned when probs_only is TRUE, print details instead")
-
+  
   # check x and y are the same length
   if(length(x) != length(y)) stop("x and y length differ")
-
-
+  
+  
   ###################
   #  Function Code  #
   ###################
-
+  
   val <- mle_recal_internal(x=x, y=y, probs_only=probs_only, optim_details=optim_details, ...)
   return(val)
 }
@@ -233,12 +237,12 @@ LLO_internal <- function(x, delta, gamma){
 
 
 mle_recal_internal <- function(x, y, probs_only=TRUE, optim_details = TRUE, ...) {
-
-
+  
+  
   ###################
   #  Function Code  #
   ###################
-
+  
   optLRT <- llo_optim(x, y, ...)
   est_params <- optLRT$par
   new_probs <- LLO_internal(x=x, est_params[1], est_params[2])
@@ -257,11 +261,8 @@ mle_recal_internal <- function(x, y, probs_only=TRUE, optim_details = TRUE, ...)
 
 # NEED TO MAKE NOTE IN DOCUMENTATION ABOUT ROUNDING OFF
 to_logit <- logit <- function(p, epsilon=.Machine$double.eps){
-
-  # better way to handle the rounding here? - check literature
-  # p <- ifelse(p < (10^(-300)), (10^(-300)), p) # technically -323 is smallest we can go...
-  # p <- ifelse(p > 0.9999999999999999, 0.9999999999999999, p)
-
+  
+  # rounding off x's that are too close to zero or one
   p <- ifelse(p < 0 + epsilon, 0 + epsilon, p) 
   p <- ifelse(p > 1 - epsilon, 1 - epsilon, p)
   
@@ -274,31 +275,27 @@ to_prob <- function(x){
 
 # Likelihood
 llo_lik <- function(params, x, y, log = FALSE, neg = FALSE, tau = FALSE, epsilon=.Machine$double.eps){
-
-  # rounding off x's that are too close to zero or one
-  x <- ifelse(x < 0 + epsilon, 0 + epsilon, x) 
-  x <- ifelse(x > 1 - epsilon, 1 - epsilon, x)
-
+  
   if(tau){
     llo <- LLO_internal(x = x, delta = exp(params[1]), gamma = params[2])
   } else {
     llo <- LLO_internal(x = x, delta = params[1], gamma = params[2])
   }
-
+  
+  # rounding off x's that are too close to zero or one
   llo <- ifelse(llo < 0 + epsilon, 0 + epsilon, llo) 
   llo <- ifelse(llo > 1 - epsilon, 1 - epsilon, llo)
-
-
+  
   if(log){
     result <- sum(y * log(llo) + (1 - y) * log(1 - llo))
   } else{
     result <- prod((llo^y) * (1 - llo)^(1 - y))
   }
-
+  
   if(neg){
     result <- -result
   }
-  # print("llo_lik end")
+
   return(result)
 }
 
@@ -312,54 +309,54 @@ llo_optim <- function(x, y, par=c(0.5,0.5), tau=TRUE, gr=nll_gradient, ...){
     if("lower" %in% names(list(...))){ lower[1] <- log(lower[1]) }
     if("upper" %in% names(list(...))){ upper[1] <- log(upper[1]) }
   }
-
+  
   opt <- optim(par=par, fn=llo_lik,
                ...,
                x=x, y=y, neg = TRUE, log = TRUE, tau=tau)
-
+  
   if(tau){
     opt$par[1] <- exp(opt$par[1])
   }
-
+  
   return(opt)
 }
 
 
 prelec <- function(p, alpha, beta){
-
+  
   ##################
   #  Input Checks  #
   ##################
-
+  
   # check input probs are valid
   p <- check_input_probs(p, "p")
-
+  
   # check alpha > 0 & numeric & size 1
   if(length(alpha) != 1) stop("argument alpha must be single value")
   if(!is.numeric(alpha)) stop("argument alpha is not numeric type")
   if(alpha <= 0) stop("argument alpha must be greater than 0")
-
+  
   # check beta > 0 & numeric & size 1
   if(length(beta) != 1) stop("argument beta must be single value")
   if(!is.numeric(beta)) stop("argument beta is not numeric type")
   if(beta <= 0) stop("argument beta must be greater than 0")
-
+  
   ###################
   #  Function Code  #
   ###################
-
+  
   p_prelec <- exp(-beta * ((-log(p))^alpha))
-
+  
   ###################
   #  Output Checks  #
   ###################
-
+  
   # check if return vector contains nans
   if(!check_noNaNs(p_prelec)) warning("return value contains NaNs")
-
+  
   # check if return vector contains Infs - typically not possible
   if(!check_noInfs(p_prelec)) warning("return value contains +/-Inf")
-
+  
   return(p_prelec)
 }
 

@@ -4,7 +4,14 @@
 \alias{llo_lrt}
 \title{Likelihood Ratio Test for Calibration}
 \usage{
-llo_lrt(x, y, event = 1, optim_details = TRUE, ...)
+llo_lrt(
+  x,
+  y,
+  event = 1,
+  optim_details = TRUE,
+  epsilon = .Machine$double.eps,
+  ...
+)
 }
 \arguments{
 \item{x}{a numeric vector of probabilities to be LLO-adjusted. Must only
@@ -17,6 +24,11 @@ Must only contain 0 or 1.}
 
 \item{optim_details}{Logical.  If \code{TRUE}, the list returned by \code{optim()} when
 minimizing the negative log likelihood is also returned by \code{llo_lrt()}.}
+
+\item{epsilon}{Amount by which probabilities are pushed away from 0 or 1
+boundary for numerical stability. If a value in \code{x} < \code{epsilon}, it will be
+replaced with \code{epsilon}.  If a value in \code{x} > \code{1-epsilon}, that value will
+be replaced with \code{1-epsilon}.}
 
 \item{...}{Additional arguments to be passed to \code{optim()}.}
 }
