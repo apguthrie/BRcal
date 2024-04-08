@@ -41,7 +41,7 @@
 #'   for Binary Event Predictions. \emph{arxiv}.
 #'
 #' @examples
-bayes_ms <- function(x, y, Pmc = 0.5, event=1, optim_details = TRUE,  ...){
+bayes_ms <- function(x, y, Pmc = 0.5, event=1, optim_details = TRUE, epsilon=.Machine$double.eps, ...){
 
   ##################
   #  Input Checks  #
@@ -68,7 +68,7 @@ bayes_ms <- function(x, y, Pmc = 0.5, event=1, optim_details = TRUE,  ...){
   #  Function Code  #
   ###################
 
-  results <- bayes_ms_internal(x=x, y=y, Pmc=Pmc, optim_details=optim_details, ...)
+  results <- bayes_ms_internal(x=x, y=y, Pmc=Pmc, optim_details=optim_details, epsilon=epsilon, ...)
   return(results)
 }
 
@@ -76,13 +76,13 @@ bayes_ms <- function(x, y, Pmc = 0.5, event=1, optim_details = TRUE,  ...){
 #  Internal Functions                                #
 ######################################################
 
-bayes_ms_internal <- function(x, y, Pmc = 0.5, optim_details = TRUE,  ...){
+bayes_ms_internal <- function(x, y, Pmc = 0.5, optim_details = TRUE, epsilon=.Machine$double.eps,  ...){
   n <- length(x)
   params_null <- c(1,1)
 
   # BIC under null (well calibrated model Mc)
   # BIC_Mc <- BIC_llo(x = x, y = y, k = 0, params = params_null)
-  BIC_Mc <- -2*llo_lik(params = params_null, x = x, y = y, log = TRUE)
+  BIC_Mc <- -2*llo_lik(params = params_null, x = x, y = y, log = TRUE, epsilon=epsilon)
 
   # Maximize likelihood
   optimlik <- llo_optim(x,y, tau=TRUE, ...)

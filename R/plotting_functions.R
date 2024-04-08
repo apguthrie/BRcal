@@ -7,6 +7,7 @@
 # options, suggestions for setting k and bounds, how to use z ad return_z
 # efficiently, citations, add capability for points at B-R params???? Note
 # calculations will change with thinning and is generally not recommended
+# Need to explain why white cells may show up + warning message
 
 #' Draw image plot of posterior model probability surface.
 #'
@@ -69,8 +70,9 @@
 #' @importFrom graphics contour
 #' @importFrom fields image.plot
 #'
-#' @references Nychka,D., Furrer, R., Paige, J., Sain, S. (2021). fields: Tools for
-#' spatial data. R package version 15.2, <https://github.com/dnychka/fieldsRPackage>.
+#' @references Nychka,D., Furrer, R., Paige, J., Sain, S. (2021). fields: Tools
+#'   for spatial data. R package version 15.2,
+#'   <https://github.com/dnychka/fieldsRPackage>.
 #'
 #' @examples
 plot_params <- function(x, y, z=NULL, t_levels = c(0.8, 0.9),
@@ -80,6 +82,7 @@ plot_params <- function(x, y, z=NULL, t_levels = c(0.8, 0.9),
                         glim = c(0.0001,5),
                         zlim = c(0,1),
                         return_z = TRUE,
+                        epsilon=.Machine$double.eps,
                         thin_to=NULL,
                         thin_percent=NULL,
                         thin_by=NULL,
@@ -164,7 +167,7 @@ plot_params <- function(x, y, z=NULL, t_levels = c(0.8, 0.9),
     x <- x[rows]
     y <- y[rows]
 
-    z <- get_zmat(x=x, y=y, Pmc=Pmc, len.out=k, lower=c(dlim[1], glim[1]), upper=c(dlim[2], glim[2]))
+    z <- get_zmat(x=x, y=y, Pmc=Pmc, len.out=k, lower=c(dlim[1], glim[1]), upper=c(dlim[2], glim[2]), epsilon=epsilon)
 
   }
 
@@ -267,7 +270,7 @@ plot_params <- function(x, y, z=NULL, t_levels = c(0.8, 0.9),
 #'
 #' @examples
 lineplot <- function(x, y, t_levels=NULL, df=NULL,
-                     Pmc = 0.5, event=1, return_df=TRUE,
+                     Pmc = 0.5, event=1, return_df=TRUE, 
                      title="Line Plot", ylab="Probability",
                      xlab = "Posterior Model Probability",
                      pt_size = 1.5, ln_size = 0.5,
@@ -405,17 +408,12 @@ lineplot <- function(x, y, t_levels=NULL, df=NULL,
 ######################################################
 
 # Function to get matrix of posterior model probabilities across delta/gamma grid
-get_zmat <- function(x, y, Pmc=0.5, len.out = 100, lower = c(0.0001,-2), upper = c(5,2)){
-  # print("get_zmat start")
-
+get_zmat <- function(x, y, Pmc=0.5, len.out = 100, lower = c(0.0001,-2), upper = c(5,2), epsilon=.Machine$double.eps){
 
   # Set up grid of Delta (d) and Gamma (g)
   d <- seq(lower[1], upper[1], length.out = len.out)
   g <- seq(lower[2], upper[2], length.out = len.out)
   grd <- expand.grid(d,g)
-
-  #print(d)
-  #print(g)
 
   # starting xs
   x0 <- x
@@ -423,9 +421,6 @@ get_zmat <- function(x, y, Pmc=0.5, len.out = 100, lower = c(0.0001,-2), upper =
 
   # MLE recalibrate
   xM <- mle_recal_internal(x0, y, optim_details = FALSE, probs_only = TRUE)
-
-  # paramsM <- bayes_ms_internal(x0, y, optim_details=FALSE)$MLEs
-  # xM <- LLO(x=x0, delta=paramsM[1], gamma=paramsM[2])
 
   # Set up storage
   grd.loglik <- c()
@@ -437,7 +432,7 @@ get_zmat <- function(x, y, Pmc=0.5, len.out = 100, lower = c(0.0001,-2), upper =
   # Loop over grid of delta/gamma vals
   for(i in 1:nrow(grd)){
 
-    if(grd[i,2] == 0){  # WHAT IS THIS???
+    if(grd[i,2] == 0){  # REVISIT THIS
       temp <- bayes_ms_internal(LLO_internal(x=x0, delta = grd[i,1], gamma = grd[i,2]), y, Pmc=Pmc)
       BIC_1[i] <- temp$BIC_Mc
       grd.BIC_2[i] <- temp$BIC_Mu
@@ -445,19 +440,35 @@ get_zmat <- function(x, y, Pmc=0.5, len.out = 100, lower = c(0.0001,-2), upper =
       # LLO-adjust based on current grid params
       xg <- LLO_internal(x=x0, delta = grd[i,1], gamma = grd[i,2])
 
-      # grab two unique xs
-      xu <- unique(xM)[1:2]
+      # Convert grid adjusted probs to logit scale
+      xg_logit <- logit(xg, epsilon=epsilon)
+      
+      # Get indices of two unique grid adjusted points following these conditions:
+      # - they are unique on probability scale up to 15 decimal places
+      # - they are unique on logit scale up to 15 decimal places
+      # - they are not within epsilon of the 0 or 1 boundary (because this causes round off problems)
+      
+      uniq_inds <- which(!duplicated(round(xg,15)) & !duplicated(round(xg_logit, 15)) & xg < 1-epsilon & xg > epsilon)
 
-      # find their indices (make sure only grab one index for each)
-      uniq_inds <- c(which(xM == xu[1])[1], which(xM == xu[2])[1])
-
+      # check to make sure there's at least two points
+      if(length(uniq_inds) < 2){
+        # uniq_inds <-  NA   # this way the plot will not plot anything at that cell
+        uniq_inds <- which(!duplicated(round(xg,15)) & !duplicated(round(xg_logit, 15)))
+        if(length(uniq_inds) < 2){
+          uniq_inds <-  NA
+        }else{
+          uniq_inds <- uniq_inds[1:2]
+          warning("Roundoff may cause inaccuracies in upper region of plot")
+        }
+      } else{
+        uniq_inds <- uniq_inds[1:2]
+      }
+      print(uniq_inds)
       # Use point slope formula
-      start <- logit(xg[uniq_inds])
-      goal <- logit(xM[uniq_inds])
+      start <- xg_logit[uniq_inds]
+      goal <- logit(xM[uniq_inds], epsilon=epsilon)
       b <- (goal[2] - goal[1]) / (start[2] - start[1])
       a <- goal[2] - b*start[2]
-      # print(paste0("a=", a, ", b=", b, ", exp(a)=", exp(a)))
-      # print(paste0("delta=", grd[i,1], ", gamma=", grd[i,2]))
 
       # Get BIC for calibrated model
       BIC_1[i] <- (-2)*llo_lik(params=c(1,1), x=xg, y=y, log=TRUE)
@@ -477,8 +488,6 @@ get_zmat <- function(x, y, Pmc=0.5, len.out = 100, lower = c(0.0001,-2), upper =
   z_mat <- matrix(posts, nrow = length(d), ncol = length(g))
   colnames(z_mat) <- g
   rownames(z_mat) <- d
-
-  # print("get_zmat end")
 
   return(z_mat)
 }
