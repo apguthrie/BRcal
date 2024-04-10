@@ -75,8 +75,6 @@ check_input_outcomes <- function(y, name="y", event=1){
 
 check_input_params <- function(params, name="params", tau=FALSE){
 
-  # print(paste0("params: delta = ", params[1], ", gamma = ", params[2], " in check_input_params"))
-
   # check if params is list
   if(is.list(params)){
     warning("argument params is a list, coerced to vector")
@@ -114,4 +112,24 @@ check_input_gamma <- function(gamma, name="gamma"){
   # check gamma in Reals & numeric & size 1
   if(length(gamma) != 1) stop("argument ", name, " must be single value")
   if(!is.numeric(gamma)) stop("argument ", name, " is not numeric type")
+}
+
+
+# Checks a single value is:
+# - only one value
+# - numeric
+# - in [0, 1]
+check_value01 <- function(x, name="x"){
+  
+  # check x is vector
+  
+  if(length(x) != 1) stop("length(", name, ") = ", length(x) ,", should be a single value")
+  
+  # check x is numeric
+  if(!is.numeric(x)) stop("argument ", name, " is not numeric type")
+  
+  # check x are probabilities in [0,1]
+  if(!check_probs(x)) stop("argument ", name, " is not in [0,1]")
+  
+  return(x)
 }
