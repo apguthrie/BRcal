@@ -78,8 +78,7 @@ likelihood estimates for \eqn{\delta} and \eqn{\gamma}.
 # Simulate 100 predicted probabilities
 x <- runif(100)
 # Simulated 100 binary event outcomes using `x`
-y <- rbinom(100, 1, x)
-# By construction, `x` is well calibrated.
+y <- rbinom(100, 1, x)  # By construction, `x` is well calibrated.
 
 # Run the likelihood ratio test on `x` and `y`
 llo_lrt(x, y, optim_details=FALSE)

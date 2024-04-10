@@ -88,8 +88,7 @@ and the BIC for the uncalibrated model (returned as \code{BIC_mu}) is \deqn{BIC_
 # Simulate 100 predicted probabilities
 x <- runif(100)
 # Simulated 100 binary event outcomes using x
-y <- rbinom(100, 1, x)
-# By construction, x is well calibrated.
+y <- rbinom(100, 1, x)  # By construction, x is well calibrated.
 
 # Use bayesian model selection approach to check calibration of x given outcomes y
 bayes_ms(x, y, optim_details=FALSE)
