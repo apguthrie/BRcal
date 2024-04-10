@@ -24,19 +24,35 @@ LLO-adjust predicted probabilities based on specified \eqn{\delta} and
 \eqn{\gamma}.
 }
 \details{
-The Linear Log Odds (LLO) recalibration function is defined as
+The Linear Log Odds (LLO) recalibration function can be written as
 \deqn{c(x_i;\delta, \gamma) = \frac{\delta x_i^\gamma}{\delta x_i^\gamma +
-(1-x_i)^\gamma}} where \eqn{\mathbf{x}} is the vector of predicted probabilities
-to be LLO-adjusted via \eqn{\delta > 0} and \eqn{\gamma \in \mathbb{R}}.
+(1-x_i)^\gamma}} where \eqn{x_i} is a predicted probability,
+\eqn{\delta > 0} and \eqn{\gamma \in \mathbb{R}}.  Then \eqn{c(x_i;\delta,
+\gamma)} is the corresponding LLO-adjusted probability that has been shifted
+by \eqn{\delta} and scaled by \eqn{\gamma} on the log odds scale.  When
+\eqn{\delta = \gamma = 1}, there is no shifting or scaling imposed on \code{x}.
 }
 \examples{
+
+# Vector of probability predictions from 0 to 1
+x1 <- seq(0, 1, by=0.1)
+x1
+
+# LLO-adjusted predictions via delta = 2, gamma = 3
+x1_llo23 <- LLO(x1, 2, 3)
+x1_llo23  
+
+# LLO-adjusted predictions via delta = 1, gamma = 1
+x1_llo11 <- LLO(x1, 1, 1)
+x1_llo11  # no change
+
 # Create vector of 100 probability predictions
-x <- runif(100)
+x2 <- runif(100)
 
 # LLO-adjust via delta = 2, gamma = 3
-x_llo <- LLO(x, 2, 3)
+x2_llo23 <- LLO(x2, 2, 3)
 
-plot(x, x_llo)
+plot(x2, x2_llo23)
 }
 \references{
 Turner, B., Steyvers, M., Merkle, E., Budescu, D., and Wallsten,

@@ -17,8 +17,10 @@ llo_lrt(
 \item{x}{a numeric vector of probabilities to be LLO-adjusted. Must only
 contain values in [0,1].}
 
-\item{y}{a numeric vector of outcomes corresponding to probabilities in \code{x}.
-Must only contain 0 or 1.}
+\item{y}{a vector of outcomes corresponding to probabilities in \code{x}. Must
+only contain two unique values (one for "events" and one for "non-events").
+By default, this function expects a vector of 0s (non-events) and 1s
+(events).}
 
 \item{event}{Value in \code{y} that represents an "event".  Default value is 1.}
 
@@ -33,9 +35,8 @@ be replaced with \code{1-epsilon}.}
 \item{...}{Additional arguments to be passed to \code{optim()}.}
 }
 \value{
-A list with the following attributes:
-\item{\code{test_stat}}{The test statistic from the likelihood ratio test
-formed as \eqn{-2 - log()}}
+A list with the following attributes: \item{\code{test_stat}}{The
+test statistic \eqn{\lambda_{LR}} from the likelihood ratio test.}
 \item{\code{pval}}{The p-value from the likelihood ratio test.}
 \item{\code{MLEs}}{Maximum likelihood estimates for \eqn{\delta} and
 \eqn{\gamma}.}
@@ -45,8 +46,67 @@ information, number of iterations, and achieved negative log likelihood
 value and MLEs.}
 }
 \description{
-Perform a likelihood ratio test for calibration as specified in Guthrie and
-Franck (2024).
+Perform a likelihood ratio test for if calibration a set of probability
+predictions, \code{x}, are well-calibrated given a corresponding set of binary
+event outcomes, \code{y}. See Guthrie and Franck (2024).
+}
+\details{
+This likelihood ratio test is based on the following likelihood
+\deqn{\pi(\mathbf{x}, \mathbf{y} | \delta, \gamma) = \prod_{i=1}^n
+c(x_i;\delta, \gamma)^{y_i} \left[1-c(x_i;\delta, \gamma)\right]^{1-y_i}}
+where \eqn{c(x_i; \delta, \gamma)} is the Linear in Log Odds
+(\link[BRcal]{LLO}) function, \eqn{\delta>0} is the shift parameter on the
+logs odds scale, and \eqn{\gamma \in \mathbb{R}} is the scale parameter on
+the log odds scale.
+
+As \eqn{\delta = \gamma = 1} corresponds to no shift or scaling of
+probabilities, i.e. \code{x} is well calibrated given corresponding outcomes \code{y}.
+Thus the hypotheses for this test are as follows: \deqn{H_0: \delta = 1,
+\gamma = 1 \text{  (Probabilities are well calibrated)}} \deqn{H_1: \delta
+\neq 1 \text{ and/or } \gamma \neq 1 \text{  (Probabilities are poorly
+calibrated)}.}
+
+The likelihood ratio test statistics for \eqn{H_0} is
+\deqn{\lambda_{LR} = -2 log\left[\frac{\pi(\delta =1, \gamma=1|\mathbf{x},
+\mathbf{y})}{\pi(\delta = \hat\delta_{MLE}, \gamma = \hat\gamma_{MLE}|
+\mathbf{x},\mathbf{y})}\right]} where \eqn{\lambda_{LR}\stackrel{H_0}{\sim}{\chi^2_2}}
+asymptotically under the null hypothesis \eqn{H_0}, and
+\eqn{\hat{\delta}_{MLE}} and \eqn{\hat{\gamma}_{MLE}} are the maximum
+likelihood estimates for \eqn{\delta} and \eqn{\gamma}.
+}
+\examples{
+# Simulate 100 predicted probabilities
+x <- runif(100)
+# Simulated 100 binary event outcomes using `x`
+y <- rbinom(100, 1, x)
+# By construction, `x` is well calibrated.
+
+# Run the likelihood ratio test on `x` and `y`
+llo_lrt(x, y, optim_details=FALSE)
+
+# Use optim_details = TRUE to see returned info from call to optim(),
+# details useful for checking convergence
+llo_lrt(x, y, optim_details=TRUE)  # no convergence problems in this example
+
+# Use different start value in `optim()` call, start at delta = 5, gamma = 5
+llo_lrt(x, y, optim_details=TRUE, par=c(5,5))
+
+# Use `L-BFGS-B` instead of `Nelder-Mead`
+llo_lrt(x, y, optim_details=TRUE, method = "L-BFGS-B")  # same result
+
+# What if events are defined by text instead of 0 or 1?
+y2 <- ifelse(y==0, "Loss", "Win")
+llo_lrt(x, y2, event="Win", optim_details=FALSE)  # same result
+
+# What if we're interested in the probability of loss instead of win?
+x2 <- 1 - x
+llo_lrt(x2, y2, event="Loss", optim_details=FALSE)
+
+# Push probabilities away from bounds by 0.000001
+x3 <- c(runif(50, 0, 0.0001), runif(50, .9999, 1))
+y3 <- rbinom(100, 1, 0.5)
+llo_lrt(x3, y3, epsilon=0.000001)
+
 }
 \references{
 Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration

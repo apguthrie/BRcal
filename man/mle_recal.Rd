@@ -4,14 +4,16 @@
 \alias{mle_recal}
 \title{Recalibration via Maximum Likelihood Estimates (MLEs)}
 \usage{
-mle_recal(x, y, probs_only = TRUE, event = 1, optim_details = TRUE, ...)
+mle_recal(x, y, probs_only = FALSE, event = 1, optim_details = TRUE, ...)
 }
 \arguments{
 \item{x}{a numeric vector of probabilities to be LLO-adjusted. Must only
 contain values in [0,1].}
 
-\item{y}{a numeric vector of outcomes corresponding to probabilities in \code{x}.
-Must only contain 0 or 1.}
+\item{y}{a vector of outcomes corresponding to probabilities in \code{x}. Must
+only contain two unique values (one for "events" and one for "non-events").
+By default, this function expects a vector of 0s (non-events) and 1s
+(events).}
 
 \item{probs_only}{Logical.  If \code{TRUE}, \code{mle_recal()} returns only the vector
 of MLE recalibrated probabilities.}
@@ -37,7 +39,47 @@ information, number of iterations, and achieved negative log likelihood
 value and MLEs.}
 }
 \description{
-MLE recalibrate as specified in Guthrie and Franck (2024).
+MLE recalibrate (i.e. LLO-adjust via \eqn{\hat{\delta}_{MLE}} and
+\eqn{\hat{\gamma}_{MLE}} as specified in Guthrie and Franck (2024).
+}
+\details{
+Given a set of probability predictions \code{x}, the corresponding MLE
+recalibrated set is \eqn{c(x; \hat{\delta}_{MLE}, \hat{\gamma}_{MLE})} (see
+\link[BRcal]{LLO}).
+}
+\examples{
+# Simulate 100 predicted probabilities
+x <- runif(100)
+# Simulated 100 binary event outcomes using `x` 
+y <- rbinom(100, 1, x)
+
+# MLE recalibrate `x`
+mle_recal(x, y, optim_details=FALSE)  
+
+# Just return the vector of MLE recalibrated probabilities
+x_mle <- mle_recal(x, y, optim_details=FALSE, probs_only=TRUE)
+x_mle
+
+plot(x, x_mle)
+
+# Use optim_details = TRUE to see returned info from call to optim(),
+# details useful for checking convergence
+mle_recal(x, y, optim_details=TRUE)  # no convergence problems in this example
+
+# Use different start value in `optim()` call, start at delta = 5, gamma = 5
+mle_recal(x, y, optim_details=TRUE, par=c(5,5))
+
+# Use `L-BFGS-B` instead of `Nelder-Mead` 
+mle_recal(x, y, optim_details=TRUE, method = "L-BFGS-B")  # same result
+
+# What if events are defined by text instead of 0 or 1? 
+y2 <- ifelse(y==0, "Loss", "Win")
+mle_recal(x, y2, event="Win", optim_details=FALSE)  # same result
+
+# What if we're interested in the probability of loss instead of win?
+x2 <- 1 - x
+mle_recal(x2, y2, event="Loss", optim_details=FALSE)
+
 }
 \references{
 Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
