@@ -18,8 +18,10 @@ bayes_ms(
 \item{x}{a numeric vector of probabilities to be LLO-adjusted. Must only
 contain values in [0,1].}
 
-\item{y}{a numeric vector of outcomes corresponding to probabilities in \code{x}.
-Must only contain 0 or 1.}
+\item{y}{a vector of outcomes corresponding to probabilities in \code{x}. Must
+only contain two unique values (one for "events" and one for "non-events").
+By default, this function expects a vector of 0s (non-events) and 1s
+(events).}
 
 \item{Pmc}{The prior model probability for the calibrated model \eqn{M_c}.}
 
@@ -55,15 +57,81 @@ information, number of iterations, and achieved negative log likelihood
 value and MLEs.}
 }
 \description{
-Perform Bayesian model selection-based calibration assessment as specified in
-Guthrie and Franck (2024).
+Perform Bayesian model selection-based approach to determine if a set of
+predicted probabilities \code{x} is well calibrated given the corresponding set of
+binary event outcomes \code{y} as described in Guthrie and Franck (2024).
 }
 \details{
-Compares a well calibrated model, \eqn{M_c} where \eqn{\delta = \gamma = 1}
-to an uncalibrated model, \eqn{M_u} where \eqn{\delta>0, \gamma \in
+This function compares a well calibrated model, \eqn{M_c} where \eqn{\delta =
+\gamma = 1} to an uncalibrated model, \eqn{M_u} where \eqn{\delta>0, \gamma \in
 \mathbb{R}}.
+
+The posterior model probability of \eqn{M_c} given the observed
+outcomes \code{y} (returned as \code{posterior_model_prob}) is expressed as \deqn{P(M_c|\mathbf{y})
+= \frac{P(\mathbf{y}|M_c) P(M_c)}{P(\mathbf{y}|M_c) P(M_c) + P(\mathbf{y}|M_{u}) P(M_{u})}}
+where \eqn{P(\mathbf{y}|M_i)} is the integrated likelihoof of \code{y} given
+\eqn{M_i} and \eqn{P(M_i)} is the prior probability of model i, \eqn{i \in
+\{c,u\}}. By default, this function uses \eqn{P(M_c) = P(M_u) = 0.5}. To set a
+different prior for \eqn{P(M_c)}, use \code{Pmc}, and \eqn{P(M_u)} will be set to
+\code{1 - Pmc}.
+
+The Bayes factor (returned as \code{BF}) compares \eqn{M_u} to \eqn{M_c}.  This
+value is approximated via the following large sample Bayesian Information
+Criteria (BIC) approximation (see Kass & Raftery 1995, Kass & Wasserman 1995) \deqn{BF =
+\frac{P(\mathbf{y}|M_{u})}{P(\mathbf{y}|M_c)} = \approx exp\left\{
+-\frac{1}{2}(BIC_u - BIC_c) \right\}} where the BIC for the calibrated model
+(returned as \code{BIC_mc}) is \deqn{BIC_c = - 2 \times log(\pi(\delta = 1, \gamma =1|\mathbf{x},\mathbf{y}))}
+and the BIC for the uncalibrated model (returned as \code{BIC_mu}) is \deqn{BIC_u =
+2\times log(n) - 2\times log(\pi(\hat\delta_{MLE}, \hat\gamma_{MLE}|\mathbf{x},\mathbf{y})).}
+}
+\examples{
+# Simulate 100 predicted probabilities
+x <- runif(100)
+# Simulated 100 binary event outcomes using x
+y <- rbinom(100, 1, x)
+# By construction, x is well calibrated.
+
+# Use bayesian model selection approach to check calibration of x given outcomes y
+bayes_ms(x, y, optim_details=FALSE)
+
+# To specify different prior model probability of calibration, use Pmc
+# Prior model prob of 0.7:
+bayes_ms(x, y, Pmc=0.7)
+# Prior model prob of 0.2
+bayes_ms(x, y, Pmc=0.2)
+
+# Use optim_details = TRUE to see returned info from call to optim(),
+# details useful for checking convergence
+bayes_ms(x, y, optim_details=TRUE)  # no convergence problems in this example
+
+# Pass additional arguments to optim() via ... (see optim() for details)
+# Specify different start values via par in optim() call, start at delta = 5, gamma = 5:
+bayes_ms(x, y, optim_details=TRUE, par=c(5,5))
+# Specify different optimization algorithm via method, L-BFGS-B instead of Nelder-Mead:
+bayes_ms(x, y, optim_details=TRUE, method = "L-BFGS-B")  # same result
+
+# What if events are defined by text instead of 0 or 1?
+y2 <- ifelse(y==0, "Loss", "Win")
+bayes_ms(x, y2, event="Win", optim_details=FALSE)  # same result
+
+# What if we're interested in the probability of loss instead of win?
+x2 <- 1 - x
+bayes_ms(x2, y2, event="Loss", optim_details=FALSE)
+
+# Push probabilities away from bounds by 0.000001
+x3 <- c(runif(50, 0, 0.0001), runif(50, .9999, 1))
+y3 <- rbinom(100, 1, 0.5)
+bayes_ms(x3, y3, epsilon=0.000001)
+
 }
 \references{
 Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
 for Binary Event Predictions. \emph{arxiv}.
+
+Kass, R. E., and Raftery, A. E. (1995) Bayes factors. \emph{Journal of the
+American Statistical Association}
+
+Kass, R. E., and Wassermann, L. (1995) A reference bayesian test for nested
+hypotheses and its relationship to the schwarz criterion. \emph{Journal of
+the American Statistical Association}
 }
