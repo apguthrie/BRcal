@@ -47,7 +47,7 @@
 #'   \item{\code{MLEs}}{Maximum likelihood estimates for \eqn{\delta} and
 #'   \eqn{\gamma}.}
 #'   \item{\code{optim_details}}{If `optim_details = TRUE`, the list returned by
-#'   `optim()` when minimizing the negative log likelihood, includes convergence
+#'   \link[stats]{optim} when minimizing the negative log likelihood, includes convergence
 #'   information, number of iterations, and achieved negative log likelihood
 #'   value and MLEs.}
 #' @export
@@ -55,7 +55,7 @@
 #' @importFrom stats optim
 #'
 #' @references Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
-#'   for Binary Event Predictions. \emph{arxiv}.
+#'   for Binary Event Predictions, \emph{The American Statistician} 1-17.
 #'
 #'   Kass, R. E., and Raftery, A. E. (1995) Bayes factors. \emph{Journal of the 
 #'   American Statistical Association}
@@ -104,7 +104,7 @@
 #' 
 bayes_ms <- function(x, y, Pmc = 0.5, event = 1, optim_details = TRUE, 
                      epsilon = .Machine$double.eps, ...){
-
+  # print(paste0(lower), " bayes_ms")
   ##################
   #  Input Checks  #
   ##################
@@ -142,6 +142,9 @@ bayes_ms <- function(x, y, Pmc = 0.5, event = 1, optim_details = TRUE,
 ######################################################
 
 bayes_ms_internal <- function(x, y, Pmc = 0.5, optim_details = TRUE, epsilon=.Machine$double.eps,  ...){
+  # print(paste0(lower), " bayes_ms_internal")
+  
+  
   n <- length(x)
   params_null <- c(1,1)
 

@@ -33,11 +33,13 @@ plot_params(
 )
 }
 \arguments{
-\item{x}{a numeric vector of probabilities to be LLO-adjusted. Must only
+\item{x}{a numeric vector of predicted probabilities of an event. Must only
 contain values in [0,1].}
 
-\item{y}{a numeric vector of outcomes corresponding to probabilities in \code{x}.
-Must only contain 0 or 1.}
+\item{y}{a vector of outcomes corresponding to probabilities in \code{x}. Must
+only contain two unique values (one for "events" and one for "non-events").
+By default, this function expects a vector of 0s (non-events) and 1s
+(events).}
 
 \item{z}{Matrix returned by previous call to \code{plot_params()} containing
 posterior model probabilities across k\eqn{\times}k grid of \eqn{\delta}

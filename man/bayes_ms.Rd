@@ -15,7 +15,7 @@ bayes_ms(
 )
 }
 \arguments{
-\item{x}{a numeric vector of probabilities to be LLO-adjusted. Must only
+\item{x}{a numeric vector of predicted probabilities of an event. Must only
 contain values in [0,1].}
 
 \item{y}{a vector of outcomes corresponding to probabilities in \code{x}. Must
@@ -27,15 +27,15 @@ By default, this function expects a vector of 0s (non-events) and 1s
 
 \item{event}{Value in \code{y} that represents an "event".  Default value is 1.}
 
-\item{optim_details}{Logical.  If \code{TRUE}, the list returned by \code{optim()} when
-minimizing the negative log likelihood is also returned by \code{llo_lrt()}.}
+\item{optim_details}{Logical.  If \code{TRUE}, the list returned by \link[stats]{optim} when
+minimizing the negative log likelihood is also returned by this function.}
 
 \item{epsilon}{Amount by which probabilities are pushed away from 0 or 1
 boundary for numerical stability. If a value in \code{x} < \code{epsilon}, it will be
 replaced with \code{epsilon}.  If a value in \code{x} > \code{1-epsilon}, that value will
 be replaced with \code{1-epsilon}.}
 
-\item{...}{Additional arguments to be passed to \code{optim()}.}
+\item{...}{Additional arguments to be passed to \link[stats]{optim}.}
 }
 \value{
 A list with the following attributes:
@@ -52,7 +52,7 @@ calibrated model \eqn{M_c} given the observed outcomes \code{y}, i.e. \eqn{P(M_c
 \item{\code{MLEs}}{Maximum likelihood estimates for \eqn{\delta} and
 \eqn{\gamma}.}
 \item{\code{optim_details}}{If \code{optim_details = TRUE}, the list returned by
-\code{optim()} when minimizing the negative log likelihood, includes convergence
+\link[stats]{optim} when minimizing the negative log likelihood, includes convergence
 information, number of iterations, and achieved negative log likelihood
 value and MLEs.}
 }
@@ -125,7 +125,7 @@ bayes_ms(x3, y3, epsilon=0.000001)
 }
 \references{
 Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
-for Binary Event Predictions. \emph{arxiv}.
+for Binary Event Predictions, \emph{The American Statistician} 1-17.
 
 Kass, R. E., and Raftery, A. E. (1995) Bayes factors. \emph{Journal of the
 American Statistical Association}

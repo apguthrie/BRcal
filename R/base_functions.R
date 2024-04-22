@@ -15,7 +15,7 @@
 #' by \eqn{\delta} and scaled by \eqn{\gamma} on the log odds scale.  When
 #' \eqn{\delta = \gamma = 1}, there is no shifting or scaling imposed on `x`.
 #'
-#' @param x a numeric vector of probabilities to be LLO-adjusted. Must only
+#' @param x a numeric vector of predicted probabilities of an event. Must only
 #'   contain values in \[0,1\].
 #' @param delta numeric, must be > 0, parameter \eqn{\delta} in LLO
 #'   recalibration function.
@@ -125,14 +125,14 @@ LLO <- function(x, delta, gamma){
 #'   only contain two unique values (one for "events" and one for "non-events").
 #'   By default, this function expects a vector of 0s (non-events) and 1s
 #'   (events).
-#' @param optim_details Logical.  If `TRUE`, the list returned by `optim()` when
-#'   minimizing the negative log likelihood is also returned by `llo_lrt()`.
+#' @param optim_details Logical.  If `TRUE`, the list returned by \link[stats]{optim} when
+#'   minimizing the negative log likelihood is also returned by this function.
 #' @param event Value in `y` that represents an "event".  Default value is 1.
 #' @param epsilon Amount by which probabilities are pushed away from 0 or 1
 #'   boundary for numerical stability. If a value in `x` < `epsilon`, it will be
 #'   replaced with `epsilon`.  If a value in `x` > `1-epsilon`, that value will
 #'   be replaced with `1-epsilon`.
-#' @param ... Additional arguments to be passed to `optim()`.
+#' @param ... Additional arguments to be passed to \link[stats]{optim}.
 #'
 #' @return A list with the following attributes: \item{\code{test_stat}}{The
 #'   test statistic \eqn{\lambda_{LR}} from the likelihood ratio test.}
@@ -140,7 +140,7 @@ LLO <- function(x, delta, gamma){
 #'   \item{\code{MLEs}}{Maximum likelihood estimates for \eqn{\delta} and
 #'   \eqn{\gamma}.}
 #'   \item{\code{optim_details}}{If `optim_details = TRUE`, the list returned by
-#'   `optim()` when minimizing the negative log likelihood, includes convergence
+#'   \link[stats]{optim} when minimizing the negative log likelihood, includes convergence
 #'   information, number of iterations, and achieved negative log likelihood
 #'   value and MLEs.}
 #'
@@ -149,7 +149,7 @@ LLO <- function(x, delta, gamma){
 #' @export
 #'
 #' @references Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
-#'   for Binary Event Predictions. \emph{arxiv}.
+#'   for Binary Event Predictions, \emph{The American Statistician} 1-17.
 #'
 #' @examples
 #' # Simulate 100 predicted probabilities
@@ -262,7 +262,7 @@ llo_lrt <- function(x, y, event=1, optim_details=TRUE,
 #'   \item{\code{MLEs}}{Maximum likelihood estimates for \eqn{\delta} and
 #'   \eqn{\gamma}.}
 #'   \item{\code{optim_details}}{If `optim_details = TRUE`, the list returned by
-#'   `optim()` when minimizing the negative log likelihood, includes convergence
+#'   \link[stats]{optim} when minimizing the negative log likelihood, includes convergence
 #'   information, number of iterations, and achieved negative log likelihood
 #'   value and MLEs.}
 #'
@@ -271,7 +271,7 @@ llo_lrt <- function(x, y, event=1, optim_details=TRUE,
 #' @export
 #'
 #' @references Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
-#'   for Binary Event Predictions. \emph{arxiv}.
+#'   for Binary Event Predictions, \emph{The American Statistician} 1-17.
 #'
 #' @examples
 #' # Simulate 100 predicted probabilities
@@ -411,14 +411,16 @@ llo_lik <- function(params, x, y, log = FALSE, neg = FALSE, tau = FALSE, epsilon
 }
 
 
-llo_optim <- function(x, y, par=c(0.5,0.5), tau=TRUE, gr=nll_gradient, ...){
+llo_optim <- function(x, y, par=c(0.5,0.5), tau=TRUE, gr=nll_gradient, lower = 0, upper = Inf, ...){
   
+  # print(lower)
+  # print(par)
   # convert delta to tau
   # NEED HANDELING FOR TAU = FALSE BC BOUND ON DELTA!
   if(tau){
     par[1] <- log(par[1])
-    if("lower" %in% names(list(...))){ lower[1] <- log(lower[1]) }
-    if("upper" %in% names(list(...))){ upper[1] <- log(upper[1]) }
+    lower[1] <- log(lower[1]) 
+    upper[1] <- log(upper[1]) 
   }
   
   opt <- optim(par=par, fn=llo_lik,

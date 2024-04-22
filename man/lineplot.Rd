@@ -12,6 +12,7 @@ lineplot(
   Pmc = 0.5,
   event = 1,
   return_df = TRUE,
+  epsilon = .Machine$double.eps,
   title = "Line Plot",
   ylab = "Probability",
   xlab = "Posterior Model Probability",
@@ -28,11 +29,13 @@ lineplot(
 )
 }
 \arguments{
-\item{x}{a numeric vector of probabilities to be LLO-adjusted. Must only
+\item{x}{a numeric vector of predicted probabilities of an event. Must only
 contain values in [0,1].}
 
-\item{y}{a numeric vector of outcomes corresponding to probabilities in \code{x}.
-Must only contain 0 or 1.}
+\item{y}{a vector of outcomes corresponding to probabilities in \code{x}. Must
+only contain two unique values (one for "events" and one for "non-events").
+By default, this function expects a vector of 0s (non-events) and 1s
+(events).}
 
 \item{t_levels}{Vector of desired level(s) of calibration at which to plot
 contours.}
@@ -47,6 +50,11 @@ making minor cosmetic changes to a previous call.}
 
 \item{return_df}{Logical.  If \code{TRUE}, the dataframe used to build this plot
 will be returned.}
+
+\item{epsilon}{Amount by which probabilities are pushed away from 0 or 1
+boundary for numerical stability. If a value in \code{x} < \code{epsilon}, it will be
+replaced with \code{epsilon}.  If a value in \code{x} > \code{1-epsilon}, that value will
+be replaced with \code{1-epsilon}.}
 
 \item{title}{Plot title.}
 

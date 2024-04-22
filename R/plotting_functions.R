@@ -8,6 +8,7 @@
 # efficiently, citations, add capability for points at B-R params???? Note
 # calculations will change with thinning and is generally not recommended
 # Need to explain why white cells may show up + warning message
+# add option to pass arguemtns to optim
 
 #' Draw image plot of posterior model probability surface.
 #'
@@ -73,6 +74,9 @@
 #' @references Nychka,D., Furrer, R., Paige, J., Sain, S. (2021). fields: Tools
 #'   for spatial data. R package version 15.2,
 #'   <https://github.com/dnychka/fieldsRPackage>.
+#'   
+#'   Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
+#'   for Binary Event Predictions, \emph{The American Statistician} 1-17.
 #'
 #' @examples
 plot_params <- function(x, y, z=NULL, t_levels = c(0.8, 0.9),
@@ -137,7 +141,7 @@ plot_params <- function(x, y, z=NULL, t_levels = c(0.8, 0.9),
     if(length(x) != length(y)) stop("x and y length differ")
 
     # check Pmc is valid prior model prob
-    Pmc <- check_input_probs(Pmc, name="Pmc")
+    Pmc <- check_value01(Pmc, name="Pmc")
 
     # check k
     if(!is.numeric(k)) stop("k must be numeric")
@@ -267,10 +271,14 @@ plot_params <- function(x, y, z=NULL, t_levels = c(0.8, 0.9),
 #'
 #' @references Wickham, H. (2016) ggplot2: Elegant Graphics for Data Analysis.
 #'  Springer-Verlag New York.
+#'  
+#'  Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
+#'   for Binary Event Predictions, \emph{The American Statistician} 1-17.
 #'
 #' @examples
 lineplot <- function(x, y, t_levels=NULL, df=NULL,
                      Pmc = 0.5, event=1, return_df=TRUE, 
+                     epsilon=.Machine$double.eps,
                      title="Line Plot", ylab="Probability",
                      xlab = "Posterior Model Probability",
                      pt_size = 1.5, ln_size = 0.5,
@@ -338,7 +346,7 @@ lineplot <- function(x, y, t_levels=NULL, df=NULL,
     df$probs <- x_plot
     df$outcome <- y_plot
     # use full set to get MLEs & posterior model prob, but only plot thinned set
-    bt <- bayes_ms(x, y)
+    bt <- bayes_ms(x, y, epsilon=epsilon)
     df$post <- bt$posterior_model_prob
     df$pairing <- pairs
     df$label <- paste0("Original \n(",  round(bt$posterior_model_prob,5), ")")
@@ -350,7 +358,7 @@ lineplot <- function(x, y, t_levels=NULL, df=NULL,
     # MLE recalibrate
     temp$probs <- LLO(x_plot, bt$MLEs[1], bt$MLEs[2])
     temp$outcome <- y_plot
-    bt_mle <- bayes_ms(LLO(x, bt$MLEs[1], bt$MLEs[2]), y)
+    bt_mle <- bayes_ms(LLO(x, bt$MLEs[1], bt$MLEs[2]), y, epsilon=epsilon)
     temp$post <- round(bt_mle$posterior_model_prob,5)
     temp$pairing <- pairs
     temp$label <- paste0("MLE Recal. \n(",  round(bt_mle$posterior_model_prob, 5), ")")
@@ -360,10 +368,10 @@ lineplot <- function(x, y, t_levels=NULL, df=NULL,
     # loop over t values
     for(i in 1:length(t_levels)){
       br <- brcal(x, y, t_levels[i], Pmc=Pmc, x0 = c(bt$MLEs[1], bt$MLEs[2]),
-                  start_at_MLEs=FALSE, print_level=0)
+                  start_at_MLEs=FALSE, print_level=0, epsilon=epsilon)
       temp$probs <- LLO(x=x_plot, delta=br$BR_params[1], gamma=br$BR_params[2])
       temp$outcome <- y_plot
-      bt_br <- bayes_ms(LLO(x, br$BR_params[1], br$BR_params[2]), y)
+      bt_br <- bayes_ms(LLO(x, br$BR_params[1], br$BR_params[2]), y, epsilon=epsilon)
       temp$post <- bt_br$posterior_model_prob
       temp$pairing <- pairs
       temp$label <- paste0(round(t_levels[i]*100,0), "% B-R\n(",  round(bt_br$posterior_model_prob, 5), ")")

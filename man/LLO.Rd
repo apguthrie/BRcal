@@ -7,7 +7,7 @@
 LLO(x, delta, gamma)
 }
 \arguments{
-\item{x}{a numeric vector of probabilities to be LLO-adjusted. Must only
+\item{x}{a numeric vector of predicted probabilities of an event. Must only
 contain values in [0,1].}
 
 \item{delta}{numeric, must be > 0, parameter \eqn{\delta} in LLO
