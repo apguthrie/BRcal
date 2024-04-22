@@ -52,8 +52,8 @@ check_input_outcomes <- function(y, name="y", event=1){
     }
   }
 
-  # check y is vector
-  if(!is.vector(y)) stop("argument ", name, " is ", class(y) ," type, not a vector")
+  # # check y is vector
+  # if(!is.vector(y)) stop("argument ", name, " is ", class(y) ," type, not a vector")
 
   # check y only has two values
   if(length(unique(y)) != 2) warning("argument ", name, " has ", length(unique(y)), " levels")
