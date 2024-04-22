@@ -6,7 +6,7 @@ Authors@R:
       person("Christopher T.", "Franck", , "chfranck@vt.edu", role = c("aut")))
 Description: This package facilitates boldness-recalibration at a user specified 
              level of calibration via the `brcal()` function. Supporting functions 
-             to assess calibration via Bayesian and Frequentists approaches, 
+             to assess calibration via Bayesian and Frequentist approaches, 
              MLE recalibration, LLO-adjust via any specified
              parameters, and visualize results are also provided.   
              See Guthrie & Franck (2024) for methodological details.
@@ -22,5 +22,8 @@ Imports:
     fields,
     ggplot2
 Suggests: 
+    knitr,
+    rmarkdown,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
+VignetteBuilder: knitr
