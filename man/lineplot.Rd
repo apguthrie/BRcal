@@ -81,7 +81,7 @@ passed to \code{scale_y_continous()}.}
 without replacement to form a set of size \code{thin_to}.}
 
 \item{thin_percent}{When non-null, the observations in (x,y) are randomly
-sampled without replacement to form a set that is \code{thin_percent}\\% of the
+sampled without replacement to form a set that is \code{thin_percent} * 100\% of the
 original size of (x,y).}
 
 \item{thin_by}{When non-null, the observations in (x,y) are thinned by
@@ -100,6 +100,9 @@ Otherwise just the \code{ggplot} object of the plot is returned.
 Lineplot for LLO-adjusted Probability Predictions
 }
 \references{
+Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
+for Binary Event Predictions, \emph{The American Statistician} 1-17.
+
 Wickham, H. (2016) ggplot2: Elegant Graphics for Data Analysis.
 Springer-Verlag New York.
 }
