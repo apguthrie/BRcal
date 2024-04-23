@@ -36,7 +36,7 @@ recalibrated probabilities.}
 \item{\code{optim_details}}{If \code{optim_details = TRUE}, the list returned by
 \link[stats]{optim} when minimizing the negative log likelihood, includes convergence
 information, number of iterations, and achieved negative log likelihood
-value and MLEs.}
+value and MLEs.  This arguement is ignored when \code{probs_only=TRUE}.}
 }
 \description{
 MLE recalibrate (i.e. LLO-adjust via \eqn{\hat{\delta}_{MLE}} and

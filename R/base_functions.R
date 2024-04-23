@@ -264,7 +264,7 @@ llo_lrt <- function(x, y, event=1, optim_details=TRUE,
 #'   \item{\code{optim_details}}{If `optim_details = TRUE`, the list returned by
 #'   \link[stats]{optim} when minimizing the negative log likelihood, includes convergence
 #'   information, number of iterations, and achieved negative log likelihood
-#'   value and MLEs.}
+#'   value and MLEs.  This arguement is ignored when `probs_only=TRUE`.}
 #'
 #' @importFrom stats optim
 #'
@@ -325,7 +325,7 @@ mle_recal <- function(x, y, probs_only=FALSE, event=1, optim_details=TRUE, ...){
   if(!is.logical(probs_only) & !(probs_only %in% c(0,1))) stop("argument probs_only must be logical")
   
   # check probs_only & optim_details are NOT both true
-  if(probs_only & optim_details) warning("optim_details cannot be returned when probs_only is TRUE, print details instead")
+  if(probs_only & optim_details) optim_details <- FALSE
   
   # check x and y are the same length
   if(length(x) != length(y)) stop("x and y length differ")
