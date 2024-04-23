@@ -2,7 +2,7 @@
 % Please edit documentation in R/boldness_recalib.R
 \name{brcal}
 \alias{brcal}
-\title{Boldness Recalibration for Binary Events}
+\title{Boldness-Recalibration for Binary Events}
 \usage{
 brcal(
   x,
@@ -20,17 +20,20 @@ brcal(
   xtol_rel_inner = 1e-06,
   xtol_rel_outer = 1e-06,
   print_level = 3,
+  epsilon = .Machine$double.eps,
   opts = NULL
 )
 }
 \arguments{
-\item{x}{a numeric vector of probabilities to be LLO-adjusted. Must only
+\item{x}{a numeric vector of predicted probabilities of an event. Must only
 contain values in [0,1].}
 
-\item{y}{a numeric vector of outcomes corresponding to probabilities in \code{x}.
-Must only contain 0 or 1.}
+\item{y}{a vector of outcomes corresponding to probabilities in \code{x}. Must
+only contain two unique values (one for "events" and one for "non-events").
+By default, this function expects a vector of 0s (non-events) and 1s
+(events).}
 
-\item{t}{Desired level of calibration in [0,1].}
+\item{t}{Minimum tolerable level of calibration in [0,1].}
 
 \item{Pmc}{The prior model probability for the calibrated model \eqn{M_c}.}
 
@@ -70,6 +73,11 @@ optimization routine when the parameter estimates for \eqn{\delta} and
 printed during optimization. Default is to print the most information
 allowable by \code{nloptr()}. Specify \code{0} to suppress all output.}
 
+\item{epsilon}{Amount by which probabilities are pushed away from 0 or 1
+boundary for numerical stability. If a value in \code{x} < \code{epsilon}, it will be
+replaced with \code{epsilon}.  If a value in \code{x} > \code{1-epsilon}, that value will
+be replaced with \code{1-epsilon}.}
+
 \item{opts}{List with options to be passed to \code{nloptr}.  See details.}
 }
 \value{
@@ -89,45 +97,108 @@ probabilities.}
 }
 \description{
 Perform Bayesian boldness-recalibration as specified in Guthrie and Franck
-(2024).
+(2024). Boldness-recalibration maximizes the spread in predictions (\code{x})
+subject to a constraint on the minimum tolerable posterior probability of
+calibration (\code{t}).
 }
 \details{
+The objective function in boldness-recalibration is \deqn{ f(\delta, \gamma)
+= -sd(\mathbf{x}')} and the constraint is \deqn{g(\delta, \gamma) =
+-(P(M_c|\mathbf{y}, \mathbf{x}')-t) \leq 0.}  As both the objective and
+constraint functions are non-linear with respect to \eqn{\delta} and
+\eqn{\gamma}, we use \link[nloptr]{nloptr} for this optimization rather than
+\link[stats]{optim}. Note that we use \code{x} to denote a vector of predicted
+probabilities, \code{nloptr()} uses \code{x} to denote the parameters being optimized.
+Thus, starting values for \eqn{\delta} and \eqn{\gamma} are passed via
+argument \code{x0} and all output refers to the objective and constraint as \code{f(x)}
+and \code{g(x)}.
+
 By default, this function uses the Augmented Lagrangian Algorithm (AUGLAG)
-(Conn et. al. 1991, Birgin and Martinez 2008) as the outer optimization routine
-and Sequential Least-Squares Quadratic Programming (SLSQP) (Dieter 1988, Dieter 1994)
-as the inner optimization routine.
+(Conn et. al. 1991, Birgin and Martinez 2008) as the outer optimization
+routine and Sequential Least-Squares Quadratic Programming (SLSQP) (Dieter
+1988, Dieter 1994) as the inner optimization routine.
 
 For more control over the optimization routine conducted by \code{nloptr()}, the
-user may specify their own options via the \code{opts} argument.  Note that any objective,
-constraint, or gradient functions specified by the user will be overwritten
-by those specified in this package. See the documentation for \code{nloptr()} and
-the NLopt website for full details (\url{https://nlopt.readthedocs.io/en/latest/}).
+user may specify their own options via the \code{opts} argument.  Note that any
+objective, constraint, or gradient functions specified by the user will be
+overwritten by those specified in this package. See the documentation for
+\code{nloptr()} and the NLopt website for full details
+(\url{https://nlopt.readthedocs.io/en/latest/}).
 
 When \code{tau=TRUE}, the optimization routine operates relative to \eqn{\tau =
 log(\delta)} instead of \eqn{\delta}.  Specification of start location \code{x0}
 and bounds \code{lb}, \code{ub} should still be specified in terms of \eqn{\delta}. The
 \code{brcal} function will automatically convert from \eqn{\delta} to \eqn{\tau}.
-In the returned list, \code{BR_params} will always report in terms of \eqn{\delta}.
-However, \code{nloptr} will reflect whichever scale \code{nloptr()} optimized on.
+In the returned list, \code{BR_params} will always report in terms of
+\eqn{\delta}. However, the results returned in \code{nloptr} will reflect
+whichever scale \code{nloptr()} optimized on.
+}
+\examples{
+#' # Simulate 100 predicted probabilities
+x <- runif(100)
+# Simulated 100 binary event outcomes using x
+y <- rbinom(100, 1, x)  # By construction, x is well calibrated.
+
+# Perform 95\% boldness-recalibration
+brcal(x, y)
+
+# Perform 90\% boldness-recalibration
+brcal(x, y, t=0.9)
+
+# To specify different prior model probability of calibration, use Pmc
+# Prior model prob of 0.7:
+brcal(x, y, Pmc=0.7)
+# Prior model prob of 0.2
+brcal(x, y, Pmc=0.2)
+
+# To suppress all output from nloptr() for each iteration use print_level=0
+brcal(x, y, print_level=0)
+
+# For reduced output at each iteration used print_level=1 or 2
+brcal(x, y, print_level=1)
+
+# To specify different starting values, use x0 and set start_at_MLEs=FALSE
+#brcal(x, y, x0=c(1,2), start_at_MLEs=FALSE)
+
+# Adjust stopping criteria:
+# max number of evaluations (maxeval)
+brcal(x, y, opts=list(maxeval = 100))
+
+# What if events are defined by text instead of 0 or 1?
+y2 <- ifelse(y==0, "Loss", "Win")
+brcal(x, y2, event="Win", print_level=0)  # same result
+
+# What if we're interested in the probability of loss instead of win?
+x2 <- 1 - x
+brcal(x2, y2, event="Loss", print_level=0)
+
+# Push probabilities away from bounds by 0.000001
+x3 <- c(runif(50, 0, 0.0001), runif(50, .9999, 1))
+y3 <- rbinom(100, 1, 0.5)
+brcal(x3, y3, epsilon=0.000001)
+
 }
 \references{
 Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
-for Binary Event Predictions. \emph{arxiv}.
+for Binary Event Predictions, \emph{The American Statistician} 1-17.
 
-Johnson, S. G., The NLopt nonlinear-optimization package, \url{https://nlopt.readthedocs.io/en/latest/}.
+Johnson, S. G., The NLopt nonlinear-optimization package,
+\url{https://nlopt.readthedocs.io/en/latest/}.
 
-Conn, A. R., Gould, N. I. M., and Toint, P. L. (1991) A globally convergent augmented
-Lagrangian algorithm for optimization with general constraints and simple bounds,
-\emph{SIAM Journal of Numerical Analysis} vol. 28, no. 2, p. 545-572.
+Conn, A. R., Gould, N. I. M., and Toint, P. L. (1991) A globally convergent
+augmented Lagrangian algorithm for optimization with general constraints
+and simple bounds, \emph{SIAM Journal of Numerical Analysis} vol. 28, no.
+2, p. 545-572.
 
 Birgin, E. G., and Martínez, J. M. (2008) Improving ultimate convergence of
 an augmented Lagrangian method, \emph{Optimization Methods and Software}
 vol. 23, no. 2, p. 177-195.
 
 Kraft, D. (1988) A software package for sequential quadratic programming",
-\emph{Technical Report} DFVLR-FB 88-28, Institut für Dynamik der Flugsysteme,
-Oberpfaffenhofen.
+\emph{Technical Report} DFVLR-FB 88-28, Institut für Dynamik der
+Flugsysteme, Oberpfaffenhofen.
 
-Kraft, D. (1994) Algorithm 733: TOMP–Fortran modules for optimal control
-calculations, \emph{ACM Transactions on Mathematical Software}, vol. 20, no. 3, pp. 262-281 .
+Kraft, D. (1994) Algorithm 733: TOMP-Fortran modules for optimal control
+calculations, \emph{ACM Transactions on Mathematical Software}, vol. 20,
+no. 3, pp. 262-281.
 }
