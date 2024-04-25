@@ -2,9 +2,6 @@
 #  External Functions                                #
 ######################################################
 
-# fix up passing opts list to nloptr and finish examples
-
-
 #' Boldness-Recalibration for Binary Events
 #'
 #' Perform Bayesian boldness-recalibration as specified in Guthrie and Franck
@@ -93,20 +90,20 @@
 #'
 #'
 #'
-#' @references Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
-#'   for Binary Event Predictions, \emph{The American Statistician} 1-17.
-#'
-#'   Johnson, S. G., The NLopt nonlinear-optimization package,
-#'   <https://nlopt.readthedocs.io/en/latest/>.
-#'
+#' @references Birgin, E. G., and Martínez, J. M. (2008) Improving ultimate convergence of
+#'   an augmented Lagrangian method, \emph{Optimization Methods and Software}
+#'   vol. 23, no. 2, p. 177-195.
+#'   
 #'   Conn, A. R., Gould, N. I. M., and Toint, P. L. (1991) A globally convergent
 #'   augmented Lagrangian algorithm for optimization with general constraints
 #'   and simple bounds, \emph{SIAM Journal of Numerical Analysis} vol. 28, no.
 #'   2, p. 545-572.
+#' 
+#'   Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
+#'   for Binary Event Predictions, \emph{The American Statistician} 1-17.
 #'
-#'   Birgin, E. G., and Martínez, J. M. (2008) Improving ultimate convergence of
-#'   an augmented Lagrangian method, \emph{Optimization Methods and Software}
-#'   vol. 23, no. 2, p. 177-195.
+#'   Johnson, S. G., The NLopt nonlinear-optimization package,
+#'   <https://nlopt.readthedocs.io/en/latest/>.
 #'
 #'   Kraft, D. (1988) A software package for sequential quadratic programming",
 #'   \emph{Technical Report} DFVLR-FB 88-28, Institut für Dynamik der
@@ -141,12 +138,21 @@
 #' brcal(x, y, print_level=1)
 #'
 #' # To specify different starting values, use x0 and set start_at_MLEs=FALSE
-#' #brcal(x, y, x0=c(1,2), start_at_MLEs=FALSE)
+#' brcal(x, y, x0=c(1,2), start_at_MLEs=FALSE)
 #'
 #' # Adjust stopping criteria:
-#' # max number of evaluations (maxeval)
-#' brcal(x, y, opts=list(maxeval = 100))
+#' # set max number of evaluations to 100 (maxeval)
+#' brcal(x, y, maxeval = 100)
+#' 
+#' # Stop after 2 minutes (maxtime)
+#' brcal(x, y, maxtime = 120)  
 #'
+#' # Stop inner optimization when parameters change by less than .0001
+#' brcal(x, y, xtol_rel_inner = 120)  
+#' 
+#' #' # Stop outeroptimization when parameters change by less than .0001
+#' brcal(x, y, xtol_rel_outer = 120)  
+#' 
 #' # What if events are defined by text instead of 0 or 1?
 #' y2 <- ifelse(y==0, "Loss", "Win")
 #' brcal(x, y2, event="Win", print_level=0)  # same result

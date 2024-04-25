@@ -179,20 +179,20 @@ brcal(x3, y3, epsilon=0.000001)
 
 }
 \references{
-Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
-for Binary Event Predictions, \emph{The American Statistician} 1-17.
-
-Johnson, S. G., The NLopt nonlinear-optimization package,
-\url{https://nlopt.readthedocs.io/en/latest/}.
+Birgin, E. G., and Martínez, J. M. (2008) Improving ultimate convergence of
+an augmented Lagrangian method, \emph{Optimization Methods and Software}
+vol. 23, no. 2, p. 177-195.
 
 Conn, A. R., Gould, N. I. M., and Toint, P. L. (1991) A globally convergent
 augmented Lagrangian algorithm for optimization with general constraints
 and simple bounds, \emph{SIAM Journal of Numerical Analysis} vol. 28, no.
 2, p. 545-572.
 
-Birgin, E. G., and Martínez, J. M. (2008) Improving ultimate convergence of
-an augmented Lagrangian method, \emph{Optimization Methods and Software}
-vol. 23, no. 2, p. 177-195.
+Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
+for Binary Event Predictions, \emph{The American Statistician} 1-17.
+
+Johnson, S. G., The NLopt nonlinear-optimization package,
+\url{https://nlopt.readthedocs.io/en/latest/}.
 
 Kraft, D. (1988) A software package for sequential quadratic programming",
 \emph{Technical Report} DFVLR-FB 88-28, Institut für Dynamik der
