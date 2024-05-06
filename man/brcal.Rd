@@ -21,7 +21,8 @@ brcal(
   xtol_rel_outer = 1e-06,
   print_level = 3,
   epsilon = .Machine$double.eps,
-  opts = NULL
+  opts = NULL,
+  optim_options = NULL
 )
 }
 \arguments{
@@ -78,7 +79,9 @@ boundary for numerical stability. If a value in \code{x} < \code{epsilon}, it wi
 replaced with \code{epsilon}.  If a value in \code{x} > \code{1-epsilon}, that value will
 be replaced with \code{1-epsilon}.}
 
-\item{opts}{List with options to be passed to \code{nloptr}.  See details.}
+\item{opts}{List with options to be passed to \code{nloptr}.}
+
+\item{optim_options}{List with options to be passed to \code{optim}.}
 }
 \value{
 A list with the following attributes:
@@ -117,6 +120,9 @@ By default, this function uses the Augmented Lagrangian Algorithm (AUGLAG)
 (Conn et. al. 1991, Birgin and Martinez 2008) as the outer optimization
 routine and Sequential Least-Squares Quadratic Programming (SLSQP) (Dieter
 1988, Dieter 1994) as the inner optimization routine.
+}
+\section{Adjusting call to \code{nloptr()}}{
+
 
 For more control over the optimization routine conducted by \code{nloptr()}, the
 user may specify their own options via the \code{opts} argument.  Note that any
@@ -124,6 +130,21 @@ objective, constraint, or gradient functions specified by the user will be
 overwritten by those specified in this package. See the documentation for
 \code{nloptr()} and the NLopt website for full details
 (\url{https://nlopt.readthedocs.io/en/latest/}).
+}
+
+\section{Adjusting call to \code{optim()}}{
+
+
+While \code{optim()} is not used for the non-linear constrained optimization for
+finding he boldness-recalibration parameters, it is used in the constraint
+function as it involves the posterior model posterior.  Because of this,
+we do allow users to pass additional arguments to \code{optim} to be used in this
+calculation.  However, rather than use the \code{...},
+users should pass these arguments to \code{optim_options} via a list.
+}
+
+\section{Optimizing over \eqn{\tau}}{
+
 
 When \code{tau=TRUE}, the optimization routine operates relative to \eqn{\tau =
 log(\delta)} instead of \eqn{\delta}.  Specification of start location \code{x0}
@@ -133,6 +154,7 @@ In the returned list, \code{BR_params} will always report in terms of
 \eqn{\delta}. However, the results returned in \code{nloptr} will reflect
 whichever scale \code{nloptr()} optimized on.
 }
+
 \examples{
 #' # Simulate 100 predicted probabilities
 x <- runif(100)
@@ -145,11 +167,6 @@ brcal(x, y)
 # Perform 90\% boldness-recalibration
 brcal(x, y, t=0.9)
 
-# To specify different prior model probability of calibration, use Pmc
-# Prior model prob of 0.7:
-brcal(x, y, Pmc=0.7)
-# Prior model prob of 0.2
-brcal(x, y, Pmc=0.2)
 
 # To suppress all output from nloptr() for each iteration use print_level=0
 brcal(x, y, print_level=0)
@@ -158,11 +175,38 @@ brcal(x, y, print_level=0)
 brcal(x, y, print_level=1)
 
 # To specify different starting values, use x0 and set start_at_MLEs=FALSE
-#brcal(x, y, x0=c(1,2), start_at_MLEs=FALSE)
+brcal(x, y, x0=c(1,2), start_at_MLEs=FALSE)
 
 # Adjust stopping criteria:
-# max number of evaluations (maxeval)
-brcal(x, y, opts=list(maxeval = 100))
+# set max number of evaluations to 100 (maxeval)
+brcal(x, y, maxeval = 100)
+
+# Stop after 2 minutes (maxtime)
+brcal(x, y, maxtime = 120)
+
+# Stop inner optimization when parameters change by less than .0001
+brcal(x, y, xtol_rel_inner = .0001)
+
+# Stop outer optimization when parameters change by less than .0001
+brcal(x, y, xtol_rel_outer = .0001)
+
+# Setting optimization bounds 
+# delta in (0.0001, 10), gamma in (0, 10)
+brcal(x, y, lb=(0.001, 0), ub=(10, 10))
+
+# Specify different arguments in nloptr
+brcal(x, y, opts=list(xtol_abs=0.00001,
+                      local_opts=list(algorithm="NLOPT_LD_MMA")))
+
+# Specify different arguments in optim
+brcal(x, y, optim_options=list(method = "L-BFGS-B", lower = c(0, -1), 
+                               upper = c(10, 25), control=list(reltol=1e-10)))
+
+# To specify different prior model probability of calibration, use Pmc
+# Prior model prob of 0.7:
+brcal(x, y, Pmc=0.7)
+# Prior model prob of 0.2
+brcal(x, y, Pmc=0.2)
 
 # What if events are defined by text instead of 0 or 1?
 y2 <- ifelse(y==0, "Loss", "Win")
@@ -179,17 +223,17 @@ brcal(x3, y3, epsilon=0.000001)
 
 }
 \references{
-Birgin, E. G., and Martínez, J. M. (2008) Improving ultimate convergence of
-an augmented Lagrangian method, \emph{Optimization Methods and Software}
-vol. 23, no. 2, p. 177-195.
+Birgin, E. G., and Martínez, J. M. (2008) Improving ultimate
+convergence of an augmented Lagrangian method, \emph{Optimization Methods
+and Software} vol. 23, no. 2, p. 177-195.
 
 Conn, A. R., Gould, N. I. M., and Toint, P. L. (1991) A globally convergent
 augmented Lagrangian algorithm for optimization with general constraints
 and simple bounds, \emph{SIAM Journal of Numerical Analysis} vol. 28, no.
 2, p. 545-572.
 
-Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
-for Binary Event Predictions, \emph{The American Statistician} 1-17.
+Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration for Binary
+Event Predictions, \emph{The American Statistician} 1-17.
 
 Johnson, S. G., The NLopt nonlinear-optimization package,
 \url{https://nlopt.readthedocs.io/en/latest/}.
