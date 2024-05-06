@@ -23,7 +23,8 @@ plot_params(
   ylab = "gamma",
   optim_options = NULL,
   imgplt_options = list(legend.lab = ""),
-  contour_options = list(drawlabels = TRUE, col = "white", labcex = 0.6, lwd = 1)
+  contour_options = list(drawlabels = TRUE, labcex = 0.6, lwd = 1, col =
+    ifelse(contours_only, "black", "white"))
 )
 }
 \arguments{
@@ -216,23 +217,32 @@ plot_params(x, y, k=200, dlim=c(0.0001, 3), glim=c(0.1,2))
 zmat_list <- plot_params(x, y, k=200, dlim=c(0.0001, 3), glim=c(0.1,2), return_z=TRUE)
 
 # Reuse z matrix
-plot_params(z=zmat_list$z, dlim=c(0.0001, 3), glim=c(0.1,2))
+plot_params(z=zmat_list$z, k=200, dlim=c(0.0001, 3), glim=c(0.1,2))
 
 # Add contours at t=0.95, 0.9, and 0.8
-plot_params(z=zmat_list$z, dlim=c(0.0001, 3), glim=c(0.1,2), t_levels=c(0.95, 0.9, 0.8))
+plot_params(z=zmat_list$z, k=200, dlim=c(0.0001, 3), glim=c(0.1,2), t_levels=c(0.95, 0.9, 0.8))
 
 # Add points for 95\% boldness-recalibration parameters
 br95 <- brcal(x, y, t=0.95)
-plot_params(z=zmat_list$z, dlim=c(0.0001, 3), glim=c(0.1,2), t_levels=c(0.95, 0.9, 0.8))
+plot_params(z=zmat_list$z, k=200,dlim=c(0.0001, 3), glim=c(0.1,2), t_levels=c(0.95, 0.9, 0.8))
 points(br95$BR_params[1], br95$BR_params[2], pch=19, col="white")
 
-# Only plot contours & change color of contours
-plot_params(z=zmat_list$z, dlim=c(0.0001, 3), glim=c(0.1,2), t_levels=c(0.95, 0.9, 0.8),
-contours_only=TRUE, contour_color="blue")
+# Change color and size of contours
+plot_params(z=zmat_list$z, k=200, dlim=c(0.5, 1.5), glim=c(0.25, 2.75), t_levels = c(0.99, 0.1), 
+contour_options=list(col="orchid", lwd=2))
 
-# Zoom in and change range of colors used for z
-plot_params(x, y, dlim=c(0.75, 1.75), glim=c(0.5,1.25), zlim=c(0.7, 1),
-t_levels=c(0.95, 0.9, 0.8))
+# Plot contours only
+plot_params(z=zmat_list$z, k=200, dlim=c(0.0001, 3), glim=c(0.1,2), t_levels=c(0.95, 0.9, 0.8),
+contours_only=TRUE)
+
+# Pass arguments to image.plot()
+plot_params(z=zmat_list$z, k=200, dlim=c(0.5, 1.5), glim=c(0.25, 2.75),
+imgplt_options=list(horizontal = TRUE, nlevel=10, legend.lab="Posterior Model Prob"))
+
+# Pass arguments to optim()
+plot_params(hockey$x, hockey$y, k=50, dlim=c(0.5, 1.5), glim=c(0.25, 2.75), 
+optim_options=list(method="L-BFGS-B", lower=c(0.0001, 10), upper=c(0.0001, 10), 
+control=list(maxit=200)))
 
 # Adjust how much probabilities are pushed away from bounds
 # Note warning message

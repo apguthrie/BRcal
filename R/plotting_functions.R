@@ -2,7 +2,6 @@
 #  External Functions (Version 1)                    #
 ######################################################
 
-# need to add checks 
 #  adjust behavior at gamma = 0?
 
 #' Draw image plot of posterior model probability surface.
@@ -167,24 +166,33 @@
 #' zmat_list <- plot_params(x, y, k=200, dlim=c(0.0001, 3), glim=c(0.1,2), return_z=TRUE)
 #'
 #' # Reuse z matrix
-#' plot_params(z=zmat_list$z, dlim=c(0.0001, 3), glim=c(0.1,2))
+#' plot_params(z=zmat_list$z, k=200, dlim=c(0.0001, 3), glim=c(0.1,2))
 #'
 #' # Add contours at t=0.95, 0.9, and 0.8
-#' plot_params(z=zmat_list$z, dlim=c(0.0001, 3), glim=c(0.1,2), t_levels=c(0.95, 0.9, 0.8))
+#' plot_params(z=zmat_list$z, k=200, dlim=c(0.0001, 3), glim=c(0.1,2), t_levels=c(0.95, 0.9, 0.8))
 #'
 #' # Add points for 95% boldness-recalibration parameters
 #' br95 <- brcal(x, y, t=0.95)
-#' plot_params(z=zmat_list$z, dlim=c(0.0001, 3), glim=c(0.1,2), t_levels=c(0.95, 0.9, 0.8))
+#' plot_params(z=zmat_list$z, k=200,dlim=c(0.0001, 3), glim=c(0.1,2), t_levels=c(0.95, 0.9, 0.8))
 #' points(br95$BR_params[1], br95$BR_params[2], pch=19, col="white")
 #'
-#' # Only plot contours & change color of contours
-#' plot_params(z=zmat_list$z, dlim=c(0.0001, 3), glim=c(0.1,2), t_levels=c(0.95, 0.9, 0.8),
-#' contours_only=TRUE, contour_color="blue")
+#' # Change color and size of contours
+#' plot_params(z=zmat_list$z, k=200, dlim=c(0.5, 1.5), glim=c(0.25, 2.75), t_levels = c(0.99, 0.1), 
+#' contour_options=list(col="orchid", lwd=2))
+#' 
+#' # Plot contours only
+#' plot_params(z=zmat_list$z, k=200, dlim=c(0.0001, 3), glim=c(0.1,2), t_levels=c(0.95, 0.9, 0.8),
+#' contours_only=TRUE)
 #'
-#' # Zoom in and change range of colors used for z
-#' plot_params(x, y, dlim=c(0.75, 1.75), glim=c(0.5,1.25), zlim=c(0.7, 1),
-#' t_levels=c(0.95, 0.9, 0.8))
+#' # Pass arguments to image.plot()
+#' plot_params(z=zmat_list$z, k=200, dlim=c(0.5, 1.5), glim=c(0.25, 2.75),
+#' imgplt_options=list(horizontal = TRUE, nlevel=10, legend.lab="Posterior Model Prob"))
 #'
+#' # Pass arguments to optim()
+#' plot_params(hockey$x, hockey$y, k=50, dlim=c(0.5, 1.5), glim=c(0.25, 2.75), 
+#' optim_options=list(method="L-BFGS-B", lower=c(0.0001, 10), upper=c(0.0001, 10), 
+#' control=list(maxit=200)))
+#' 
 #' # Adjust how much probabilities are pushed away from bounds
 #' # Note warning message
 #' x3 <- c(runif(50, 0, 0.1), runif(50, .9, 1))
@@ -202,16 +210,14 @@ plot_params <- function(x=NULL, y=NULL, z=NULL, t_levels = NULL,
                         zlim = c(0,1),
                         return_z = FALSE,
                         epsilon=.Machine$double.eps,
-                        # thin_to=NULL,
-                        # thin_percent=NULL,
-                        # thin_by=NULL,
                         contours_only = FALSE,
                         main="Posterior Model Probability of Calibration",
                         xlab = "delta",
                         ylab = "gamma",
                         optim_options=NULL,
                         imgplt_options=list(legend.lab = ""),
-                        contour_options=list(drawlabels=TRUE, col="white", labcex=0.6, lwd=1)){
+                        contour_options=list(drawlabels=TRUE, labcex=0.6, lwd=1, 
+                                             col=ifelse(contours_only, "black", "white"))){
   
   ##################
   #  Input Checks  #
@@ -219,8 +225,6 @@ plot_params <- function(x=NULL, y=NULL, z=NULL, t_levels = NULL,
   
   # check either x and y or z are specified
   if(is.null(z) & (is.null(x) | is.null(y))) stop("must specify either x and y or z")
-  
-  if(any(dim(z) != k)) warning("dimensions of z do not match k")
   
   # check t_levels are valid calibration probs
   if(!is.null(t_levels)) t_levels <- check_input_probs(t_levels, name="t_levels")
@@ -247,7 +251,7 @@ plot_params <- function(x=NULL, y=NULL, z=NULL, t_levels = NULL,
     # check x is vector, values in [0,1]
     x <- check_input_probs(x, name="x")
     
-    # check y is vector, values are 0s or 1s
+    # check y is vector, values are 0s or 1s, or event is specified properly
     y <- check_input_outcomes(y, name="y", event=event)
     
     # check x and y are the same length
@@ -264,52 +268,25 @@ plot_params <- function(x=NULL, y=NULL, z=NULL, t_levels = NULL,
     if(k < 2) stop("k must be greater than 1")
     if(is.infinite(k)) stop("k must be finite")
     
-    # # check thin_to
-    # if(!is.null(thin_to)){
-    #   if(!is.numeric(thin_to)) stop("thin_to must be numeric")
-    #   if(thin_to < 2) stop("thin_to must be greater than 1")
-    #   if(is.infinite(thin_to)) stop("thin_to must be finite")
-    # }
-    # 
-    # # check thin_percent
-    # if(!is.null(thin_percent))    thin_percent <- check_value01(thin_percent, name="thin_percent") 
-    # 
-    # # check thin_by
-    # if(!is.null(thin_by)){
-    #   if(!is.numeric(thin_by)) stop("thin_by must be numeric")
-    #   if(thin_by < 1) stop("thin_by must be greater than 0")
-    #   if(is.infinite(thin_by)) stop("thin_by must be finite")
-    # }
   }
   
-  # Check that additional options are in the form of a list
+  # check that additional options are in the form of a list
   if(!is.null(optim_options) & !is.list(optim_options)) stop("optim_options must be a list")
   if(!is.null(imgplt_options) & !is.list(imgplt_options)) stop("imgplt_options must be a list")
   if(!is.null(contour_options) & !is.list(contour_options)) stop("contour_options must be a list")
+  
+  # check that contour levels are specified if contours_only=TRUE
+  if(is.null(t_levels) & contours_only)  stop("must provide contour levels when contours_only = TRUE") 
   
   ###################
   #  Function Code  #
   ###################
   
-  
+  # Calculate z matrix
   if(is.null(z)) {
-    # if(!is.null(thin_to)){
-    #   set.seed(0)
-    #   rows <- sample(1:length(x), size=thin_to)
-    # } else if (!is.null(thin_percent)){
-    #   set.seed(0)
-    #   rows <- sample(1:length(x), size=length(x)*thin_percent)
-    # } else if (!is.null(thin_by)){
-    #   rows <- seq(1,length(x),thin_by)
-    # }  else{
-    #   rows <- 1:length(x)
-    # }
-    
     rows <- 1:length(x)
-    
     x <- x[rows]
     y <- y[rows]
-    
     z <- get_zmat(x=x, y=y, Pmc=Pmc, len.out=k, lower=c(dlim[1], glim[1]),
                   upper=c(dlim[2], glim[2]), epsilon=epsilon, optim_options=optim_options)
   }
@@ -329,47 +306,39 @@ plot_params <- function(x=NULL, y=NULL, z=NULL, t_levels = NULL,
   }
   
   
-  if(!contours_only){
-    
+  if(!contours_only){   
+    # Plot color surface
     do.call(fields::image.plot, c(list(x = d, y = g, z = z,
                                        xlim = dlim, ylim = glim, zlim = zlim,
                                        main = main,
                                        xlab = xlab,
                                        ylab = ylab),
                                   imgplt_options))
-    
     # plus contours if specified
-    if(!is.null(t_levels)){
-      
+    if(!is.null(t_levels)){ 
       do.call(contour, c(list(x = d, y = g, z = z,  
                               add = TRUE, levels = t_levels), 
                          contour_options))
     }
-    
-    
+  } else { 
     # just plot contours
-  }else{
-    if(!is.null(t_levels)){
-      
-      do.call(contour, c(list(x = d, y = g, z = z,
-                              xlim = dlim, ylim = glim, zlim = zlim,
-                              levels = t_levels, 
-                              main = main,
-                              xlab = xlab,
-                              ylab = ylab),
-                         contour_options))
-    } else {
-      stop("must provide contour levels when contours_only = TRUE")  # move this check up!
-    }
-  }
+    do.call(contour, c(list(x = d, y = g, z = z,
+                            xlim = dlim, ylim = glim, zlim = zlim,
+                            levels = t_levels, 
+                            main = main,
+                            xlab = xlab,
+                            ylab = ylab),
+                       contour_options))
+    
+  } 
   
+  # Return z if specified
   if(return_z){
     return(list(z = z,
                 dlim = dlim,
                 glim = glim,
                 k = k))
   }
-  
 }
 
 
