@@ -192,7 +192,7 @@ brcal(x, y, xtol_rel_outer = .0001)
 
 # Setting optimization bounds 
 # delta in (0.0001, 10), gamma in (0, 10)
-brcal(x, y, lb=(0.001, 0), ub=(10, 10))
+brcal(x, y, lb=c(0.001, 0), ub=c(10, 10))
 
 # Specify different arguments in nloptr
 brcal(x, y, opts=list(xtol_abs=0.00001,
