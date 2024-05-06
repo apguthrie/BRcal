@@ -1,0 +1,612 @@
+---
+title: "Using `BRcal`: Hockey Home Team Win Predictions Case Study"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{hockey_vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+
+
+# save the built-in output hook
+hook_output <- knitr::knit_hooks$get("output")
+
+# set a new output hook to truncate text output
+# knitr::knit_hooks$set(output = function(x, options) {
+#   if (!is.null(n <- options$out.lines)) {
+#     x <- xfun::split_lines(x)
+#     if (length(x) > n) {
+#       # truncate the output
+#       x <- c(head(x, n - floor(n/2)), "....\n", tail(x, floor(n/2)+1))
+#     }
+#     x <- paste(x, collapse = "\n")
+#   }
+#   hook_output(x, options)
+# })
+
+# set a new output hook to truncate text output
+knitr::knit_hooks$set(output = function(x, options) {
+  if (!is.null(ns <- c(options$out.lines.head,
+                       options$out.lines.tail))) {
+    x <- xfun::split_lines(x)
+    if (length(x) > sum(ns)) {
+      # truncate the output
+      x <- c(head(x, ns[1]), "...\n", tail(x, ns[2]))
+    }
+    x <- paste(x, collapse = "\n")
+  }
+  hook_output(x, options)
+})
+
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = ">"
+)
+
+library(ggplot2)
+library(devtools)
+```
+
+```{r eval=FALSE, include=FALSE}
+# Additional packages used: 
+library(latex2exp)# axis labels on contour plot
+library(s2dverification) # Brier Score & decompositions
+library(CalibratR) # ECE
+library(Metrics)   # auc
+library(gridExtra) # lineplot arrangement
+
+```
+
+
+<!-- Notes to self:  -->
+<!-- - add date last updated when it's done? NEED to make sure this gets updated as edits are made, but using sys.dat won't work for this because it will reflect dat package is built not updated. -->
+<!-- - add authors?  -->
+<!-- - %\VignetteIndexEntry{hockey_vignette} needs to reflect actual title! -->
+
+This vignette demonstrates how to use the `BRcal` package via a case study involving hockey home team win probability predictions and game outcomes.  For more details on the methodology under the hood of the `BRcal` package, see Guthrie and Franck (2024).  [CITE!]  Note that in many cases the output is truncated with `...` for readablility.
+
+## Installation
+
+
+```{r}
+# Install via github
+
+# Install via tarball
+
+# Install via CRAN (later)
+```
+
+
+```{r setup}
+# library(BRcal)
+devtools::load_all(".")
+```
+
+## Loading the Data
+
+The hockey data we will use throughout this vignette is directly available through the BRcal package in the object called `hockey` and can be loaded as follows:  
+
+```{r}
+data("hockey")
+```
+
+The data contains probability predictions and outcomes for all 868 regular season games in the 2020-21 National Hockey League (NHL) season.  The column descriptions are as follows:
+
+* `y`: game outcome, 1 if home team win, 0 if home team loss
+* `x`:  probability predictions of home team win from FiveThirtyEight
+* `rand`: probability predictions of home team win from random noise forecaster
+* `winner`: game outcome in text, "home" if home team win, "away" if home team loss
+
+The predictions from FiveThirtyEight were furnished via modelling with carefully constructed components based on expert knowledge of the game of hockey and can also be found on their website (\url{https://data.fivethirtyeight.com/}).  The random noise forecaster predictions were generated via random uniforms draws from 0.26 to 0.77 (the observed range in the FiveThirtyEight data) to mimic the behavior of a completely uninformed forecaster.
+
+## Common Convention Across the Package 
+
+The functions in the `BRcal` package share a lot of common arguments. Two that we want to explain up front are `x` and `y`, where `x` is a vector of probabilities predictions of binary events and `y` is the corresponding true event outcomes.  Since we are dealing with probabilities, `x` must contain numeric values from 0 to 1 (inclusive).  And as we are dealing with binary events, `y` must only take on two values, i.e. the two possible outcomes.
+
+By default, the functions in `BRcal` expect `y` to be a vector of 0s and 1s where a 1 represents a "event" and 0 represents a "non-event". Additionally, these functions expect that the probabilities in `x` are the probabilities of "event" at each observation. While switching the labels of "event" and "non-event" will not change the fundamental conclusions, it is good practice to make sure `event` is defined properly.  For demonstration of how to pass `y` as a binary vector that contains values other than 0s and 1s and properly specify `event`, see [Specifying event](#event). 
+
+
+## Linear in Log Odds (LLO) function `LLO()`
+
+The `LLO` function allows you to apply a linear in log odds (LLO) adjustment to predicted probabilities in `x`.  Specifically it shifts the probabilities (on the log odds scale) by `delta` and scales them by `gamma`.  Note that the value supplied to `delta` must be greater than 0 and `gamma` can be any real number, though very extreme values may cause instabilities (which we'll see later).
+
+Let's look at a few examples of how the hockey probabilities can be LLO-adjusted under different settings of `delta` and `gamma`.  Rather than stare at how the raw probabilities have changed under LLO-adjustment, we'll plot the original `x` vs the adjusted `x`.  
+
+In the first example, we'll LLO-adjust the hockey predictions using `delta=2` and `gamma=2`.  Note that the points are the actual observations and the curve represents how any prediction along the 0-1 range would behave under `delta=2` and `gamma=2`.
+
+```{r, fig.width=6, fig.height=4, fig.align='center'}
+# LLO-adjust using delta=2, gamma=2
+hockey$x2 <- LLO(hockey$x, delta=2, gamma=2)
+
+# plot original vs LLO-adjusted via 2,2
+ggplot(data=hockey, mapping=aes(x=x, y=x2)) +
+  stat_function(fun=LLO,
+                args=list(delta=2, gamma=2),
+                geom="line",
+                linewidth=1,
+                color="black",
+                xlim=c(0, 1)) +
+  geom_point(aes(color=winner), alpha=0.75, size=2) +
+  lims(x=c(0,1), y=c(0,1)) +
+  labs(x="Original", y="LLO(x, 2, 2)", color="Winner") +
+  theme_bw()
+```
+
+To get a better feel for how different values of `delta` and `gamma` affect probabilities, let's plot a few more different adjustments on the same plot.
+
+```{r, fig.width=6, fig.height=4, fig.align='center'}
+# # LLO-adjust using delta=2, gamma=2
+# hockey$x2 <- LLO(hockey$x, delta=2, gamma=2)
+
+
+ggplot() +
+  stat_function(fun=LLO,
+                args=list( delta=2, gamma=2),
+                geom="line",
+                linewidth=1,
+                color="black") +
+  # geom_point(aes(color=winner), alpha=0.75, size=2) +
+  lims(x=c(0,1), y=c(0,1)) +
+  labs(x="Original", y="LLO(x, 2, 2)") +
+  theme_bw()
+```
+
+- show what happens when you use really extreme values (force warning message) ? 
+
+As previously mentioned, using extreme values of `delta` or `gamma` can cause instabilities.  For example, let's see what happens when
+
+```{r, fig.width=6, fig.height=4, fig.align='center'}
+# LLO-adjust using delta=2, gamma=2
+hockey$x2 <- LLO(hockey$x, delta=2, gamma=1000)
+
+# plot original vs LLO-adjusted via 2,2
+ggplot(data=hockey, mapping=aes(x=x, y=x2)) +
+  stat_function(fun=LLO,
+                args=list(delta=2, gamma=1000),
+                geom="line",
+                linewidth=1,
+                color="black",
+                xlim=c(0, 1)) +
+  geom_point(aes(color=winner), alpha=0.75, size=2) +
+  lims(x=c(0,1), y=c(0,1)) +
+  labs(x="Original", y="LLO(x, 2, 2)", color="Winner") +
+  theme_bw()
+```
+
+
+
+## Assessing Calibration via `bayes_ms()` and `llo_lrt()`
+
+The `BRcal` package provides two approaches to assessing calibration: a Bayesian model selection-based approach implemented in `bayes_ms()` and a likelihood ratio test for calibration in `llo_lrt()`.  
+
+### Bayesian Model Selection-based approach (`bayes_ms()`)
+
+We'll first look at the Bayesian model selection-based approach to calibration assessment using `bayes_ms()`. The snippet below uses this function to assess the calibration of FiveThirtyEight's predictions in `hockey$x`.    
+
+```{r}
+bt538 <- bayes_ms(hockey$x, hockey$y)
+bt538
+```
+
+Notice this function returns a list, which we've stored in `bt538` for later use.  The first element in the returned list is `Pmc` which shows the prior probability for the calibrated model.  
+
+The next two elements in the return list are `BIC_Mc` and `BIC_Mu` which are the Bayesian Information Criteria (BIC) for the calibrated model and the uncalibrated model, respectively.  These are used in the approximation for the Bayes Factor comparing the uncalibrated model to the calibrated model, which is returned in list element `BF`. 
+
+Next, `posterior_model_prob` is the posterior model probability for the calibrated model given the outcomes `y`.  This serves as the assessment measure of calibration.  In this case, since the posterior model probability is high, we consider the predictions from FiveThirtyEight to be well calibrated. 
+
+Element `MLEs` are the maximum likelihood estimates (MLEs) for $\delta$ and $\gamma$. Throughout this package, whenever MLEs are found for $\delta$ and $\gamma$, the `optim`  function is used to perform the optimization.  The final list element is called `optim_details`, which itself is a list returned by the call to `optim()` to get the MLEs.  
+
+
+#### Setting the prior model probabilities via `Pmc`
+
+By default, this function uses assumes equal prior probabilities for the calibrated and uncalibrated models.  However, it is important for users to determine what priors make sense for the context of their problem.  Argument `Pmc` allows easy specification of the prior model probability for the calibrated model.  Naturally, `Pmc` must be a value in [0,1] and the prior model probability for the uncalibrated model is taken to be `1 - Pmc`.  
+
+For example, let's say it is reasonable to assume that the prior model probability of calibration for FiveThirtyEight is 0.7 instead of 0.5 based on past experience.  Then we could use `bayes_ms()` in the following way.
+
+```{r}
+bayes_ms(hockey$x, hockey$y, Pmc=0.7)
+```
+
+Note that while many of the elements returned are unchanged (as `Pmc` is not used in their calculation), `BF` and `posterior_model_prob` are different than the previous call.
+
+
+### Likelihood Ratio Test for Calibration (`llo_lrt()`)
+
+Now let's look at the likelihood ratio test for calibration using `llo_lrt()`. The null hypothesis for this test is that the predictions `x` are well calibrated.  The alternative is that they are not well calibrated.  
+
+The snippet below uses this function to test the calibration of FiveThirtyEight's predictions in `hockey$x` and returns a list.    
+
+```{r}
+llo_lrt(hockey$x, hockey$y)
+```
+
+The first element `test_stat` in the returned list is the test statistic under this likelihood ratio test. 
+
+The element `pval` is the p-value associated with this test and can be used to determine if the predictions in `x` are well calibrated.  In this case, since the p-value is relatively high, we will fail to reject the null that FiveThirtyEight's predictions are well calibrated, which agrees with the conclusion from `bayes_ms()`.
+
+The elements in `MLEs` and `optim_details` are the same as described in the section for `bayes_ms()`.
+
+## Passing Additional / Different Arguments to `optim()`
+
+As previously mentioned, the `optim` function is used throughout this package wherever the MLEs are needed (`bayes_ms()`, `llo_lrt()`, `mle_recal`, `brcal()`, and `line_plot()`).  While the examples in this section use `bayes_ms()`, the same conventions apply with the other functions who use `optim()`. 
+
+While we've found that `optim()` converges in most cases we've tried using the default settings in this package, it is important to double check convergence.  It is for this reason that we include the returned list from `optim()` in our own function so users can see the convergence information.  If the algorithm did not converge, which can be checked via list elements `optim_details$convergence` and `optim_details$message`, users should adjust the arguments passed to `optim()` using `...` to achieve convergence before trusting results.  Below are a few examples of how to adjust the call to `optim()`.  See the documentation for `optim()` for more information.    
+
+### Start Values
+
+In some cases, the optimization routine may sensitive to the starting location of the optimizer.  By default, all calls to `optim()` in this package use users can change the starting values of $\delta$ and $\gamma$ by passing them as a vector via argument `par`.
+
+In the following example, we will start the optimizer at $\delta = 10$, $\gamma = -5$.
+
+```{r}
+bayes_ms(hockey$x, hockey$y, par = c(10, -5))
+```
+In this case, the optimizer does not seem overly sensitive to start values, as $\delta = 10$, $\gamma = -5$ are not close to the solution (the MLEs) at $\delta = 0.9455$, $\gamma = 1.4005$.  The algorithm converged and we get the same solution as when we started at $\delta = 0.5$, $\gamma = 0.5$.  
+
+### Stopping Criteria
+
+Sometimes it's useful to adjust the optimization stopping criteria to improve convergence or refine the solution.  We use the default settings in `optim()`.  These can be adjust via the argument `control` which takes a list with an array of possible components.  We defer to the documentation for `optim()` for further explanation of how to use `control`.  Below is a simple example where we set the relative convergence tolerance (`reltol`) to `1e-10` instead of the default of `sqrt(.Machine$double.eps)`.   
+
+```{r}
+bayes_ms(hockey$x, hockey$y, control=list(reltol=1e-10))
+```
+
+Notice how we arrive at a slightly different solution and there were more function calls than when using the default.
+
+### Algorithm and Bounds
+
+It's not uncommon that some optimization algorithms work better than others depending on the nature of the problem.  We use the default algorithm `"Nelder-Mead"` (CITE) which we've found to reliable in most cases we've tried.  This algorithm does not accept bounds on the parameters.  To circumvent the fact that $\delta > 0$, meaning one of our parameters of interest is bounded, we perform the optimization in terms of $log(\delta)$. 
+Should users prefer to use a bounded algorithm, the algorithm can be specified using `method` and the bounds can be specified using `lower` and `upper`.  For example, let's say we want to use `"L-BFGS-B"` where we bound $0 < \delta < 10$ and $-1 < \gamma < 25$:
+
+```{r}
+bayes_ms(hockey$x, hockey$y, method = "L-BFGS-B", lower = c(0, -1), upper = c(10, 25))
+```
+
+Or, if we'd rather only impose the lower bound on $\delta$ and leave $\gamma$ unbounded, we could use the following snippet:
+
+```{r}
+bayes_ms(hockey$x, hockey$y, method = "L-BFGS-B", 
+         lower = c(0, -Inf), upper = c(Inf, Inf))
+```
+
+### Suppressing the output from `optim()`
+
+Once you are confident that the algorithm converges via the arguments you've specified, you can set `optim_details=FALSE` to reduce the output if desired.  As long as you continue to use the same settings, the convergence should not change.  Below is what the output looks like using the `hockey` data when `optim_details=FALSE`.
+
+```{r}
+bayes_ms(hockey$x, hockey$y, optim_details=FALSE)
+```
+
+## Specifying `event` {#event}
+
+Throughout this package, the functions assume by default that `y` is a vector of 0s and 1s where a 1 represents a "event" and 0 represents a "non-event". However, there may be cases where you want to pass a binary vector of outcomes that are not defined as 0s and 1s. To define which of the two values in `y` should be considered a "success" or the event of interest, users may set argument `event` to that value. 
+
+For example, let's use the column `winner` from the `hockey` dataset as our vector of binary outcomes instead of `y` in `bayes_ms()`.  We can do this by specifying `event = "home"`. We'll continue to set `optim_details=FALSE` for easier reading of the output.
+
+```{r}
+bayes_ms(hockey$x, hockey$winner, event="home", optim_details=FALSE)
+```
+
+As expected, the results are identical to our previous call. 
+
+Maybe you want to approach this problem from the perspective of an event being a home team loss.  To do so, you need to pass the predicted probabilities of a home team loss as `x = 1 - hockey$x`, and specify which value in `y` is an event via `event=0` for `y=hockey$y`... 
+
+```{r}
+bayes_ms(1-hockey$x, hockey$y, event=0, optim_details=FALSE)
+```
+
+... or `event="away"` for `hockey$winner`. 
+
+```{r}
+bayes_ms(1-hockey$x, hockey$winner, event="away", optim_details=FALSE)
+```
+
+Note that we get the same results using either specification.  Additionally, the posterior model probability is the same as when we considered event to be a home team win, as one might expect with binary event predictions. 
+
+## Specifying `epsilon`
+
+When probability predictions that are "too close" to 0 or 1, calculations using the log likelihood become unstable.  To mitigate this, we use `epsilon` to specify how close is "too close".  For values in `x` that are less than `epsilon` (i.e. too close to zero), these are replaced with `epsilon`.  For values in `x` greater than `1 - epsilon` (i.e. too close to 1), these are replaced with `1 - epsilon`. Naturally, `epsilon` must take on a value between 0 and 1, but it is recommended that this be a very small number.  By default, we use `.Machine$double.eps`.  
+
+In this example with the `hockey` data, there are no values close to 0 or 1 in `x` or `rand`, so `epsilon` is not used at all.  
+
+## MLE Recalibration
+
+To get the MLE recalibrated set (i.e. LLO-adjust the probability predictions in `x` such that calibration is maximized), you can either use `mle_recal()` or get them manually using `LLO()` with the MLEs.   
+
+### Using `mle_recal()`
+
+The simplest way to get the MLE recalibrated set is using the `mle_recal` function to get them automatically. Below is an example of using `mle_recal()` with the `hockey` data.
+
+```{r, out.lines.head=4, out.lines.tail=23}
+mle_recal(hockey$x, hockey$y)
+```
+
+
+
+
+
+#### Specifying `probs_only = TRUE`
+
+In some cases, you may just want the recalibrated probabilities and without any of the other items in the return list.  In this case, you can set `probs_only=TRUE` and just the vector of probabilities will be returned.  Note that it's still recommended that you check `optim_details` to verify convergence before using this option. Below is the result of using `probs_only=TRUE`.
+
+```{r, out.lines.head=3, out.lines.tail=3}
+mle_recal(hockey$x, hockey$y, probs_only=TRUE)
+```
+
+
+### Using `LLO()` with MLEs
+
+Alternatively, you can get the MLE recalibrated set manually by first getting the MLEs from another function (such as `bayes_ms()` or `llo_lrt()`) and then passing those as `delta` and `gamma` in `LLO()`.  This may be useful in cases where you have large data and finding the MLEs is slower than desired.  If you already have the MLEs from a previous function call to `bayes_ms()` or `llo_lrt()` then you don't need to take the time to re-solve for the MLEs.  Additionally, this approach serves as a good alternative to using `mle_recal()` with `probs_only=TRUE`.  
+
+In the example below, we'll use the MLEs for FiveThirtyEight's predictions we saved from `bayes_ms()` earlier on and pass those to `LLO()`. Notice the probabilities below are identical to those we got from `mle_recal()`.
+
+```{r, out.lines.head=3, out.lines.tail=3}
+LLO(hockey$x, delta=bt538$MLEs[1], gamma=bt538$MLEs[2])
+```
+
+
+
+
+## Boldness-Recalibration via `brcal()`
+
+The `brcal` functions allows users to boldness-recalibrate `x`.  More specifically, we are maximizing the standard deviation of the predictions while ensuring the posterior model probability of calibration is at least `t`.  By default, `brcal` performs 95% boldness recalibration (i.e. `t` is set to 0.95).  Below is an example of 90% boldness-recalibration for FiveThirtyEight's predictions. 
+
+```{r br90, cache=TRUE, out.lines.head=12, out.lines.tail=9}
+br90 <- brcal(hockey$x, hockey$y, t=0.9)
+```
+
+Notice there would be quite a bit of output from this call if it were not truncated (4 lines for each of the 176 iterations).  This is coming from a call to the `nloptr` function from the `nloptr` package under the hood of `brcal`. Since both our objective and constraint functions are are nonlinear with respect to parameters $\delta$ and $\gamma$, we leverage the `nloptr` package for the optimization rather than `optim()`.  The output printed at each iteration shows (1) the current values of the parameters, (2) the value of the objective function, and (3) the value of the constraint function.  
+
+Next, let's look at the list returned by `brcal()`.  The first entry `nloptr` is exactly the object returned from `nloptr()` when the optimizer stops.  This provides useful information about convergence and should always be checked by users to ensure that the algorithm converged properly. Next in the list are `Pmc` and `t`, which are just the prior model probability and constraint on probability as specified by the user (or the default values).  The solution for the boldness-recalibration parameters is found in `BR_params`.  The achieved maximal spread is `sb`.  Lastly, `brcal()` returns the vector of boldness-recalibrated probabilities in `probs`.       
+
+```{r, out.lines.head=43, out.lines.tail=3}
+br90
+```
+
+Note that the probabilities in `probs` returned by `brcal` can be equivalently achieved by LLO-adjusting via the returned boldness-recalibration parameters in `BR_params`.
+
+```{r, out.lines.head=3, out.lines.tail=3}
+LLO(hockey$x, br90$BR_params[1], br90$BR_params[2])
+```
+
+
+
+### Passing Additional / Different Arguments to `nloptr()`
+
+The \link[nloptr]{nloptr} package is extremely flexible, as it provides numerous arguments to users for tailoring the optimization to the problem at hand. In the `nloptr` function, most of these arguments are specified via the `opts` argument, a convention we partially borrow for `brcal()`.  However, we allow users to directly specify a few arguments that are typically relegated to `opts` for easier adjustments.  All other arguments, except those related to the objective and constraint functions, are available to users by passing a list of these arguments `opts`.  We do not allow users to change the objective or constraint functions, or their Jacobian functions, as these are the backbone of this method and the sole purpose for using the `brcal` function.  For those who wish to optimize a different function or use a different constraint, we recommend using the `nloptr` function directly.
+
+
+<!-- While only a few of these arguments are directly used and documented in the `brcal` function, we allow users to access all of them via the `opts` argument (see [Other options for `nloptr()` via `opts`](#opts)).  This section provides guidance on using these `nloptr()` related arguments.  -->
+
+#### Start Values
+
+While the algorithm used by `optim()` was not very sensitive to the starting location of $\delta$ and $\gamma$, we've found the nature of boldness-recalibration makes `nloptr()` more sensitive to starting location.  By default, `brcal()` initializes the optimization at the MLEs for $\delta$ and $\gamma$.  While we've found this to be the most stable approach to setting a starting location, users can specify their own starting location by specifying `x0` and setting `start_at_MLEs=FALSE`.  
+
+To show the sensitivity of this approach to the starting values, let's set `x0` to $\delta = 10$, $\gamma = -5$ like we did with `optim()`.   
+
+```{r br90_err, cache=TRUE, out.lines.head=12, out.lines.tail=14}
+try(brcal(hockey$x, hockey$y, x0 = c(10, -5), start_at_MLEs = FALSE))
+```
+
+Notice this time the algorithm cannot converge and ends up crashing due to trying extreme values of the parameters. 
+
+#### Algorithm
+
+By default, the `brcal` function uses the Augmented Lagrangian Algorithm (AUGLAG) (Conn et. al. 1991, Birgin and Martinez 2008), which requires an inner optimization routine. We use Sequential Least-Squares Quadratic Programming (SLSQP) (Dieter 1988, Dieter 1994) as the inner optimization routine, by default.   For a complete list of inner and outer optimization algorithms, see the [NLopt website](https://nlopt.readthedocs.io/en/latest/).  Note that not all algorithms can be used with a non-linear constraint (which is necessary for boldness-recalibration).  Also note that other algorithms may be more sensitive to starting conditions or may need different stopping criteria to converge.
+
+All changes to the inner algorithm are made via passing a sub-list to `local_opts`, which itself an entry of the list passed to `opts`. Instead of SLSQP as the inner algorithm, let's try the method of moving asymptotes (MMA) (Svanberg 2002). 
+
+```{r, out.lines.head=8, out.lines.tail=9}
+br90_inMMA <- brcal(hockey$x, hockey$y, t=0.9, 
+                    opts=list(local_opts=list(algorithm="NLOPT_LD_MMA")))
+```
+
+```{r}
+br90_inMMA$nloptr
+```
+
+Now, let's try changing the outer algorithm to MMA. This is a great example of an algorithm that is more sensitive to both starting conditions and stopping criteria.  In order to get convergence here, we'll opt to start the optimizer at `c(1,2)` and relax the relative tolerance.  Stopping criteria is discussed in a later section.
+
+```{r, out.lines.head=8, out.lines.tail=9}
+br90_outMMA <- brcal(hockey$x, hockey$y, t=0.9, x0=c(1, 2), start_at_MLEs = FALSE,
+                     xtol_rel_outer = 1e-05, 
+                     opts=list(algorithm="NLOPT_LD_MMA"))
+```
+
+```{r}
+br90_outMMA$nloptr
+```
+
+Note that many of the algorithms do not use an inner algorithm.  In most of these cases, `local_opts` will be ignored, otherwise `nloptr()` may throw a warning or error. 
+
+#### Bounds
+
+Following the convention of `nloptr()`, arguments `lb` and `ub` allow users to specify the lower and upper bounds of optimization, respectively.  The bounds set using `lb` and `ub` are used for both the inner and outer algorithms. By default, we only place a lower bound on $\delta$ requiring $\delta > 0$.  Similar to setting the bounds of optimization in `optim()`, setting the lower bound to `-Inf` and the upper bound to `Inf` will leave the corresponding parameter unbounded.  
+
+For example, the code below shows how to bound $0.25 < \delta < 5$ and leave $\gamma$ unbounded. 
+
+```{r, out.lines.head=8, out.lines.tail=9}
+br90_bound <- brcal(hockey$x, hockey$y, t=0.9, lb=c(0.25, -Inf), ub=c(5, Inf))
+```
+
+```{r}
+br90_bound$nloptr
+```
+
+
+#### Stopping criteria
+
+Since there are quite a few options for stopping criteria that can be set via `opts` in the `nloptr` function, we select just a few to specify directly in the `brcal` function. As with `optim()`, it is important to check convergence and adjust the stopping criteria accordingly.  Keep in mind that stopping criteria also work together so several adjustments may be necessary.
+
+Argument `maxeval` sets the maximum number of iterations (approximately) allowed by the outer optimization routine.  Argument `maxtime` sets the maximum number of seconds (approximately) the outer algorithm will be allowed to run.   Argument `xtol_rel_outer` and `xtol_rel_inner` set the relative tolerance for the change in $\delta$ and $\gamma$ between iterations of the outer and inner algorithms, respectively.  Again, `nloptr` allows several other options for stopping criteria that can be specified via `opts`.
+
+The example below shows how to set the maximum number of evaluations to 100, the maximum time to 30 seconds, and the relative tolerance of both the inner and outer algorithms to 0.001.  These are not necessarily recommended settings, rather they are intended for demonstration purposes only. 
+
+
+```{r, out.lines.head=8, out.lines.tail=9}
+br90_stop <- brcal(hockey$x, hockey$y, t=0.9, maxeval=100, maxtime = 30, 
+      xtol_rel_outer = 0.001, xtol_rel_inner = 0.001)
+```
+
+```{r}
+br90_stop$nloptr
+```
+
+
+
+#### Suppressing output from `nloptr()`
+
+To minimize the amount of output printed at each iteration of the optimizer, we leverage `print_level` from `nloptr()`.  By default, we choose to print the maximum amount of information by setting `print_level=3`.  To simply reduce the output, try `print_level=1`... 
+
+```{r br95_2, cache=TRUE, out.lines.head=6, out.lines.tail=7}
+br90 <- brcal(hockey$x, hockey$y, t=0.9, print_level=1)
+```
+
+...or `print_level=2`.
+
+```{r br95_3, cache=TRUE, out.lines.head=9, out.lines.tail=10}
+br90 <- brcal(hockey$x, hockey$y, t=0.9, print_level=2)
+```
+
+Or to fully suppress, use `print_level=0`. Notice nothing prints from the following call.
+
+```{r br95, cache=TRUE, out.lines.head=12, out.lines.tail=9}
+br90 <- brcal(hockey$x, hockey$y, t=0.9, print_level=0)
+```
+
+### Using `tau = TRUE`
+
+Sometimes the optimizer is more efficient when optimizing over $\tau = log(\delta)$ instead of $\delta$.  In this case, users can set `tau = TRUE`.  Specification of start location `x0` and bounds `lb`, `ub` should still be specified in terms of $\delta$. The `brcal` function will automatically convert from $\delta$ to $\tau$. Let's try optimizing over $\tau$ with the `hockey` data. 
+
+```{r br90_tau, cache=TRUE, out.lines.head=12, out.lines.tail=9}
+br90_tau <- brcal(hockey$x, hockey$y, t=0.9, tau=TRUE)
+```
+
+Notice that the parameter values in the output from `nloptr` are in terms of $\tau$ instead of $\delta$. The same is true of the solution reported in `br90_tau$nloptr`.  In general, all results returned directly from `nloptr` will reflect whichever scale `nloptr()` optimized on, whether it be $\delta$ or $\tau$. However, `BR_params` in the returned list will always be reported in terms of $\delta$.
+
+```{r, out.lines.head=43, out.lines.tail=3}
+br90_tau
+```
+
+### Passing Additional / Different Arguments to `optim()`
+
+While `optim()` is not used for the non-linear constrained optimization for finding he boldness-recalibration parameters, it is used in the constraint function as it involves the posterior model posterior.  Because of this, we do allow users to pass additional arguments to `optim` to be used in this calculation.  However, rather than use the `...` to pass these arguments, users should pass these arguments to `optim_options` via a list.  Demonstration of passing arguments to `optim()` in this fashion can be found in [Passing Additional / Different Arguments to `optim()`](#optim_opts_pp) for `plot_params()` below. 
+
+## Visualizing Changes in Posterior Model Probability via `plot_params()`
+
+The goal of the `plot_params` function is to visualize how the posterior model probability changes under different recalibration parameters, as this is used in boldness-recalibration. Let's see what the default version of this plot looks like with FiveThirtyEight's data.
+
+```{r, fig.width=6, fig.height=4, fig.align='center'}
+plot_params(hockey$x, hockey$y)
+```
+
+You might immediately notice the imagine is grainy and unnecessarily small.  In the following sections, we will demonstrate how to fix these issues and make further adjustments via arguments in `plot_params()`. 
+
+
+### Setting bounds and grid density
+
+To adjust the grid of $\delta$ and $\gamma$ values, we can use `dlim` and `glim` to "zoom in" on the area of non-zero posterior model probabilities. Let's reduce the range of $\delta$ and $\gamma$ so we can better visualize the area of non-zero posterior model probability of calibration.  
+
+```{r, fig.width=6, fig.height=4, fig.align='center'}
+plot_params(hockey$x, hockey$y, dlim=c(0.5, 1.5), glim=c(0.25, 2.75))
+```
+
+Next, we can use `k` to form a denser grid (and thus a smoother plotting surface).  However, it's important to note that the larger `k` values used, the slower this plot will generate.
+
+```{r eval=FALSE, fig.align='center', fig.height=4, fig.width=6, include=TRUE}
+plot_params(hockey$x, hockey$y, k=200, dlim=c(0.5, 1.5), glim=c(0.25, 2.75))
+```
+
+```{r echo=FALSE, fig.align='center', fig.height=4, fig.width=6}
+zmat_list <- plot_params(hockey$x, hockey$y, k=200, dlim=c(0.5, 1.5), glim=c(0.25, 2.75), 
+                         return_z = TRUE)
+```
+
+### Saving and Reusing `z`
+
+Once you've settled on the bounds for $\delta$ and $\gamma$ you want to plot and the density of the grid via `k`, you can save the underlying matrix of posterior model probabilities to reuse while making minor plot adjustments. This will save you the hassle of having to recalculate these values, which is where the bottleneck on time occurs. To save this matrix, set `return_z=TRUE` and store the returned list from `plot_params()`.  
+
+```{r save_z, eval=FALSE, fig.align='center', fig.height=4, fig.width=6, include=TRUE}
+zmat_list <- plot_params(hockey$x, hockey$y, k=200, dlim=c(0.5, 1.5), glim=c(0.25, 2.75), 
+                         return_z = TRUE)
+```
+
+```{r echo=FALSE, fig.align='center', fig.height=4, fig.width=6}
+plot_params(z=zmat_list$z, k=200, dlim=c(0.5, 1.5), glim=c(0.25, 2.75))
+```
+
+
+The returned list is printed below. Note that the matrix is the first entry in the list named `z`. Additionally, the bounds passed via `dlim` and `glim`, and `k` are returned as a reminder of what values were used to construct `z`.
+
+```{r, out.lines.head=4, out.lines.tail=9}
+zmat_list
+```
+
+It's a little hard to see what `z` looks like in the above output. Below shows that `z` is a 200 by 200 matrix. The rows and columns are named based on the value of $\delta$ and $\gamma$ for which the posterior model probability was calculated. 
+
+```{r}
+class(zmat_list$z)
+dim(zmat_list$z)
+```
+
+Now we can reuse the matrix to adjust the plot by passing `zmat_list$z` to `z` in `plot_params()`. However, this trick is only useful so long as you do not expand the bounds over which you want to plot.  Below shows the same `z` matrix plotted on (1) the same range, (2) a smaller range, and (3) a larger range than over which is was calculated. The white that appears in the third frame reflects the fact that the posterior model probability was not calcualted for those grid cells since they are outside of the original bounds. 
+
+```{r,  fig.width=8, fig.height=4, fig.align='center'}
+par(mfrow=c(1,3))
+plot_params(z=zmat_list$z, k=200, dlim=c(0.5, 1.5), glim=c(0.25, 2.75), main="Same range as z")
+plot_params(z=zmat_list$z, k=200, dlim=c(0.7, 1.3), glim=c(0.5, 2.5), main="Smaller range than z")
+plot_params(z=zmat_list$z, k=200, dlim=c(1e-04, 5), glim=c(1e-04, 5), main="Larger range than z")
+```
+
+We'll continue to use this trick throughout to reduce plotting time. 
+
+### Adding contours and using `countors_only=TRUE`
+
+To add contours at specific levels of the posterior model probability of calibration, users can specify these levels in a vector via `t_levels`.  Below, we add contours at t = 0.95, 0.9, and 0.8. 
+
+```{r,  fig.width=6, fig.height=4, fig.align='center'}
+plot_params(z=zmat_list$z, t_levels=c(0.95, 0.9, 0.8),
+            k=200, dlim=c(0.5, 1.5), glim=c(0.25, 2.75))
+```
+
+[FINISH AFTER DECIDING WHAT TO PASS DIRCETLY VS VIA OPTS]
+
+### Passing Additional / Different Arguments to `image.plot()` and `contour()`
+
+While `plot_params()` obscured the call to `image.plot()` and `contour()`, we allow users to leverage their full capabilities via arguments `imgplt_options` and `contour_options`.  To pass additional arguments to `image.plot()` and `contour()`, users can create a list whose entries match the names of the arguments in these functions and pass them to `imgplt_options` and `contour_options`, respectively.  
+
+For example, below we can move the legend to appear horizontally below the plot using argument `horizontal = TRUE` in `image.plot()`.  Additionally, we'll reduce the number of colors used for plotting via `nlevel=10` and add a legend label via `legend.lab`.  Notice how these are passed as a list to `imgplt_options`.  
+
+
+```{r, fig.width=6, fig.height=6, fig.align='center'}
+plot_params(z=zmat_list$z, k=200, dlim=c(0.5, 1.5), glim=c(0.25, 2.75),
+            imgplt_options=list(horizontal = TRUE, nlevel=10, legend.lab="Posterior Model Prob"))
+```
+
+Next, we can pass additional arguments to `contour()` via `contour_options`.  Below, we'll draw contours at t = 0.99 and 0.1.  To make them dotted lines instead of solid, we'll use `lty="dotted"` and we'll adjust where the labels are placed via `method="edge"`. 
+
+```{r, fig.width=6, fig.height=4, fig.align='center'}
+plot_params(z=zmat_list$z, k=200, dlim=c(0.5, 1.5), glim=c(0.25, 2.75), t_levels = c(0.99, 0.1), 
+            contour_options=list(lty = "dotted", method = "edge"))
+```
+
+
+### Passing Additional / Different Arguments to `optim()` {#optim_opts_pp}
+
+Similar to some of the other functions in this package, we also allow users of `plot_params()` to pass additional arguments to `optim()`.  However, since this function also passed arguments to `image.plot()` and `contour()`, we cannot leverage the flexibility of `...`. Instead, we'll follow the same convention as `imgplt_options` and `contour_options` by specifying additional arguments for `optim()` via a list in `optim_options`.  
+
+The example below shows how to use `optim_options` to change the algorithm to `"L-BFGS-B"`, set bounds on $\delta$ and $\gamma$, and set the max number of iterations to 200. To reduce plotting time, we'll revert to a lower resolution image. 
+
+```{r, fig.width=6, fig.height=4, fig.align='center'}
+plot_params(hockey$x, hockey$y, k=50, dlim=c(0.5, 1.5), glim=c(0.25, 2.75), 
+            optim_options=list(method="L-BFGS-B", lower=c(0.0001, 10), upper=c(0.0001, 10), 
+                               control=list(maxit=200)))
+```
+
+
+## Visualizing Changes in Probabilities via `lineplot()`
+
+
+# References
