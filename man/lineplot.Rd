@@ -81,8 +81,8 @@ passed to \code{scale_y_continous()}.}
 without replacement to form a set of size \code{thin_to}.}
 
 \item{thin_percent}{When non-null, the observations in (x,y) are randomly
-sampled without replacement to form a set that is \code{thin_percent} * 100\% of the
-original size of (x,y).}
+sampled without replacement to form a set that is \code{thin_percent} * 100\% of
+the original size of (x,y).}
 
 \item{thin_by}{When non-null, the observations in (x,y) are thinned by
 selecting every \code{thin_by} observation.}
@@ -99,6 +99,20 @@ Otherwise just the \code{ggplot} object of the plot is returned.
 \description{
 Lineplot for LLO-adjusted Probability Predictions
 }
+\section{Thinning}{
+
+
+Another approach to speed up the calculations of this function is to thin
+the data used. However, this is generally not recommended unless the sample
+size is very large as the calculations of the posterior model probability
+may change drastically under small sample sizes.  This can lead to
+misleading results. Under large sample sizes where thinning is used, note
+this is only an approximate visual of the posterior model probability.  We
+provide three options for thinning: \code{thin_to}, \code{thin_percent}, and
+\code{thin_by}.  Care should be taken in selecting a thinning approach based on
+the nature of your data and problem.
+}
+
 \references{
 Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
 for Binary Event Predictions, \emph{The American Statistician} 1-17.
