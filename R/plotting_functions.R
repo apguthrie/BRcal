@@ -3,8 +3,7 @@
 ######################################################
 
 # need to add checks 
-#  addtnal options, add capability for points at B-R params???? 
-# add option to pass arguments to optim, adjust behavior at gamma = 0?
+#  adjust behavior at gamma = 0?
 
 #' Draw image plot of posterior model probability surface.
 #'
@@ -71,7 +70,7 @@
 #'   return the underlying matrix of posterior mode probabilities for plotting.
 #'   Then, instead of specifying `x` and `y` users can just pass the returned
 #'   matrix as `z`.  Note this assumes you are NOT making any changes to `k`,
-#'   `dlim`, or `glim`.  Also, it is not reccommended that you construct your
+#'   `dlim`, or `glim`.  Also, it is not recommended that you construct your
 #'   own matrix to pass via `z` as this function relies on the structure as
 #'   returned by a previous call of `plot_params()`.
 #'
@@ -81,17 +80,14 @@
 #'   the data used. However, this is generally not recommended unless the sample
 #'   size is very large as the calculations of the posterior model probability
 #'   may change drastically under small sample sizes.  This can lead to
-#'   misleading results. Under large sample sizes where thinning is used, not
-#'   this is only an approximate visual of the posterior model probability.  We
-#'   provide three options for thinning: `thin_to`, `thin_percent`, and
-#'   `thin_by`.  Care should be taken in selecting a thinning approach based on
-#'   the nature of your data and problem.
+#'   misleading results. Under large sample sizes where thinning is used, note
+#'   this is only an approximate visual of the posterior model probability. 
 #'
 #' @section Grid cells that show up white / round off warning message:
 #'
 #'   In some cases, grid cells in the plot may show up as white instead of one
 #'   of the colors from red to blue shown on the legend.  A white grid cell
-#'   indicates that there is no calculated postereior model probability at that
+#'   indicates that there is no calculated posterior model probability at that
 #'   cell. There are two common reasons for this: (1) that grid cell location is
 #'   not covered by the `z` matrix used (i.e. you've adjusted the bounds without
 #'   recalculating z) or (2) the values of the parameters at these locations
@@ -119,13 +115,6 @@
 #' @param return_z Logical.  If `TRUE`, the matrix of posterior model
 #'   probabilities across the specified k\eqn{\times}k grid of \eqn{\delta} and
 #'   \eqn{\gamma} will be returned.
-#' @param thin_to When non-null, the observations in (x,y) are randomly sampled
-#'   without replacement to form a set of size `thin_to`.
-#' @param thin_percent When non-null, the observations in (x,y) are randomly
-#'   sampled without replacement to form a set that is `thin_percent` * 100% of
-#'   the original size of (x,y).
-#' @param thin_by When non-null, the observations in (x,y) are thinned by
-#'   selecting every `thin_by` observation.
 #' @param contours_only Logical.  If `TRUE`, only the contours at the specified
 #'   `t_levels` will be plotted with no color for the posterior model
 #'   probability across the k\eqn{\times}k grid of \eqn{\delta} and
@@ -133,15 +122,9 @@
 #' @param main Plot title.
 #' @param xlab Label for x-axis.
 #' @param ylab Label for x-axis.
-#' @param legend.lab Label for legend.
-#' @param drawlabels Logical.  If `TRUE`, the contour labels will be plotted
-#'   with the corresponding contours passed to \link[graphics]{contour}().
-#' @param contour_color Color of the contours and their labels passed to
-#'   \link[graphics]{contour}().
-#' @param labcex Size of contour labels passed to \link[graphics]{contour}().
-#' @param lwd Linewidth of contours passed to \link[graphics]{contour}().
-#' @param ... Additional arguments to be passed to \link[fields]{image.plot}()
-#'   and \link[graphics]{contour}().
+#' @param optim_options List of additional arguments to be passed to \link[base]{optim}().
+#' @param imgplt_options List of additional arguments to be passed to \link[fields]{image.plot}().
+#' @param contour_options List of additional arguments to be passed to \link[graphics]{contour}().
 #'
 #' @return If `return_z = TRUE`, a list with the following attributes is
 #'   returned: \item{\code{z}}{Matrix containing posterior model probabilities
@@ -219,32 +202,29 @@ plot_params <- function(x=NULL, y=NULL, z=NULL, t_levels = NULL,
                         zlim = c(0,1),
                         return_z = FALSE,
                         epsilon=.Machine$double.eps,
-                        thin_to=NULL,
-                        thin_percent=NULL,
-                        thin_by=NULL,
+                        # thin_to=NULL,
+                        # thin_percent=NULL,
+                        # thin_by=NULL,
                         contours_only = FALSE,
                         main="Posterior Model Probability of Calibration",
                         xlab = "delta",
                         ylab = "gamma",
-                        legend.lab = "",
-                        drawlabels = TRUE,
-                        contour_color = "white",
-                        labcex=0.6,
-                        lwd=1,
-                        ...){
-
+                        optim_options=NULL,
+                        imgplt_options=list(legend.lab = ""),
+                        contour_options=list(drawlabels=TRUE, col="white", labcex=0.6, lwd=1)){
+  
   ##################
   #  Input Checks  #
   ##################
   
   # check either x and y or z are specified
   if(is.null(z) & (is.null(x) | is.null(y))) stop("must specify either x and y or z")
-
+  
   if(any(dim(z) != k)) warning("dimensions of z do not match k")
   
   # check t_levels are valid calibration probs
   if(!is.null(t_levels)) t_levels <- check_input_probs(t_levels, name="t_levels")
-
+  
   # check upper and lower bounds
   check_input_delta(dlim[1], name="dlim[1]")
   check_input_delta(dlim[2], name="dlim[2]")
@@ -257,25 +237,25 @@ plot_params <- function(x=NULL, y=NULL, z=NULL, t_levels = NULL,
   if(!is.logical(return_z) & !(return_z %in% c(0,1))){
     stop("argument return_z must be logical")
   }
-
+  
   # check contours_only is logical
   if(!is.logical(contours_only) & !(contours_only %in% c(0,1))){
     stop("argument contours_only must be logical")
   }
-
+  
   if(is.null(z)) {
     # check x is vector, values in [0,1]
     x <- check_input_probs(x, name="x")
-
+    
     # check y is vector, values are 0s or 1s
     y <- check_input_outcomes(y, name="y", event=event)
-
+    
     # check x and y are the same length
     if(length(x) != length(y)) stop("x and y length differ")
-
+    
     # check Pmc is valid prior model prob
     Pmc <- check_value01(Pmc, name="Pmc")
-
+    
     # check epsilon
     epsilon <- check_value01(epsilon, name="epsilon")    
     
@@ -284,107 +264,112 @@ plot_params <- function(x=NULL, y=NULL, z=NULL, t_levels = NULL,
     if(k < 2) stop("k must be greater than 1")
     if(is.infinite(k)) stop("k must be finite")
     
-    # check thin_to
-    if(!is.null(thin_to)){
-      if(!is.numeric(thin_to)) stop("thin_to must be numeric")
-      if(thin_to < 2) stop("thin_to must be greater than 1")
-      if(is.infinite(thin_to)) stop("thin_to must be finite")
-    }
-    
-    # check thin_percent
-    thin_percent <- check_value01(thin_percent, name="thin_percent") 
-    
-    # check thin_by
-    if(!is.null(thin_by)){
-      if(!is.numeric(thin_by)) stop("thin_by must be numeric")
-      if(thin_by < 1) stop("thin_by must be greater than 0")
-      if(is.infinite(thin_by)) stop("thin_by must be finite")
-    }
+    # # check thin_to
+    # if(!is.null(thin_to)){
+    #   if(!is.numeric(thin_to)) stop("thin_to must be numeric")
+    #   if(thin_to < 2) stop("thin_to must be greater than 1")
+    #   if(is.infinite(thin_to)) stop("thin_to must be finite")
+    # }
+    # 
+    # # check thin_percent
+    # if(!is.null(thin_percent))    thin_percent <- check_value01(thin_percent, name="thin_percent") 
+    # 
+    # # check thin_by
+    # if(!is.null(thin_by)){
+    #   if(!is.numeric(thin_by)) stop("thin_by must be numeric")
+    #   if(thin_by < 1) stop("thin_by must be greater than 0")
+    #   if(is.infinite(thin_by)) stop("thin_by must be finite")
+    # }
   }
-
   
+  # Check that additional options are in the form of a list
+  if(!is.null(optim_options) & !is.list(optim_options)) stop("optim_options must be a list")
+  if(!is.null(imgplt_options) & !is.list(imgplt_options)) stop("imgplt_options must be a list")
+  if(!is.null(contour_options) & !is.list(contour_options)) stop("contour_options must be a list")
   
-
   ###################
   #  Function Code  #
   ###################
-
-
+  
+  
   if(is.null(z)) {
-    if(!is.null(thin_to)){
-      set.seed(0)
-      rows <- sample(1:length(x), size=thin_to)
-    } else if (!is.null(thin_percent)){
-      set.seed(0)
-      rows <- sample(1:length(x), size=length(x)*thin_percent)
-    } else if (!is.null(thin_by)){
-      rows <- seq(1,length(x),thin_by)
-    }  else{
-      rows <- 1:length(x)
-    }
-
+    # if(!is.null(thin_to)){
+    #   set.seed(0)
+    #   rows <- sample(1:length(x), size=thin_to)
+    # } else if (!is.null(thin_percent)){
+    #   set.seed(0)
+    #   rows <- sample(1:length(x), size=length(x)*thin_percent)
+    # } else if (!is.null(thin_by)){
+    #   rows <- seq(1,length(x),thin_by)
+    # }  else{
+    #   rows <- 1:length(x)
+    # }
+    
+    rows <- 1:length(x)
+    
     x <- x[rows]
     y <- y[rows]
-
-    z <- get_zmat(x=x, y=y, Pmc=Pmc, len.out=k, lower=c(dlim[1], glim[1]), upper=c(dlim[2], glim[2]), epsilon=epsilon)
-
+    
+    z <- get_zmat(x=x, y=y, Pmc=Pmc, len.out=k, lower=c(dlim[1], glim[1]),
+                  upper=c(dlim[2], glim[2]), epsilon=epsilon, optim_options=optim_options)
   }
-
+  
   # get max z value
   max_z <- max(z[!is.na(z)])
-
+  
   # set up delta and gamma vectors
   g <- as.numeric(colnames(z))
   d <- as.numeric(rownames(z))
-
+  
   if(anyNA(dlim)){
     dlim <- c(min(d), max(d))
   }
   if(anyNA(glim)){
     glim <- c(min(g), max(g))
   }
-
-
+  
+  
   if(!contours_only){
-
-
-    fields::image.plot(x = d, y = g, z = z,
-                       xlim = dlim, ylim = glim, zlim = zlim,
-                       main = main,
-                       xlab = xlab,
-                       ylab = ylab,
-                       legend.lab =  legend.lab,
-                       ...)
+    
+    do.call(fields::image.plot, c(list(x = d, y = g, z = z,
+                                       xlim = dlim, ylim = glim, zlim = zlim,
+                                       main = main,
+                                       xlab = xlab,
+                                       ylab = ylab),
+                                  imgplt_options))
+    
     # plus contours if specified
     if(!is.null(t_levels)){
-      contour(x = d, y = g, z = z,  add = TRUE, levels = t_levels, col = contour_color,
-              drawlabels = drawlabels, lwd=lwd, labcex=labcex, ...)
+      
+      do.call(contour, c(list(x = d, y = g, z = z,  
+                              add = TRUE, levels = t_levels), 
+                         contour_options))
     }
-
-
+    
+    
     # just plot contours
   }else{
     if(!is.null(t_levels)){
       
-      contour(x = d, y = g, z = z,
-              xlim = dlim, ylim = glim, zlim = zlim,
-              levels = t_levels, col = contour_color,
-              main = main,
-              xlab = xlab,
-              ylab = ylab,
-              drawlabels = drawlabels, lwd=lwd, labcex=labcex, ...)
+      do.call(contour, c(list(x = d, y = g, z = z,
+                              xlim = dlim, ylim = glim, zlim = zlim,
+                              levels = t_levels, 
+                              main = main,
+                              xlab = xlab,
+                              ylab = ylab),
+                         contour_options))
     } else {
       stop("must provide contour levels when contours_only = TRUE")  # move this check up!
     }
   }
-
+  
   if(return_z){
     return(list(z = z,
                 dlim = dlim,
                 glim = glim,
                 k = k))
   }
-
+  
 }
 
 
@@ -396,7 +381,19 @@ plot_params <- function(x=NULL, y=NULL, z=NULL, t_levels = NULL,
 # add checks for graphing params
 
 #' Lineplot for LLO-adjusted Probability Predictions
+#' 
+#' @section Thinning:
 #'
+#'   Another approach to speed up the calculations of this function is to thin
+#'   the data used. However, this is generally not recommended unless the sample
+#'   size is very large as the calculations of the posterior model probability
+#'   may change drastically under small sample sizes.  This can lead to
+#'   misleading results. Under large sample sizes where thinning is used, note
+#'   this is only an approximate visual of the posterior model probability.  We
+#'   provide three options for thinning: `thin_to`, `thin_percent`, and
+#'   `thin_by`.  Care should be taken in selecting a thinning approach based on
+#'   the nature of your data and problem.
+#' 
 #' @inheritParams plot_params
 #' @param df Dataframe returned by previous call to lineplot() specially
 #'   formatted for use in this function. Only used for faster plotting when
@@ -412,6 +409,13 @@ plot_params <- function(x=NULL, y=NULL, z=NULL, t_levels = NULL,
 #' @param ylim Vector with bounds for y-axis, must be in \[0,1\].
 #' @param breaks Locations along y-axis at which to draw horizontal guidelines,
 #'   passed to `scale_y_continous()`.
+#' @param thin_to When non-null, the observations in (x,y) are randomly sampled
+#'   without replacement to form a set of size `thin_to`.
+#' @param thin_percent When non-null, the observations in (x,y) are randomly
+#'   sampled without replacement to form a set that is `thin_percent` * 100% of
+#'   the original size of (x,y).
+#' @param thin_by When non-null, the observations in (x,y) are thinned by
+#'   selecting every `thin_by` observation.
 #'
 #' @return If `return_df = TRUE`, a list with the folling attributes is
 #'   returned: \item{\code{plot}}{A `ggplot` object showing how the predicted
@@ -440,40 +444,40 @@ lineplot <- function(x, y, t_levels=NULL, df=NULL,
                      pt_alpha = 0.35, ln_alpha = 0.25, font_base = 10,
                      ylim=c(0,1), breaks=seq(0,1,by=0.2), thin_to=NULL,
                      thin_percent=NULL, thin_by=NULL){
-
+  
   ##################
   #  Input Checks  #
   ##################
-
+  
   # check either x and y or df are specified
   if(is.null(df) & (is.null(x) | is.null(y))) stop("must specify either x and y or df")
-
+  
   if(is.null(df)){
-
+    
     # check x is vector, values in [0,1]
     x <- check_input_probs(x, name="x")
-
+    
     # check y is vector, values are 0s or 1s
     y <- check_input_outcomes(y, name="y", event=event)
-
+    
     # check x and y are the same length
     if(length(x) != length(y)) stop("x and y length differ")
-
+    
     # check t is valid calibration prob
     if(!is.null(t_levels)){  t_levels <- check_input_probs(t_levels, name="t_levels")}
-
+    
     # check Pmc is valid prior model prob
     Pmc <- check_input_probs(Pmc, name="Pmc")
-
+    
     # CHECK GRAPHING PARAMS
-
-
+    
+    
     ###################
     #  Function Code  #
     ###################
-
+    
     rows <- 1:length(x)
-
+    
     if(!is.null(thin_to)){
       set.seed(0)
       rows <- sample(1:length(x), size=thin_to)
@@ -485,18 +489,18 @@ lineplot <- function(x, y, t_levels=NULL, df=NULL,
     }  else{
       rows <- 1:length(x)
     }
-
+    
     x_plot <- x[rows]
     y_plot <- y[rows]
-
+    
     nplot <- length(x_plot)
-
+    
     # create empty DF
     df <- data.frame(matrix(nrow=nplot, ncol=5))
     colnames(df) <- c("probs", "outcome", "post", "pairing", "label")
-
+    
     pairs <- 1:length(x_plot)
-
+    
     # Original Set
     df$probs <- x_plot
     df$outcome <- y_plot
@@ -505,11 +509,11 @@ lineplot <- function(x, y, t_levels=NULL, df=NULL,
     df$post <- bt$posterior_model_prob
     df$pairing <- pairs
     df$label <- paste0("Original \n(",  round(bt$posterior_model_prob,5), ")")
-
-
+    
+    
     temp  <- data.frame(matrix(nrow=nplot, ncol=5))
     colnames(temp) <- c("probs", "outcome", "post", "pairing", "label")
-
+    
     # MLE recalibrate
     temp$probs <- LLO(x_plot, bt$MLEs[1], bt$MLEs[2])
     temp$outcome <- y_plot
@@ -518,7 +522,7 @@ lineplot <- function(x, y, t_levels=NULL, df=NULL,
     temp$pairing <- pairs
     temp$label <- paste0("MLE Recal. \n(",  round(bt_mle$posterior_model_prob, 5), ")")
     df <- rbind(df, temp)
-
+    
     # Boldness-recalibrate at given levels
     # loop over t values
     for(i in 1:length(t_levels)){
@@ -533,11 +537,11 @@ lineplot <- function(x, y, t_levels=NULL, df=NULL,
       df <- rbind(df, temp)
     }
   }
-
+  
   df$outcome <- factor(df$outcome)
   ulabs <- unique(df$label)
   df$label <- factor(df$label, levels=c(unique(df$label)))
-
+  
   lines <- ggplot2::ggplot(data = df, mapping = aes_string(x = "label", y = "probs")) +
     geom_point(aes_string(color = "outcome"),
                alpha = pt_alpha, size = pt_size,
@@ -555,12 +559,12 @@ lineplot <- function(x, y, t_levels=NULL, df=NULL,
     scale_color_manual(values = c("red", "blue")) +
     scale_x_discrete(expand = c(0, 0.075)) +
     theme(axis.text.x = element_text(hjust=0.75))
-
+  
   if(return_df){
     return(list(plot=lines,
                 df=df))
   }
-
+  
   return(lines)
 }
 
@@ -571,40 +575,42 @@ lineplot <- function(x, y, t_levels=NULL, df=NULL,
 ######################################################
 
 # Function to get matrix of posterior model probabilities across delta/gamma grid
-get_zmat <- function(x, y, Pmc=0.5, len.out = 100, lower = c(0.0001,-2), upper = c(5,2), epsilon=.Machine$double.eps){
-
+get_zmat <- function(x, y, Pmc=0.5, len.out = 100, lower = c(0.0001,-2), upper = c(5,2), 
+                     epsilon=.Machine$double.eps, optim_options=NULL){
+  
   # Set up grid of Delta (d) and Gamma (g)
   d <- seq(lower[1], upper[1], length.out = len.out)
   g <- seq(lower[2], upper[2], length.out = len.out)
   grd <- expand.grid(d,g)
-
+  
   # starting xs
   x0 <- x
   n <- length(x0)
-
+  
   # MLE recalibrate
-  xM <- mle_recal_internal(x0, y, optim_details = FALSE, probs_only = TRUE)
-
+  xM <- do.call(mle_recal_internal, c(list(x=x0, y=y, optim_details = FALSE, probs_only = TRUE), optim_options))
+  
   # Set up storage
   grd.loglik <- c()
   optim.loglik <- c()
   BIC_1 <- c()
   grd.BIC_2 <- c()
   optim.BIC_2 <- c()
-
+  
   warn <- NULL
   
   # Loop over grid of delta/gamma vals
   for(i in 1:nrow(grd)){
-
+    
     if(grd[i,2] == 0){  # REVISIT THIS
       temp <- bayes_ms_internal(LLO_internal(x=x0, delta = grd[i,1], gamma = grd[i,2]), y, Pmc=Pmc)
+      temp <- do.call(bayes_ms_internal, c(list(LLO_internal(x=x0, delta = grd[i,1], gamma = grd[i,2]), y, Pmc=Pmc), optim_options))
       BIC_1[i] <- temp$BIC_Mc
       grd.BIC_2[i] <- temp$BIC_Mu
     }else{
       # LLO-adjust based on current grid params
       xg <- LLO_internal(x=x0, delta = grd[i,1], gamma = grd[i,2])
-
+      
       # Convert grid adjusted probs to logit scale
       xg_logit <- logit(xg, epsilon=epsilon)
       
@@ -614,7 +620,7 @@ get_zmat <- function(x, y, Pmc=0.5, len.out = 100, lower = c(0.0001,-2), upper =
       # - they are not within epsilon of the 0 or 1 boundary (because this causes round off problems)
       
       uniq_inds <- which(!duplicated(round(xg,15)) & !duplicated(round(xg_logit, 15)) & xg < 1-epsilon & xg > epsilon)
-
+      
       # check to make sure there's at least two points
       if(length(uniq_inds) < 2){
         # uniq_inds <-  NA   # this way the plot will not plot anything at that cell
@@ -628,34 +634,34 @@ get_zmat <- function(x, y, Pmc=0.5, len.out = 100, lower = c(0.0001,-2), upper =
       } else{
         uniq_inds <- uniq_inds[1:2]
       }
-
+      
       # Use point slope formula
       start <- xg_logit[uniq_inds]
       goal <- logit(xM[uniq_inds], epsilon=epsilon)
       b <- (goal[2] - goal[1]) / (start[2] - start[1])
       a <- goal[2] - b*start[2]
-
+      
       # Get BIC for calibrated model
       BIC_1[i] <- (-2)*llo_lik(params=c(1,1), x=xg, y=y, log=TRUE)
-
+      
       # Get BIC for uncalibrated model
       grd.loglik[i] <- llo_lik(params=c(exp(a),b), x=xg, y=y, log=TRUE)
       grd.BIC_2[i] <- 2*log(n) - 2*grd.loglik[i]
     }
   }
-
+  
   if(!is.null(warn)) warning(warn)
   
   # Get Bayes Factor and posterior model prob of calibration
   grd.BF <- exp(-(1/2) * (grd.BIC_2 - BIC_1)) #bayes_factor(BIC1 = grd.BIC_2, BIC2 = BIC_1)
   Pmu <- 1 - Pmc
   posts <- 1/(1+(grd.BF*(Pmu/Pmc))) #post_mod_prob(grd.BF)
-
+  
   # Reshape vector of posterior model probs into matrix for plotting
   z_mat <- matrix(posts, nrow = length(d), ncol = length(g))
   colnames(z_mat) <- g
   rownames(z_mat) <- d
-
+  
   return(z_mat)
 }
 

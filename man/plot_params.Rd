@@ -17,19 +17,13 @@ plot_params(
   zlim = c(0, 1),
   return_z = FALSE,
   epsilon = .Machine$double.eps,
-  thin_to = NULL,
-  thin_percent = NULL,
-  thin_by = NULL,
   contours_only = FALSE,
   main = "Posterior Model Probability of Calibration",
   xlab = "delta",
   ylab = "gamma",
-  legend.lab = "",
-  drawlabels = TRUE,
-  contour_color = "white",
-  labcex = 0.6,
-  lwd = 1,
-  ...
+  optim_options = NULL,
+  imgplt_options = list(legend.lab = ""),
+  contour_options = list(drawlabels = TRUE, col = "white", labcex = 0.6, lwd = 1)
 )
 }
 \arguments{
@@ -72,16 +66,6 @@ boundary for numerical stability. If a value in \code{x} < \code{epsilon}, it wi
 replaced with \code{epsilon}.  If a value in \code{x} > \code{1-epsilon}, that value will
 be replaced with \code{1-epsilon}.}
 
-\item{thin_to}{When non-null, the observations in (x,y) are randomly sampled
-without replacement to form a set of size \code{thin_to}.}
-
-\item{thin_percent}{When non-null, the observations in (x,y) are randomly
-sampled without replacement to form a set that is \code{thin_percent} * 100\% of the
-original size of (x,y).}
-
-\item{thin_by}{When non-null, the observations in (x,y) are thinned by
-selecting every \code{thin_by} observation.}
-
 \item{contours_only}{Logical.  If \code{TRUE}, only the contours at the specified
 \code{t_levels} will be plotted with no color for the posterior model
 probability across the k\eqn{\times}k grid of \eqn{\delta} and
@@ -93,20 +77,11 @@ probability across the k\eqn{\times}k grid of \eqn{\delta} and
 
 \item{ylab}{Label for x-axis.}
 
-\item{legend.lab}{Label for legend.}
+\item{optim_options}{List of additional arguments to be passed to \link[base]{optim}().}
 
-\item{drawlabels}{Logical.  If \code{TRUE}, the contour labels will be plotted
-with the corresponding contours passed to \link[graphics]{contour}().}
+\item{imgplt_options}{List of additional arguments to be passed to \link[fields]{image.plot}().}
 
-\item{contour_color}{Color of the contours and their labels passed to
-\link[graphics]{contour}().}
-
-\item{labcex}{Size of contour labels passed to \link[graphics]{contour}().}
-
-\item{lwd}{Linewidth of contours passed to \link[graphics]{contour}().}
-
-\item{...}{Additional arguments to be passed to \link[fields]{image.plot}()
-and \link[graphics]{contour}().}
+\item{contour_options}{List of additional arguments to be passed to \link[graphics]{contour}().}
 }
 \value{
 If \code{return_z = TRUE}, a list with the following attributes is
@@ -188,7 +163,9 @@ not change the grid bounds or density, users can set \code{return_z=TRUE} to
 return the underlying matrix of posterior mode probabilities for plotting.
 Then, instead of specifying \code{x} and \code{y} users can just pass the returned
 matrix as \code{z}.  Note this assumes you are NOT making any changes to \code{k},
-\code{dlim}, or \code{glim}.
+\code{dlim}, or \code{glim}.  Also, it is not recommended that you construct your
+own matrix to pass via \code{z} as this function relies on the structure as
+returned by a previous call of \code{plot_params()}.
 }
 
 \section{Thinning}{
@@ -198,11 +175,8 @@ Another approach to speed up the calculations of this function is to thin
 the data used. However, this is generally not recommended unless the sample
 size is very large as the calculations of the posterior model probability
 may change drastically under small sample sizes.  This can lead to
-misleading results. Under large sample sizes where thinning is used, not
-this is only an approximate visual of the posterior model probability.  We
-provide three options for thinning: \code{thin_to}, \code{thin_percent}, and
-\code{thin_by}.  Care should be taken in selecting a thinning approach based on
-the nature of your data and problem.
+misleading results. Under large sample sizes where thinning is used, note
+this is only an approximate visual of the posterior model probability.
 }
 
 \section{Grid cells that show up white / round off warning message}{
@@ -210,16 +184,17 @@ the nature of your data and problem.
 
 In some cases, grid cells in the plot may show up as white instead of one
 of the colors from red to blue shown on the legend.  A white grid cell
-indicates that something is numerically unstable at that grid location and
-the posterior model probability could not be calculated.  The most common
-reason for this is that the values of the parameters at these locations are
-so extreme that the values in \code{x} are LLO-adjusted to values virtually
-equal to 0 or 1.  This invokes the use of \code{epsilon} to push them away from
-these boundaries for stability.  However, in these extreme cases this can
-cause inaccuracies in this plot.  For this reason, we either throw the
-warning message: "Roundoff may cause inaccuracies in upper region of plot"
-or allow the cell to be plotted as white to notify the user and avoid
-plotting artifacts.
+indicates that there is no calculated posterior model probability at that
+cell. There are two common reasons for this: (1) that grid cell location is
+not covered by the \code{z} matrix used (i.e. you've adjusted the bounds without
+recalculating z) or (2) the values of the parameters at these locations
+cause the values in \code{x} to be LLO-adjusted such that they virtually equal 0
+or 1.  This invokes the use of \code{epsilon} to push them away from these
+boundaries for stability. However, in these extreme cases this can cause
+inaccuracies in this plot. For this reason, we either throw the warning
+message: "Roundoff may cause inaccuracies in upper region of plot" or allow
+the cell to be plotted as white to notify the user and avoid plotting
+artifacts.
 }
 
 \examples{
@@ -252,7 +227,7 @@ plot_params(z=zmat_list$z, dlim=c(0.0001, 3), glim=c(0.1,2), t_levels=c(0.95, 0.
 points(br95$BR_params[1], br95$BR_params[2], pch=19, col="white")
 
 # Only plot contours & change color of contours
-plot_params(z=zmat_list$z, dlim=c(0.0001, 3), glim=c(0.1,2), t_levels=c(0.95, 0.9, 0.8), 
+plot_params(z=zmat_list$z, dlim=c(0.0001, 3), glim=c(0.1,2), t_levels=c(0.95, 0.9, 0.8),
 contours_only=TRUE, contour_color="blue")
 
 # Zoom in and change range of colors used for z
