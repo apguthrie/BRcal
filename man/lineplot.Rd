@@ -5,27 +5,27 @@
 \title{Lineplot for LLO-adjusted Probability Predictions}
 \usage{
 lineplot(
-  x,
-  y,
+  x = NULL,
+  y = NULL,
   t_levels = NULL,
   df = NULL,
   Pmc = 0.5,
   event = 1,
-  return_df = TRUE,
+  return_df = FALSE,
   epsilon = .Machine$double.eps,
   title = "Line Plot",
   ylab = "Probability",
   xlab = "Posterior Model Probability",
-  pt_size = 1.5,
-  ln_size = 0.5,
-  pt_alpha = 0.35,
-  ln_alpha = 0.25,
-  font_base = 10,
   ylim = c(0, 1),
   breaks = seq(0, 1, by = 0.2),
   thin_to = NULL,
   thin_percent = NULL,
-  thin_by = NULL
+  thin_by = NULL,
+  seed = 0,
+  optim_options = NULL,
+  nloptr_options = NULL,
+  ggpoint_options = list(alpha = 0.35, size = 1.5, show.legend = FALSE),
+  ggline_options = list(alpha = 0.25, linewidth = 0.5, show.legend = FALSE)
 )
 }
 \arguments{
@@ -62,16 +62,6 @@ be replaced with \code{1-epsilon}.}
 
 \item{xlab}{Label for x-axis.}
 
-\item{pt_size}{Size of plotted points passed to \code{geom_point()}.}
-
-\item{ln_size}{Linewidth of connecting lines passed to \code{geom_line()}.}
-
-\item{pt_alpha}{Transparency of plotted point passed to \code{geom_point()}.}
-
-\item{ln_alpha}{Transparency of connecting lines passed to \code{geom_line()}.}
-
-\item{font_base}{Base font size for \code{ggplot()}.}
-
 \item{ylim}{Vector with bounds for y-axis, must be in [0,1].}
 
 \item{breaks}{Locations along y-axis at which to draw horizontal guidelines,
@@ -86,9 +76,19 @@ the original size of (x,y).}
 
 \item{thin_by}{When non-null, the observations in (x,y) are thinned by
 selecting every \code{thin_by} observation.}
+
+\item{seed}{Seed for random thinning.  Set to NULL for no seed.}
+
+\item{optim_options}{List of additional arguments to be passed to \link[base]{optim}().}
+
+\item{nloptr_options}{List with options to be passed to \code{nloptr()}.}
+
+\item{ggpoint_options}{List with options to be passed to \code{geom_point()}.}
+
+\item{ggline_options}{List with options to be passed to \code{geom_line()}.}
 }
 \value{
-If \code{return_df = TRUE}, a list with the folling attributes is
+If \code{return_df = TRUE}, a list with the following attributes is
 returned: \item{\code{plot}}{A \code{ggplot} object showing how the predicted
 probabilities under MLE recalibration and specified levels of
 boldness-recalibration.}
@@ -97,22 +97,104 @@ formatted for use in \code{lineplot()}.}
 Otherwise just the \code{ggplot} object of the plot is returned.
 }
 \description{
-Lineplot for LLO-adjusted Probability Predictions
+Function to visualize how predicted probabilities change under
+MLE-recalibration and boldness-recalibration.
 }
+\details{
+This function leverages \code{ggplot()} and related functions from the \code{ggplot2}
+package (REF).
+
+The goal of this function is to visualize how predicted probabilities change
+under different recalibration parameters. By default this function only shows
+how the original probabilities change after MLE recalibration.  Argument
+\code{t_levels} can be used to specify a vector of levels of
+boldness-recalibration to visualize in addition to MLE recalibration.
+
+While the x-axis shows the posterior model probabilities of each set of
+probabilities, note the posterior model probabilities are not in ascending or
+descending order.  Instead, they simply follow the ordering of how one might
+use the \code{BRcal} package: first looking at the original predictions, then
+maximizing calibration, then examining how far they can spread out
+predictions while maintaining calibration with boldness-recalibration.
+}
+\section{Reusing underlying dataframe via \code{return_df}}{
+
+
+While this function does not typically come with a large burden on time
+under moderate sample sizes, there is still a call to \code{optim()} under the
+hood for MLE recalibration and a call to \code{nloptr()} for each level of
+boldness-reaclibration that could cause a bottleneck on time.  With this in
+mind, users can specify \code{return_df=TRUE} to return the underlying dataframe
+used to build the resulting lineplot.  Then, users can pass this dataframe
+to \code{df} in subsequent calls of \code{lineplot} to circumvent these calls to
+\code{optim} and \code{nloptr} and make cosmetic changes to the plot.
+}
+
 \section{Thinning}{
 
 
-Another approach to speed up the calculations of this function is to thin
-the data used. However, this is generally not recommended unless the sample
-size is very large as the calculations of the posterior model probability
-may change drastically under small sample sizes.  This can lead to
-misleading results. Under large sample sizes where thinning is used, note
-this is only an approximate visual of the posterior model probability.  We
-provide three options for thinning: \code{thin_to}, \code{thin_percent}, and
-\code{thin_by}.  Care should be taken in selecting a thinning approach based on
-the nature of your data and problem.
+Another strategy to save time when plotting is to thin the amount of data
+plotted.  When sample sizes are large, the plot can become overcrowded and
+slow to plot.  We provide three options for thinning: \code{thin_to},
+\code{thin_percent}, and \code{thin_by}.  Care should be taken in selecting a
+thinning approach based on the nature of your data and problem.  Note that
+MLE recalibration and boldness-recalibration will be done using the full
+set.
 }
 
+\section{Passing additional arguments to \code{geom_point()} and \code{geom_line()}}{
+
+
+To make cosmetic changes to the points and lines plotted, users can pass a
+list of any desired arguments of \code{geom_point()} and \code{geom_line()} to
+\code{ggpoint_options} and \code{ggline_options}, respectively.  These will overwrite
+everything passed to \code{geom_point()} or \code{geom_line()} except any aesthetic
+arguments in \code{aes()}.
+}
+
+\examples{
+#' # Simulate 100 predicted probabilities
+x <- runif(100)
+# Simulated 100 binary event outcomes using x
+y <- rbinom(100, 1, x)  # By construction, x is well calibrated.
+
+# Lineplot show change in probabilities from original to MLE-recalibration
+lineplot(x, y)
+
+# Specifying Levels of Boldness-Recalibration via t_levels
+lineplot(x, y, t_levels=c(0.98, 0.95))
+
+# Returning a list with dataframe used to construct plot with return_df=TRUE
+lp1 <- lineplot(x, y, t_levels=c(0.98, 0.95), return_df=TRUE)
+lp1$plot
+
+# Reusing the previous dataframe to save calculation time
+lineplot(df=lp1$df)
+
+# Adjust geom_point cosmetics via ggpoint
+# Increase point size and change to open circles
+lineplot(df=lp1$df, ggpoint_options=list(size=3, shape=4))
+
+# Adjust geom_line cosmetics via ggline
+# Increase line size and change transparencys
+lineplot(df=lp1$df, ggline_options=list(linewidth=2, alpha=0.1))
+
+# Thinning down to 75 randomly selected observation
+lineplot(df=lp1$df, thin_to=75)
+
+# Thinning down to 53\% of the data
+lineplot(df=lp1$df, thin_percent=0.53)
+
+# Thinning down to every 3rd observation
+lineplot(df=lp1$df, thin_by=3)
+
+# Setting a different seed for thinning
+lineplot(df=lp1$df, thin_percent=0.53, seed=47)
+
+# Setting NO seed for thinning (plot will be different every time)
+lineplot(df=lp1$df, thin_to=75, seed=NULL)
+
+}
 \references{
 Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
 for Binary Event Predictions, \emph{The American Statistician} 1-17.

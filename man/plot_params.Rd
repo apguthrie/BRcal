@@ -244,15 +244,6 @@ plot_params(hockey$x, hockey$y, k=50, dlim=c(0.5, 1.5), glim=c(0.25, 2.75),
 optim_options=list(method="L-BFGS-B", lower=c(0.0001, 10), upper=c(0.0001, 10), 
 control=list(maxit=200)))
 
-# Adjust how much probabilities are pushed away from bounds
-# Note warning message
-x3 <- c(runif(50, 0, 0.1), runif(50, .9, 1))
-y3 <- rbinom(100, 1, 0.5)
-plot_params(x3, y3, dlim=c(0.0001, 3), glim=c(-0.5,0.5), epsilon=0.001)
-
-# Use different prior model probability
-plot_params(x, y, Pmc=0.7)
-
 }
 \references{
 Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration

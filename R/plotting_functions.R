@@ -1,5 +1,5 @@
 ######################################################
-#  External Functions (Version 1)                    #
+#  External Functions (Version 2)                    #
 ######################################################
 
 #  adjust behavior at gamma = 0?
@@ -193,15 +193,6 @@
 #' optim_options=list(method="L-BFGS-B", lower=c(0.0001, 10), upper=c(0.0001, 10), 
 #' control=list(maxit=200)))
 #' 
-#' # Adjust how much probabilities are pushed away from bounds
-#' # Note warning message
-#' x3 <- c(runif(50, 0, 0.1), runif(50, .9, 1))
-#' y3 <- rbinom(100, 1, 0.5)
-#' plot_params(x3, y3, dlim=c(0.0001, 3), glim=c(-0.5,0.5), epsilon=0.001)
-#'
-#' # Use different prior model probability
-#' plot_params(x, y, Pmc=0.7)
-#' 
 plot_params <- function(x=NULL, y=NULL, z=NULL, t_levels = NULL,
                         Pmc = 0.5, event=1,
                         k = 100,
@@ -342,27 +333,61 @@ plot_params <- function(x=NULL, y=NULL, z=NULL, t_levels = NULL,
 }
 
 
-
-# start with simple version that you pass x and y that automatically returns OG, MLE, and desired B-R levels
 # see lineplot_dev in plotting_functions_old
 # add option to control # decimal places printed in pmp
-# add option to thin after the fact?
-# add checks for graphing params
+# add option for thin_unique i.e. only plot unique observations. but need to consider that outcomes could be different
 
 #' Lineplot for LLO-adjusted Probability Predictions
-#' 
+#'
+#' Function to visualize how predicted probabilities change under
+#' MLE-recalibration and boldness-recalibration.
+#'
+#' This function leverages `ggplot()` and related functions from the `ggplot2`
+#' package (REF).
+#'
+#' The goal of this function is to visualize how predicted probabilities change
+#' under different recalibration parameters. By default this function only shows
+#' how the original probabilities change after MLE recalibration.  Argument
+#' `t_levels` can be used to specify a vector of levels of
+#' boldness-recalibration to visualize in addition to MLE recalibration.
+#'
+#' While the x-axis shows the posterior model probabilities of each set of
+#' probabilities, note the posterior model probabilities are not in ascending or
+#' descending order.  Instead, they simply follow the ordering of how one might
+#' use the `BRcal` package: first looking at the original predictions, then
+#' maximizing calibration, then examining how far they can spread out
+#' predictions while maintaining calibration with boldness-recalibration.
+#'
+#' @section Reusing underlying dataframe via `return_df`:
+#'
+#'   While this function does not typically come with a large burden on time
+#'   under moderate sample sizes, there is still a call to `optim()` under the
+#'   hood for MLE recalibration and a call to `nloptr()` for each level of
+#'   boldness-reaclibration that could cause a bottleneck on time.  With this in
+#'   mind, users can specify `return_df=TRUE` to return the underlying dataframe
+#'   used to build the resulting lineplot.  Then, users can pass this dataframe
+#'   to `df` in subsequent calls of `lineplot` to circumvent these calls to
+#'   `optim` and `nloptr` and make cosmetic changes to the plot.
+#'
 #' @section Thinning:
 #'
-#'   Another approach to speed up the calculations of this function is to thin
-#'   the data used. However, this is generally not recommended unless the sample
-#'   size is very large as the calculations of the posterior model probability
-#'   may change drastically under small sample sizes.  This can lead to
-#'   misleading results. Under large sample sizes where thinning is used, note
-#'   this is only an approximate visual of the posterior model probability.  We
-#'   provide three options for thinning: `thin_to`, `thin_percent`, and
-#'   `thin_by`.  Care should be taken in selecting a thinning approach based on
-#'   the nature of your data and problem.
-#' 
+#'   Another strategy to save time when plotting is to thin the amount of data
+#'   plotted.  When sample sizes are large, the plot can become overcrowded and
+#'   slow to plot.  We provide three options for thinning: `thin_to`,
+#'   `thin_percent`, and `thin_by`.  Care should be taken in selecting a
+#'   thinning approach based on the nature of your data and problem.  Note that
+#'   MLE recalibration and boldness-recalibration will be done using the full
+#'   set.
+#'
+#' @section Passing additional arguments to `geom_point()` and `geom_line()`:
+#'
+#'   To make cosmetic changes to the points and lines plotted, users can pass a
+#'   list of any desired arguments of `geom_point()` and `geom_line()` to
+#'   `ggpoint_options` and `ggline_options`, respectively.  These will overwrite
+#'   everything passed to `geom_point()` or `geom_line()` except any aesthetic
+#'   arguments in `aes()`.   
+#'
+#'
 #' @inheritParams plot_params
 #' @param df Dataframe returned by previous call to lineplot() specially
 #'   formatted for use in this function. Only used for faster plotting when
@@ -370,11 +395,6 @@ plot_params <- function(x=NULL, y=NULL, z=NULL, t_levels = NULL,
 #' @param return_df Logical.  If `TRUE`, the dataframe used to build this plot
 #'   will be returned.
 #' @param title Plot title.
-#' @param pt_size Size of plotted points passed to `geom_point()`.
-#' @param ln_size Linewidth of connecting lines passed to `geom_line()`.
-#' @param pt_alpha Transparency of plotted point passed to `geom_point()`.
-#' @param ln_alpha Transparency of connecting lines passed to `geom_line()`.
-#' @param font_base Base font size for `ggplot()`.
 #' @param ylim Vector with bounds for y-axis, must be in \[0,1\].
 #' @param breaks Locations along y-axis at which to draw horizontal guidelines,
 #'   passed to `scale_y_continous()`.
@@ -385,8 +405,12 @@ plot_params <- function(x=NULL, y=NULL, z=NULL, t_levels = NULL,
 #'   the original size of (x,y).
 #' @param thin_by When non-null, the observations in (x,y) are thinned by
 #'   selecting every `thin_by` observation.
+#' @param seed Seed for random thinning.  Set to NULL for no seed.
+#' @param nloptr_options List with options to be passed to `nloptr()`.
+#' @param ggpoint_options List with options to be passed to `geom_point()`.
+#' @param ggline_options List with options to be passed to `geom_line()`.
 #'
-#' @return If `return_df = TRUE`, a list with the folling attributes is
+#' @return If `return_df = TRUE`, a list with the following attributes is
 #'   returned: \item{\code{plot}}{A `ggplot` object showing how the predicted
 #'   probabilities under MLE recalibration and specified levels of
 #'   boldness-recalibration.}
@@ -399,20 +423,68 @@ plot_params <- function(x=NULL, y=NULL, z=NULL, t_levels = NULL,
 #'
 #' @references Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
 #'   for Binary Event Predictions, \emph{The American Statistician} 1-17.
-#' 
-#' Wickham, H. (2016) ggplot2: Elegant Graphics for Data Analysis.
-#'  Springer-Verlag New York.
-#'  
+#'
+#'   Wickham, H. (2016) ggplot2: Elegant Graphics for Data Analysis.
+#'   Springer-Verlag New York.
+#'
 #' @examples
-lineplot <- function(x, y, t_levels=NULL, df=NULL,
-                     Pmc = 0.5, event=1, return_df=TRUE, 
+#' #' # Simulate 100 predicted probabilities
+#' x <- runif(100)
+#' # Simulated 100 binary event outcomes using x
+#' y <- rbinom(100, 1, x)  # By construction, x is well calibrated.
+#' 
+#' # Lineplot show change in probabilities from original to MLE-recalibration
+#' lineplot(x, y)
+#' 
+#' # Specifying Levels of Boldness-Recalibration via t_levels
+#' lineplot(x, y, t_levels=c(0.98, 0.95))
+#' 
+#' # Returning a list with dataframe used to construct plot with return_df=TRUE
+#' lp1 <- lineplot(x, y, t_levels=c(0.98, 0.95), return_df=TRUE)
+#' lp1$plot
+#' 
+#' # Reusing the previous dataframe to save calculation time
+#' lineplot(df=lp1$df)
+#' 
+#' # Adjust geom_point cosmetics via ggpoint
+#' # Increase point size and change to open circles
+#' lineplot(df=lp1$df, ggpoint_options=list(size=3, shape=4))
+#' 
+#' # Adjust geom_line cosmetics via ggline
+#' # Increase line size and change transparencys
+#' lineplot(df=lp1$df, ggline_options=list(linewidth=2, alpha=0.1))
+#' 
+#' # Thinning down to 75 randomly selected observation
+#' lineplot(df=lp1$df, thin_to=75)
+#' 
+#' # Thinning down to 53% of the data
+#' lineplot(df=lp1$df, thin_percent=0.53)
+#' 
+#' # Thinning down to every 3rd observation
+#' lineplot(df=lp1$df, thin_by=3)
+#' 
+#' # Setting a different seed for thinning
+#' lineplot(df=lp1$df, thin_percent=0.53, seed=47)
+#' 
+#' # Setting NO seed for thinning (plot will be different every time)
+#' lineplot(df=lp1$df, thin_to=75, seed=NULL)
+#' 
+lineplot <- function(x=NULL, y=NULL, t_levels=NULL, df=NULL,
+                     Pmc = 0.5, event=1, return_df=FALSE, 
                      epsilon=.Machine$double.eps,
                      title="Line Plot", ylab="Probability",
                      xlab = "Posterior Model Probability",
-                     pt_size = 1.5, ln_size = 0.5,
-                     pt_alpha = 0.35, ln_alpha = 0.25, font_base = 10,
-                     ylim=c(0,1), breaks=seq(0,1,by=0.2), thin_to=NULL,
-                     thin_percent=NULL, thin_by=NULL){
+                     ylim=c(0,1), breaks=seq(0,1,by=0.2), 
+                     thin_to=NULL,
+                     thin_percent=NULL, 
+                     thin_by=NULL,
+                     seed=0,
+                     optim_options=NULL,
+                     nloptr_options=NULL,
+                     ggpoint_options=list(alpha=0.35, size=1.5,
+                                          show.legend = FALSE),
+                     ggline_options=list(alpha=0.25, linewidth=0.5,
+                                         show.legend = FALSE)){
   
   ##################
   #  Input Checks  #
@@ -433,25 +505,60 @@ lineplot <- function(x, y, t_levels=NULL, df=NULL,
     if(length(x) != length(y)) stop("x and y length differ")
     
     # check t is valid calibration prob
-    if(!is.null(t_levels)){  t_levels <- check_input_probs(t_levels, name="t_levels")}
+    if(!is.null(t_levels)) t_levels <- check_input_probs(t_levels, name="t_levels")
     
     # check Pmc is valid prior model prob
     Pmc <- check_input_probs(Pmc, name="Pmc")
     
-    # CHECK GRAPHING PARAMS
+    # check epsilon
+    epsilon <- check_value01(epsilon, name="epsilon") 
     
-    
-    ###################
-    #  Function Code  #
-    ###################
+    # check that additional options are in the form of a list
+    if(!is.null(optim_options) & !is.list(optim_options)) stop("optim_options must be a list")
+    if(!is.null(nloptr_options) & !is.list(nloptr_options)) stop("nloptr_options must be a list")
+  }
+  
+  # check thin_to
+  if(!is.null(thin_to)){
+    if(!is.numeric(thin_to)) stop("thin_to must be numeric")
+    if(thin_to < 2) stop("thin_to must be greater than 1")
+    if(is.infinite(thin_to)) stop("thin_to must be finite")
+  }
+  
+  # check thin_percent
+  if(!is.null(thin_percent)) thin_percent <- check_value01(thin_percent, name="thin_percent")
+  
+  # check thin_by
+  if(!is.null(thin_by)){
+    if(!is.numeric(thin_by)) stop("thin_by must be numeric")
+    if(thin_by < 1) stop("thin_by must be greater than 0")
+    if(is.infinite(thin_by)) stop("thin_by must be finite")
+  }
+  
+  # Check seed
+  if(!is.null(seed)){
+    if(!is.numeric(seed)) stop("seed must be numeric")
+    if(is.infinite(seed)) stop("seed must be finite")
+  }
+  
+  # Check additional options
+  if(!is.null(ggpoint_options) & !is.list(ggpoint_options)) stop("ggpoint_options must be a list")
+  if(!is.null(ggline_options) & !is.list(ggline_options)) stop("ggline_options must be a list")
+  
+  ###################
+  #  Function Code  #
+  ###################
+  
+  if(is.null(df)){
     
     rows <- 1:length(x)
     
+    # Thinning if specified
     if(!is.null(thin_to)){
-      set.seed(0)
+      if(!is.null(seed)) set.seed(seed)
       rows <- sample(1:length(x), size=thin_to)
     } else if (!is.null(thin_percent)){
-      set.seed(0)
+      if(!is.null(seed)) set.seed(seed)
       rows <- sample(1:length(x), size=length(x)*thin_percent)
     } else if (!is.null(thin_by)){
       rows <- seq(1,length(x),thin_by)
@@ -459,69 +566,93 @@ lineplot <- function(x, y, t_levels=NULL, df=NULL,
       rows <- 1:length(x)
     }
     
+    # extract rows to plot 
     x_plot <- x[rows]
     y_plot <- y[rows]
     
     nplot <- length(x_plot)
+    ids <- 1:length(x_plot)
     
     # create empty DF
-    df <- data.frame(matrix(nrow=nplot, ncol=5))
-    colnames(df) <- c("probs", "outcome", "post", "pairing", "label")
-    
-    pairs <- 1:length(x_plot)
+    df <- data.frame(matrix(nrow=nplot, ncol=6))
+    colnames(df) <- c("probs", "outcome", "post", "id", "set", "label")
     
     # Original Set
     df$probs <- x_plot
     df$outcome <- y_plot
     # use full set to get MLEs & posterior model prob, but only plot thinned set
-    bt <- bayes_ms(x, y, epsilon=epsilon)
+    bt <- do.call(bayes_ms_internal, c(list(x, y, Pmc=Pmc, epsilon=epsilon), optim_options))
     df$post <- bt$posterior_model_prob
-    df$pairing <- pairs
+    df$id <- ids
+    df$set <- "Original"
     df$label <- paste0("Original \n(",  round(bt$posterior_model_prob,5), ")")
     
     
-    temp  <- data.frame(matrix(nrow=nplot, ncol=5))
-    colnames(temp) <- c("probs", "outcome", "post", "pairing", "label")
+    temp  <- data.frame(matrix(nrow=nplot, ncol=6))
+    colnames(temp) <- c("probs", "outcome", "post", "id", "set", "label")
     
     # MLE recalibrate
     temp$probs <- LLO(x_plot, bt$MLEs[1], bt$MLEs[2])
     temp$outcome <- y_plot
     bt_mle <- bayes_ms(LLO(x, bt$MLEs[1], bt$MLEs[2]), y, epsilon=epsilon)
     temp$post <- round(bt_mle$posterior_model_prob,5)
-    temp$pairing <- pairs
+    temp$id <- ids
+    temp$set <- "MLE Recal"
     temp$label <- paste0("MLE Recal. \n(",  round(bt_mle$posterior_model_prob, 5), ")")
     df <- rbind(df, temp)
     
     # Boldness-recalibrate at given levels
     # loop over t values
-    for(i in 1:length(t_levels)){
-      br <- brcal(x, y, t_levels[i], Pmc=Pmc, x0 = c(bt$MLEs[1], bt$MLEs[2]),
-                  start_at_MLEs=FALSE, print_level=0, epsilon=epsilon)
-      temp$probs <- LLO(x=x_plot, delta=br$BR_params[1], gamma=br$BR_params[2])
-      temp$outcome <- y_plot
-      bt_br <- bayes_ms(LLO(x, br$BR_params[1], br$BR_params[2]), y, epsilon=epsilon)
-      temp$post <- bt_br$posterior_model_prob
-      temp$pairing <- pairs
-      temp$label <- paste0(round(t_levels[i]*100,0), "% B-R\n(",  round(bt_br$posterior_model_prob, 5), ")")
-      df <- rbind(df, temp)
+    if(!is.null(t_levels)){
+      for(i in 1:length(t_levels)){
+        br <- brcal(x, y, t_levels[i], Pmc=Pmc, x0 = c(bt$MLEs[1], bt$MLEs[2]),
+                    start_at_MLEs=FALSE, print_level=0, epsilon=epsilon, 
+                    opts=nloptr_options, optim_options=optim_options)
+        temp$probs <- LLO(x=x_plot, delta=br$BR_params[1], gamma=br$BR_params[2])
+        temp$outcome <- y_plot
+        bt_br <- do.call(bayes_ms_internal, c(list(LLO(x, br$BR_params[1], br$BR_params[2]), y, Pmc=Pmc, epsilon=epsilon), optim_options))
+        temp$post <- bt_br$posterior_model_prob
+        temp$id <- ids
+        temp$set <- paste0(round(t_levels[i]*100,0), "% B-R")
+        temp$label <- paste0(round(t_levels[i]*100,0), "% B-R\n(",  round(bt_br$posterior_model_prob, 5), ")")
+        df <- rbind(df, temp)
+      }
     }
+  } else{
+    
+    n <- max(df$id)
+    rows <- 1:n
+    
+    # Thinning if specified
+    if(!is.null(thin_to)){
+      if(!is.null(seed)) set.seed(seed)
+      rows <- sample(1:n, size=thin_to)
+    } else if (!is.null(thin_percent)){
+      if(!is.null(seed)) set.seed(seed)
+      rows <- sample(1:n, size=n*thin_percent)
+    } else if (!is.null(thin_by)){
+      rows <- seq(1,n,thin_by)
+    }  else{
+      rows <- 1:n
+    }
+    
+    # extract rows to plot 
+    df <- df[df$id %in% rows,]
   }
   
+  # Make sure outcome and label are factors
   df$outcome <- factor(df$outcome)
-  ulabs <- unique(df$label)
   df$label <- factor(df$label, levels=c(unique(df$label)))
   
+  # Create lineplot
   lines <- ggplot2::ggplot(data = df, mapping = aes_string(x = "label", y = "probs")) +
-    geom_point(aes_string(color = "outcome"),
-               alpha = pt_alpha, size = pt_size,
-               show.legend = FALSE) +
-    geom_line(aes_string(group = "pairing", color = "outcome"),
-              size = ln_size, alpha = ln_alpha,
-              show.legend = FALSE) +
+    do.call(geom_point, c(list(aes_string(color = "outcome")), ggpoint_options)) +
+    do.call(geom_line, c(list(aes_string(group = "id", color = "outcome")), 
+                         ggline_options)) +
     labs(x = xlab,
          y = ylab) +
     ggtitle(title) +
-    theme_bw(base_size = font_base) +
+    theme_bw() +
     scale_y_continuous(breaks = breaks,
                        limits = ylim,
                        expand = c(0, 0))+
@@ -529,11 +660,13 @@ lineplot <- function(x, y, t_levels=NULL, df=NULL,
     scale_x_discrete(expand = c(0, 0.075)) +
     theme(axis.text.x = element_text(hjust=0.75))
   
+  # Return df if specified
   if(return_df){
     return(list(plot=lines,
                 df=df))
   }
   
+  # Otherwise just return the plot
   return(lines)
 }
 
@@ -572,7 +705,6 @@ get_zmat <- function(x, y, Pmc=0.5, len.out = 100, lower = c(0.0001,-2), upper =
   for(i in 1:nrow(grd)){
     
     if(grd[i,2] == 0){  # REVISIT THIS
-      temp <- bayes_ms_internal(LLO_internal(x=x0, delta = grd[i,1], gamma = grd[i,2]), y, Pmc=Pmc)
       temp <- do.call(bayes_ms_internal, c(list(LLO_internal(x=x0, delta = grd[i,1], gamma = grd[i,2]), y, Pmc=Pmc), optim_options))
       BIC_1[i] <- temp$BIC_Mc
       grd.BIC_2[i] <- temp$BIC_Mu
