@@ -1,11 +1,16 @@
 ---
 title: "Using `BRcal`: Hockey Home Team Win Predictions Case Study"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{hockey_vignette}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+output: html_document
 ---
+
+<!-- --- -->
+<!-- title: "Using `BRcal`: Hockey Home Team Win Predictions Case Study" -->
+<!-- output: rmarkdown::html_vignette -->
+<!-- vignette: > -->
+<!--   %\VignetteIndexEntry{hockey_vignette} -->
+<!--   %\VignetteEngine{knitr::rmarkdown} -->
+<!--   %\VignetteEncoding{UTF-8} -->
+<!-- --- -->
 
 ```{r, include = FALSE}
 
@@ -47,6 +52,7 @@ knitr::opts_chunk$set(
 
 library(ggplot2)
 library(devtools)
+library(gridExtra)
 ```
 
 ```{r eval=FALSE, include=FALSE}
@@ -65,10 +71,11 @@ library(gridExtra) # lineplot arrangement
 <!-- - add authors?  -->
 <!-- - %\VignetteIndexEntry{hockey_vignette} needs to reflect actual title! -->
 
-This vignette demonstrates how to use the `BRcal` package via a case study involving hockey home team win probability predictions and game outcomes.  For more details on the methodology under the hood of the `BRcal` package, see Guthrie and Franck (2024).  [CITE!]  Note that in many cases the output is truncated with `...` for readablility.
+This vignette demonstrates how to use the `BRcal` package via a case study involving hockey home team win probability predictions and game outcomes.  For more details on the methodology under the hood of the `BRcal` package, see Guthrie and Franck (2024).  [CITE!]  Note that in many cases the output is truncated with `...` for readability.
 
 ## Installation
 
+TO DO - need to figure out how to make this work together with the package
 
 ```{r}
 # Install via github
@@ -112,9 +119,19 @@ By default, the functions in `BRcal` expect `y` to be a vector of 0s and 1s wher
 
 The `LLO` function allows you to apply a linear in log odds (LLO) adjustment to predicted probabilities in `x`.  Specifically it shifts the probabilities (on the log odds scale) by `delta` and scales them by `gamma`.  Note that the value supplied to `delta` must be greater than 0 and `gamma` can be any real number, though very extreme values may cause instabilities (which we'll see later).
 
-Let's look at a few examples of how the hockey probabilities can be LLO-adjusted under different settings of `delta` and `gamma`.  Rather than stare at how the raw probabilities have changed under LLO-adjustment, we'll plot the original `x` vs the adjusted `x`.  
+Let's look at a few examples of how the hockey probabilities can be LLO-adjusted under different settings of `delta` and `gamma`.  To start, let's look at a few of the original hockey predictions.  
 
-In the first example, we'll LLO-adjust the hockey predictions using `delta=2` and `gamma=2`.  Note that the points are the actual observations and the curve represents how any prediction along the 0-1 range would behave under `delta=2` and `gamma=2`.
+```{r, out.lines.head=3, out.lines.tail=3}
+hockey$x
+```
+
+Now we'll LLO-adjust the hockey predictions using `delta=2` and `gamma=2`. the `LLO` function simply returns the vector of LLO adjusted probabilities. So the first probability returned below is the the LLO adjusted probability that appears first in the output above.
+
+```{r, out.lines.head=3, out.lines.tail=3}
+LLO(hockey$x, delta=2, gamma=2)
+```
+
+Rather than stare at how the raw probabilities have changed under LLO-adjustment, we'll plot the original `x` vs the adjusted `x`.  Note that the points below are the actual observations and the curve represents how any prediction along the 0-1 range would behave under `delta=2` and `gamma=2`.
 
 ```{r, fig.width=6, fig.height=4, fig.align='center'}
 # LLO-adjust using delta=2, gamma=2
@@ -134,28 +151,9 @@ ggplot(data=hockey, mapping=aes(x=x, y=x2)) +
   theme_bw()
 ```
 
-To get a better feel for how different values of `delta` and `gamma` affect probabilities, let's plot a few more different adjustments on the same plot.
-
-```{r, fig.width=6, fig.height=4, fig.align='center'}
-# # LLO-adjust using delta=2, gamma=2
-# hockey$x2 <- LLO(hockey$x, delta=2, gamma=2)
-
-
-ggplot() +
-  stat_function(fun=LLO,
-                args=list( delta=2, gamma=2),
-                geom="line",
-                linewidth=1,
-                color="black") +
-  # geom_point(aes(color=winner), alpha=0.75, size=2) +
-  lims(x=c(0,1), y=c(0,1)) +
-  labs(x="Original", y="LLO(x, 2, 2)") +
-  theme_bw()
-```
-
 - show what happens when you use really extreme values (force warning message) ? 
 
-As previously mentioned, using extreme values of `delta` or `gamma` can cause instabilities.  For example, let's see what happens when
+As previously mentioned, using extreme values of `delta` or `gamma` can cause instabilities.  For example, let's see what happens when when we set `delta=2`, `gamma=1000`.  Below we see that nearly all predictions were pushed to approximately 0 or 1.  
 
 ```{r, fig.width=6, fig.height=4, fig.align='center'}
 # LLO-adjust using delta=2, gamma=2
@@ -171,10 +169,11 @@ ggplot(data=hockey, mapping=aes(x=x, y=x2)) +
                 xlim=c(0, 1)) +
   geom_point(aes(color=winner), alpha=0.75, size=2) +
   lims(x=c(0,1), y=c(0,1)) +
-  labs(x="Original", y="LLO(x, 2, 2)", color="Winner") +
+  labs(x="Original", y="LLO(x, 2, 1000)", color="Winner") +
   theme_bw()
 ```
 
+While this didn't cause problems plotting the LLO curve, there are cases in this package where probabilities very close to 0 or 1 will cause instability and possibly even break the code.  With this in mind, we do have safeguard in place to keep predictions from getting to close (numerically speaking) to 0 or 1, which is discussed further in (Specifying `epsilon`)[#epsilon].
 
 
 ## Assessing Calibration via `bayes_ms()` and `llo_lrt()`
@@ -305,7 +304,7 @@ bayes_ms(1-hockey$x, hockey$winner, event="away", optim_details=FALSE)
 
 Note that we get the same results using either specification.  Additionally, the posterior model probability is the same as when we considered event to be a home team win, as one might expect with binary event predictions. 
 
-## Specifying `epsilon`
+## Specifying `epsilon` {#epsilon}
 
 When probability predictions that are "too close" to 0 or 1, calculations using the log likelihood become unstable.  To mitigate this, we use `epsilon` to specify how close is "too close".  For values in `x` that are less than `epsilon` (i.e. too close to zero), these are replaced with `epsilon`.  For values in `x` greater than `1 - epsilon` (i.e. too close to 1), these are replaced with `1 - epsilon`. Naturally, `epsilon` must take on a value between 0 and 1, but it is recommended that this be a very small number.  By default, we use `.Machine$double.eps`.  
 
@@ -373,7 +372,7 @@ LLO(hockey$x, br90$BR_params[1], br90$BR_params[2])
 
 
 
-### Passing Additional / Different Arguments to `nloptr()`
+### Passing Additional / Different Arguments to `nloptr()` {#nloptr_opts}
 
 The \link[nloptr]{nloptr} package is extremely flexible, as it provides numerous arguments to users for tailoring the optimization to the problem at hand. In the `nloptr` function, most of these arguments are specified via the `opts` argument, a convention we partially borrow for `brcal()`.  However, we allow users to directly specify a few arguments that are typically relegated to `opts` for easier adjustments.  All other arguments, except those related to the objective and constraint functions, are available to users by passing a list of these arguments `opts`.  We do not allow users to change the objective or constraint functions, or their Jacobian functions, as these are the backbone of this method and the sole purpose for using the `brcal` function.  For those who wish to optimize a different function or use a different constraint, we recommend using the `nloptr` function directly.
 
@@ -544,14 +543,14 @@ The returned list is printed below. Note that the matrix is the first entry in t
 zmat_list
 ```
 
-It's a little hard to see what `z` looks like in the above output. Below shows that `z` is a 200 by 200 matrix. The rows and columns are named based on the value of $\delta$ and $\gamma$ for which the posterior model probability was calculated. 
+While it's a little hard to see what `z` looks like in the output above, below shows that `z` is a 200 by 200 matrix. The rows and columns are named based on the value of $\delta$ and $\gamma$ for which the posterior model probability was calculated. 
 
 ```{r}
 class(zmat_list$z)
 dim(zmat_list$z)
 ```
 
-Now we can reuse the matrix to adjust the plot by passing `zmat_list$z` to `z` in `plot_params()`. However, this trick is only useful so long as you do not expand the bounds over which you want to plot.  Below shows the same `z` matrix plotted on (1) the same range, (2) a smaller range, and (3) a larger range than over which is was calculated. The white that appears in the third frame reflects the fact that the posterior model probability was not calcualted for those grid cells since they are outside of the original bounds. 
+Now we can reuse the matrix to adjust the plot by passing `zmat_list$z` to `z` in `plot_params()`. However, this trick is only useful so long as you do not expand the bounds over which you want to plot.  Below shows the same `z` matrix plotted on (1) the same range, (2) a smaller range, and (3) a larger range than over which is was calculated. The white that appears in the third frame reflects the fact that the posterior model probability was not calculated for those grid cells since they are outside of the original bounds. 
 
 ```{r,  fig.width=8, fig.height=4, fig.align='center'}
 par(mfrow=c(1,3))
@@ -564,18 +563,23 @@ We'll continue to use this trick throughout to reduce plotting time.
 
 ### Adding contours and using `countors_only=TRUE`
 
-To add contours at specific levels of the posterior model probability of calibration, users can specify these levels in a vector via `t_levels`.  Below, we add contours at t = 0.95, 0.9, and 0.8. 
+To add contours at specific levels of the posterior model probability of calibration, users can specify these levels in a vector via `t_levels`.  Below, we add contours at t = 0.95, 0.9, and 0.8. See (Passing Additional / Different Arguments to `image.plot()` and `contour()`)[#contour_opts] for guidance on adjusting the contours (i.e. changing color, line width, labels, etc).
 
 ```{r,  fig.width=6, fig.height=4, fig.align='center'}
 plot_params(z=zmat_list$z, t_levels=c(0.95, 0.9, 0.8),
             k=200, dlim=c(0.5, 1.5), glim=c(0.25, 2.75))
 ```
 
-[FINISH AFTER DECIDING WHAT TO PASS DIRCETLY VS VIA OPTS]
+To plot the contour surface without the color background, users should specify `contours_only=TRUE` as shown below.  We'll also add a few more contour levels.
 
-### Passing Additional / Different Arguments to `image.plot()` and `contour()`
+```{r,  fig.width=6, fig.height=4, fig.align='center'}
+plot_params(z=zmat_list$z, t_levels=c(0.99, 0.95, 0.9, 0.8, 0.7),
+            k=200, dlim=c(0.5, 1.5), glim=c(0.25, 2.75), contours_only=TRUE)
+```
 
-While `plot_params()` obscured the call to `image.plot()` and `contour()`, we allow users to leverage their full capabilities via arguments `imgplt_options` and `contour_options`.  To pass additional arguments to `image.plot()` and `contour()`, users can create a list whose entries match the names of the arguments in these functions and pass them to `imgplt_options` and `contour_options`, respectively.  
+### Passing Additional / Different Arguments to `image.plot()` and `contour()` {#contour_opts}
+
+While `plot_params()` obscures the call to `image.plot()` and `contour()`, we allow users to leverage their full capabilities via arguments `imgplt_options` and `contour_options`.  To pass additional arguments to `image.plot()` and `contour()`, users can create a list whose entries match the names of the arguments in these functions and pass them to `imgplt_options` and `contour_options`, respectively.  
 
 For example, below we can move the legend to appear horizontally below the plot using argument `horizontal = TRUE` in `image.plot()`.  Additionally, we'll reduce the number of colors used for plotting via `nlevel=10` and add a legend label via `legend.lab`.  Notice how these are passed as a list to `imgplt_options`.  
 
@@ -585,11 +589,11 @@ plot_params(z=zmat_list$z, k=200, dlim=c(0.5, 1.5), glim=c(0.25, 2.75),
             imgplt_options=list(horizontal = TRUE, nlevel=10, legend.lab="Posterior Model Prob"))
 ```
 
-Next, we can pass additional arguments to `contour()` via `contour_options`.  Below, we'll draw contours at t = 0.99 and 0.1.  To make them dotted lines instead of solid, we'll use `lty="dotted"` and we'll adjust where the labels are placed via `method="edge"`. 
+We can also pass additional arguments to `contour()` via `contour_options`.  Below, we'll draw contours at t = 0.99 and 0.1.  To make them dotted lines instead of solid, we'll use `lty="dotted"`, we'll change the contour color to hot pink, and we'll increase the line width using `lwd=2`. 
 
 ```{r, fig.width=6, fig.height=4, fig.align='center'}
 plot_params(z=zmat_list$z, k=200, dlim=c(0.5, 1.5), glim=c(0.25, 2.75), t_levels = c(0.99, 0.1), 
-            contour_options=list(lty = "dotted", method = "edge"))
+            contour_options=list(lty = "dotted", col="hotpink", lwd=2))
 ```
 
 
@@ -605,8 +609,140 @@ plot_params(hockey$x, hockey$y, k=50, dlim=c(0.5, 1.5), glim=c(0.25, 2.75),
                                control=list(maxit=200)))
 ```
 
-
 ## Visualizing Changes in Probabilities via `lineplot()`
+
+The goal of the `lineplot` function is to visualize how predicted probabilities change under different recalibration parameters. By default this function shows changes in the original probabilities to the MLE recalibrated probabilities. Let's see what this looks like with the FiveThirtyEight `hockey` data.
+
+```{r, fig.width=6, fig.height=4, fig.align='center'}
+lineplot(x=hockey$x, y=hockey$y)
+```
+
+Note that this function leverages the flexibility of the `ggplot2` package, so cosmetic modification and how the plot is returned is a little different than `plot_params`.  We will demonstrate this throughout the following sections.
+
+### Specifying Levels of Boldness-Recalibration via `t_levels`
+
+Similar to specifying contour levels in `plot_params`, users can specify levels of boldness-recalibration using `t_levels` in `lineplot()`. Below we add 95%, 90%, and 80% boldness-recalibration to the plot.  Notice in the lineplot for FiveThirtyEight below that the posterior model probabilities on the x-axis are not in ascending or descending order.  Instead, they simply follow the ordering of how one might use the `BRcal` package: first looking at the original predictions, then maximizing calibration, then examining how far they can spread out predictions while maintaining calibration with boldness-recalibration.
+
+```{r, fig.width=6, fig.height=4, fig.align='center'}
+lineplot(x=hockey$x, y=hockey$y, t_levels = c(0.95, 0.9, 0.8))
+```
+
+### Saving and reusing `df`
+
+While the time expense of `lineplot` isn't as high as `plot_params`, there is still a call to `optim` for MLE recalibration and a call to `nloptr` for each level of boldness-recalibration.  Similar to returning the `z` matrix in `plot_params`, users of `lineplot` can specify `return_df` to return the underlying dataframe used to construct the plot.  
+
+By default, `return_df=FALSE` and `lineplot()` only returns the `ggplot` object of the lineplot.  When `return_df=TRUE`, a list is returned with two entries: (1) `plot` which is the `ggplot` object of the lineplot and (2) `df` which is the underlying dataframe. The code below shows how to specify `return_df=TRUE` and saved the returned list.  
+
+```{r}
+lp <- lineplot(x=hockey$x, y=hockey$y, return_df = TRUE, t_levels = c(0.95, 0.9, 0.8))
+```
+
+To extract the plot, we can use the following code. 
+
+```{r, fig.width=6, fig.height=4, fig.align='center'}
+lp$plot
+```
+
+We can also extract the dataframe using `lp$df`.  While it's a little hard to see what this dataframe looks like from just the first and last few rows, a summary of the dataframe is also printed below. Notice there are 6 columns, here are their brief descriptions (more details below):
+
+* `probs`: the values of each predicted probability under each set
+* `outcome`: the corresponding outcome for each predicted probability
+* `post`: the posterior model probability of the set as a whole
+* `id`: the id of each individual probability used for mapping observations between sets
+* `set`: the set with which the probability belongs to
+* `label`: the label used for the x-axis in the lineplot
+
+
+```{r, out.lines.head=7, out.lines.tail=6}
+lp$df
+```
+
+```{r}
+summary(lp$df)
+```
+
+The `probs` column contains each set of predicted probabilities that are plotted (i.e. the original, MLE recalibrated, and each set of boldness-recalibrated probabilities). The `outcome` column contains the corresponding outcome for each value in `probs`. Each set of probabilities and outcomes are essentially "stacked" on top of each other. The `id` column contains a unique id for each observation to map how observations change between sets.  This essentially tells the plotting function how to connect (with line) the same observation as is changes from the original set to MLE- or boldness-recalibration. The `set` column contains a factor for which set that observation belongs to.  The `post` column contains the value of the posterior model probability for the set as a whole, so this value will be the same for all observations in the same set. Lastly, the `label` column is a string that is used to label the x-axis for each set in the lineplot and is also the same for all observations in a set. 
+
+Since this dataframe has each set of probabilities stacked, the number of rows in the dataframe will be $\text{# of sets } \times n$, where $n$ is the number of observations per set.  For example, in the data frame above, there are 5 sets (original, MLE, 95%, 90%, and 80% boldness-recalibration) with 868 observations total.  So the length of the dataframe is 5 * 868 = `r 5*868`.  This is confirmed below.
+
+```{r}
+nrow(lp$df)
+```
+
+Now with this dataframe saved, we can pass it back via `df` without needing to specify `x` or `y` and we get the same plot as before, but much more quickly. This functionality makes it easier to make cosmetic adjustments to your plot without needing to wait for computations under the hood.
+
+```{r, fig.width=6, fig.height=4, fig.align='center'}
+lineplot(df=lp$df)
+```
+
+
+### Cosmetic Adjustments 
+
+A key difference in how this plot is created compared to `plot_params()` is that it uses `ggplot2` instead of base `R` graphics.  Users of `lineplot()` have quite a few options for making cosmetic changes to these plots. The first set of options we'll discuss are those related to the points and lines already present on the lineplot.  To modify the appearance of the points, users can pass options to `geom_point()` via a list to `ggpoint_options`.  For example, the code below shows how to change the shape and size of the points.    
+
+```{r, fig.width=6, fig.height=4, fig.align='center'}
+lineplot(df=lp$df, ggpoint_options=list(size=3, shape=1))
+```
+
+```{r, fig.width=6, fig.height=4, fig.align='center'}
+lineplot(df=lp$df, ggline_options=list(linewidth=2, alpha=0.1))
+```
+
+An important thing to note about these two options is that their purpose is solely for adjustments that are not part of the `aes` statement in `geom_point()` or `geom_line()`.  Should users specify `aes` options via `ggpoint_options` or `ggline_options`, this will cause `ggplot()` to create a new layer of points or lines on top of those following the default settings we use under the hood.
+
+Another option for making cosmetic adjustments is to use the convention of `ggplot2` and add additional `ggplot2` functions to the returned lineplot using `+`.  For example, the code below shows how we could add the `scale_color_manual()` function to our plot to change the colors of the points and lines.  Notice that `ggplot2` throws a warning about another color scale already being present.  This is because under the hood we have already specified the default color scheme to be red and blue. A similar warning may appear in any case where a user adds a function that is already present in our original construction of the lineplot.  
+
+```{r, fig.width=6, fig.height=4, fig.align='center'}
+lineplot(df=lp$df) + scale_color_manual(values = c("orchid", "darkgreen"))
+```
+
+
+```{r eval=FALSE, include=FALSE}
+# plt$plot
+# plt$plot + theme_classic()
+# lineplot(df=lp$df) + geom_point(size=4, alpha=0.1,  aes(shape=set))
+# plt$plot + geom_line()
+# plt$plot + labs(x="hi") + scale_color_manual(values = c("orchid", "darkgreen"))
+# plt$plot + scale_y_continuous(limits = c(0.1, 0.9))
+```
+
+### Thinning
+
+Another strategy to save time when plotting is to reduce, or "thin", the amount of data plotted.  When sample sizes are large, the plot can become overcrowded and slow to plot.  We provide three options for thinning: 
+
+* `thin_to`: the observations in (x,y) are randomly sampled without replacement to form a set of size `thin_to` 
+* `thin_percent`: the observations in (x,y) are randomly sampled without replacement to form a set that is `thin_percent` * 100% of the original size of (x,y)
+* `thin_by`: the observations in (x,y) are thinned by selecting every `thin_by` observation  
+
+By default, all three of these settings are set to `NULL`, meaning no thinning is performed.  Users can only specify one thinning strategy at a time. Care should be taken in selecting a thinning approach based on the nature of your data and problem.  Note that MLE recalibration and boldness-recalibration will be done using the full set, so the posterior model probabilities are those of the full set.
+
+Below is an example of each of these strategies.  Notice that each plot looks a little different since the observations selected are a little different under each strategy. 
+
+```{r, fig.width=10, fig.height=4, fig.align='center'}
+lp1 <- lineplot(df=lp$df, thin_to=500)
+lp2 <- lineplot(df=lp$df, thin_percent=0.5)
+lp3 <- lineplot(df=lp$df, thin_by=2)
+grid.arrange(lp1, lp2, lp3, ncol=3)
+```
+
+By default, there is a seed set so that the observations selected stay the same through successive calls using the same thinning strategy.  To change the seed, users can specify their own via `seed`.  Notice in the example below that we're using the same strategy as panel one in the above set of plots but the points are slightly different.
+
+```{r, fig.width=6, fig.height=4, fig.align='center'}
+lineplot(df=lp$df, thin_to=500, seed = 47)
+```
+
+Alternatively, if users would prefer no seed be set, they can set `seed=NULL`.  In the plot below, we again have a different set of points and lines.  In fact, each compilation of this vignette will have a different set.
+
+```{r, fig.width=6, fig.height=4, fig.align='center'}
+lineplot(df=lp$df, thin_to=500, seed=NULL)
+```
+
+
+### Passing Additional Arguments to `optim` and `nloptr`
+
+Similar to the `plot_params` function, this function allows users to specify additional arguments to `optim` via `optim_options`.  Additionally, we also allow users to pass arguments to `nloptr` via `nloptr_options` in a similar fashion. In this case, the list passed via `nloptr_options` is passed to `opts` in the `brcal` function.  For more information on how to structure this list, see [Passing Additional / Different Arguments to `nloptr()`](#nloptr_opts). 
 
 
 # References
+
+TO DO
