@@ -254,7 +254,7 @@ llo_lrt <- function(x, y, event=1, optim_details=TRUE,
 #' @param probs_only Logical.  If `TRUE`, `mle_recal()` returns only the vector
 #'   of MLE recalibrated probabilities.
 #'
-#' @return If `probs_only==TRUE`, `mle_recal()`returns a vector of MLE
+#' @return If `probs_only=TRUE`, `mle_recal()`returns a vector of MLE
 #'   recalibrated probabilities.  Otherwise, `mle_recal()` returns a list with
 #'   the following attributes:
 #'   \item{\code{probs}}{The vector of MLE
@@ -349,7 +349,7 @@ LLO_internal <- function(x, delta, gamma){
 
 mle_recal_internal <- function(x, y, probs_only=TRUE, optim_details = TRUE, ...) {
   
-  
+
   ###################
   #  Function Code  #
   ###################
