@@ -363,18 +363,35 @@ plot_params <- function(x=NULL, y=NULL, z=NULL, t_levels = NULL,
 #'   While this function does not typically come with a large burden on time
 #'   under moderate sample sizes, there is still a call to `optim()` under the
 #'   hood for MLE recalibration and a call to `nloptr()` for each level of
-#'   boldness-reaclibration that could cause a bottleneck on time.  With this in
+#'   boldness-recalibration that could cause a bottleneck on time.  With this in
 #'   mind, users can specify `return_df=TRUE` to return the underlying dataframe
 #'   used to build the resulting lineplot.  Then, users can pass this dataframe
 #'   to `df` in subsequent calls of `lineplot` to circumvent these calls to
 #'   `optim` and `nloptr` and make cosmetic changes to the plot.
+#'
+#'   When `return_df=TRUE`, both the plot and the dataframe are returned in a
+#'   list. The dataframe contains 6 columns:
+#'   * `probs`: the values of each predicted probability under each set
+#'   * `outcome`: the corresponding outcome for each predicted probability
+#'   * `post`: the posterior model probability of the set as a whole
+#'   * `id`: the id of each individual probability used for mapping observations between sets
+#'   * `set`: the set with which the probability belongs to
+#'   * `label`: the label used for the x-axis in the lineplot
+#'
+#'   Essentially, each set of probabilities (original, MLE-, and each level of
+#'   boldness-recalibration) and outcomes are "stacked" on top of each other.
+#'   The `id` tells the plotting function how to connect (with line) the same
+#'   observation as is changes from the original set to MLE- or
+#'   boldness-recalibration.
 #'
 #' @section Thinning:
 #'
 #'   Another strategy to save time when plotting is to thin the amount of data
 #'   plotted.  When sample sizes are large, the plot can become overcrowded and
 #'   slow to plot.  We provide three options for thinning: `thin_to`,
-#'   `thin_percent`, and `thin_by`.  Care should be taken in selecting a
+#'   `thin_percent`, and `thin_by`.  By default, all three of these settings are
+#'   set to `NULL`, meaning no thinning is performed.  Users can only specify
+#'   one thinning strategy at a time. Care should be taken in selecting a
 #'   thinning approach based on the nature of your data and problem.  Note that
 #'   MLE recalibration and boldness-recalibration will be done using the full
 #'   set.
@@ -385,7 +402,7 @@ plot_params <- function(x=NULL, y=NULL, z=NULL, t_levels = NULL,
 #'   list of any desired arguments of `geom_point()` and `geom_line()` to
 #'   `ggpoint_options` and `ggline_options`, respectively.  These will overwrite
 #'   everything passed to `geom_point()` or `geom_line()` except any aesthetic
-#'   arguments in `aes()`.   
+#'   arguments in `aes()`.
 #'
 #'
 #' @inheritParams plot_params
@@ -432,40 +449,40 @@ plot_params <- function(x=NULL, y=NULL, z=NULL, t_levels = NULL,
 #' x <- runif(100)
 #' # Simulated 100 binary event outcomes using x
 #' y <- rbinom(100, 1, x)  # By construction, x is well calibrated.
-#' 
+#'
 #' # Lineplot show change in probabilities from original to MLE-recalibration
 #' lineplot(x, y)
-#' 
+#'
 #' # Specifying Levels of Boldness-Recalibration via t_levels
 #' lineplot(x, y, t_levels=c(0.98, 0.95))
-#' 
+#'
 #' # Returning a list with dataframe used to construct plot with return_df=TRUE
 #' lp1 <- lineplot(x, y, t_levels=c(0.98, 0.95), return_df=TRUE)
 #' lp1$plot
-#' 
+#'
 #' # Reusing the previous dataframe to save calculation time
 #' lineplot(df=lp1$df)
-#' 
+#'
 #' # Adjust geom_point cosmetics via ggpoint
 #' # Increase point size and change to open circles
 #' lineplot(df=lp1$df, ggpoint_options=list(size=3, shape=4))
-#' 
+#'
 #' # Adjust geom_line cosmetics via ggline
 #' # Increase line size and change transparencys
 #' lineplot(df=lp1$df, ggline_options=list(linewidth=2, alpha=0.1))
-#' 
+#'
 #' # Thinning down to 75 randomly selected observation
 #' lineplot(df=lp1$df, thin_to=75)
-#' 
+#'
 #' # Thinning down to 53% of the data
 #' lineplot(df=lp1$df, thin_percent=0.53)
-#' 
+#'
 #' # Thinning down to every 3rd observation
 #' lineplot(df=lp1$df, thin_by=3)
-#' 
+#'
 #' # Setting a different seed for thinning
 #' lineplot(df=lp1$df, thin_percent=0.53, seed=47)
-#' 
+#'
 #' # Setting NO seed for thinning (plot will be different every time)
 #' lineplot(df=lp1$df, thin_to=75, seed=NULL)
 #' 
@@ -534,6 +551,9 @@ lineplot <- function(x=NULL, y=NULL, t_levels=NULL, df=NULL,
     if(thin_by < 1) stop("thin_by must be greater than 0")
     if(is.infinite(thin_by)) stop("thin_by must be finite")
   }
+  
+  # check only one thinning strategy used
+  if((!is.null(thin_to) + !is.null(thin_percent) + !is.null(thin_by)) > 1) stop("only specify one thinning strategy")
   
   # Check seed
   if(!is.null(seed)){
@@ -642,6 +662,7 @@ lineplot <- function(x=NULL, y=NULL, t_levels=NULL, df=NULL,
   
   # Make sure outcome and label are factors
   df$outcome <- factor(df$outcome)
+  df$set <- factor(df$set)
   df$label <- factor(df$label, levels=c(unique(df$label)))
   
   # Create lineplot

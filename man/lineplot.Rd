@@ -123,11 +123,28 @@ predictions while maintaining calibration with boldness-recalibration.
 While this function does not typically come with a large burden on time
 under moderate sample sizes, there is still a call to \code{optim()} under the
 hood for MLE recalibration and a call to \code{nloptr()} for each level of
-boldness-reaclibration that could cause a bottleneck on time.  With this in
+boldness-recalibration that could cause a bottleneck on time.  With this in
 mind, users can specify \code{return_df=TRUE} to return the underlying dataframe
 used to build the resulting lineplot.  Then, users can pass this dataframe
 to \code{df} in subsequent calls of \code{lineplot} to circumvent these calls to
 \code{optim} and \code{nloptr} and make cosmetic changes to the plot.
+
+When \code{return_df=TRUE}, both the plot and the dataframe are returned in a
+list. The dataframe contains 6 columns:
+\itemize{
+\item \code{probs}: the values of each predicted probability under each set
+\item \code{outcome}: the corresponding outcome for each predicted probability
+\item \code{post}: the posterior model probability of the set as a whole
+\item \code{id}: the id of each individual probability used for mapping observations between sets
+\item \code{set}: the set with which the probability belongs to
+\item \code{label}: the label used for the x-axis in the lineplot
+}
+
+Essentially, each set of probabilities (original, MLE-, and each level of
+boldness-recalibration) and outcomes are "stacked" on top of each other.
+The \code{id} tells the plotting function how to connect (with line) the same
+observation as is changes from the original set to MLE- or
+boldness-recalibration.
 }
 
 \section{Thinning}{
@@ -136,7 +153,9 @@ to \code{df} in subsequent calls of \code{lineplot} to circumvent these calls to
 Another strategy to save time when plotting is to thin the amount of data
 plotted.  When sample sizes are large, the plot can become overcrowded and
 slow to plot.  We provide three options for thinning: \code{thin_to},
-\code{thin_percent}, and \code{thin_by}.  Care should be taken in selecting a
+\code{thin_percent}, and \code{thin_by}.  By default, all three of these settings are
+set to \code{NULL}, meaning no thinning is performed.  Users can only specify
+one thinning strategy at a time. Care should be taken in selecting a
 thinning approach based on the nature of your data and problem.  Note that
 MLE recalibration and boldness-recalibration will be done using the full
 set.
