@@ -26,7 +26,7 @@ minimizing the negative log likelihood is also returned by this function.}
 \item{...}{Additional arguments to be passed to \link[stats]{optim}.}
 }
 \value{
-If \code{probs_only==TRUE}, \code{mle_recal()}returns a vector of MLE
+If \code{probs_only=TRUE}, \code{mle_recal()}returns a vector of MLE
 recalibrated probabilities.  Otherwise, \code{mle_recal()} returns a list with
 the following attributes:
 \item{\code{probs}}{The vector of MLE
