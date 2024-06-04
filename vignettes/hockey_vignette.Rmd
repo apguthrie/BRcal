@@ -1,5 +1,5 @@
 ---
-title: "Using `BRcal`to Assess and Embolden Probability Forecasts"
+title: "Using `BRcal` to Assess and Embolden Probability Forecasts"
 output: rmarkdown::html_vignette
 bibliography: "../inst/REFERENCES.bib"
 vignette: >
@@ -8,17 +8,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-
-<!-- # --- -->
-<!-- # title: "Using `BRcal`: Hockey Home Team Win Predictions Case Study" -->
-<!-- # output: html_document -->
-<!-- # --- -->
-
-
-
 ```{r, include = FALSE}
-
-
 # save the built-in output hook
 hook_output <- knitr::knit_hooks$get("output")
 
@@ -69,20 +59,31 @@ This vignette demonstrates how to use the `BRcal` package via a case study invol
 
 ## Installation
 
-TO DO - need to figure out how to make this work together with the package
+There are three ways to install the package.  The first is to install it directly from GitHub via the snippet below.
 
-```{r}
+```{r, eval=FALSE}
 # Install via github
-
-# Install via tarball
-
-# Install via CRAN (later)
+devtools::install_github("apguthrie/BRcal")
 ```
 
+The second way is to install the package from the most recent tarball available on GitHub.  The tarball must first be downloaded and the first argument in the example below must be the file path to the tarball. 
+
+```{r, eval=FALSE}
+# Install via tarball
+install.packages("path_to_file\BRcal_0.0.0.9000.tar.gz", repos = NULL, type="source")
+```
+
+The third and simplest way to install the package is directly from CRAN (upon acceptance) via the usual `install.packages`.
+
+```{r, eval=FALSE}
+# Install via CRAN 
+install.packages("BRcal")
+```
+
+Once the package is installed, it can be loaded with the usual `library()` call.
 
 ```{r setup}
 library(BRcal)
-# devtools::load_all(".")
 ```
 
 ## Loading the Data
@@ -247,9 +248,16 @@ While the algorithm used by `optim()` was not very sensitive to the starting loc
 
 To show the sensitivity of this approach to the starting values, let's set `x0` to $\delta = 10$, $\gamma = -5$ like we did with `optim()`.   
 
-```{r br90_err, cache=TRUE, out.lines.head=12, out.lines.tail=14}
+```{r eval=FALSE, out.lines.head=12, out.lines.tail=14}
 try(brcal(hockey$x, hockey$y, x0 = c(10, -5), start_at_MLEs = FALSE))
 ```
+
+
+<!-- ```{r br90_err, echo=FALSE, cache=TRUE, out.lines.head=12, out.lines.tail=14} -->
+<!-- err <- try(brcal(hockey$x, hockey$y, x0 = c(10, -5), start_at_MLEs = FALSE), silent=TRUE) -->
+<!-- stop("Error in optim(par = par, fn = llo_lik, ..., x = x, y = y, neg = TRUE,  : function cannot be evaluated at initial parameters") -->
+<!-- ``` -->
+
 
 Notice this time the algorithm cannot converge and ends up crashing due to trying extreme values of the parameters. 
 
@@ -434,10 +442,8 @@ hockey$x_mle
 Let's visualize what this LLO-adjustment looks like by plotting the original probabilities (`hockey$x`) on the x-axis and the MLE recalibrated probabilities (`hockey$x_mle`) on the y-axis.  Note that the points below are the actual observations and the curve represents how any prediction along the 0-1 range would behave under `delta`=`r bt538$MLEs[1]` and `gamma`=`r bt538$MLEs[2]`.
 
 ```{r, fig.width=6, fig.height=4, fig.align='center'}
-library(ggplot2)
-
 # plot original vs LLO-adjusted via 2,2
-ggplot(data=hockey, mapping=aes(x=x, y=x_mle)) +
+ggplot2::ggplot(data=hockey, mapping=aes(x=x, y=x_mle)) +
   stat_function(fun=LLO,
                 args=list(delta=2, gamma=2),
                 geom="line",
@@ -468,7 +474,7 @@ As previously mentioned, using extreme values of `delta` or `gamma` can cause in
 hockey$x2 <- LLO(hockey$x, delta=2, gamma=1000)
 
 # plot original vs LLO-adjusted via 2,2
-ggplot(data=hockey, mapping=aes(x=x, y=x2)) +
+ggplot2::ggplot(data=hockey, mapping=aes(x=x, y=x2)) +
   stat_function(fun=LLO,
                 args=list(delta=2, gamma=1000),
                 geom="line",
@@ -711,14 +717,6 @@ lineplot(df=lp$df) + scale_color_manual(values = c("orchid", "darkgreen"))
 ```
 
 
-```{r eval=FALSE, include=FALSE}
-# plt$plot
-# plt$plot + theme_classic()
-# lineplot(df=lp$df) + geom_point(size=4, alpha=0.1,  aes(shape=set))
-# plt$plot + geom_line()
-# plt$plot + labs(x="hi") + scale_color_manual(values = c("orchid", "darkgreen"))
-# plt$plot + scale_y_continuous(limits = c(0.1, 0.9))
-```
 
 ### Thinning
 
@@ -736,7 +734,7 @@ Below is an example of each of these strategies.  Notice that each plot looks a 
 lp1 <- lineplot(df=lp$df, thin_to=500)
 lp2 <- lineplot(df=lp$df, thin_percent=0.5)
 lp3 <- lineplot(df=lp$df, thin_by=2)
-grid.arrange(lp1, lp2, lp3, ncol=3)
+gridExtra::grid.arrange(lp1, lp2, lp3, ncol=3)
 ```
 
 By default, there is a seed set so that the observations selected stay the same through successive calls using the same thinning strategy.  To change the seed, users can specify their own via `seed`.  Notice in the example below that we're using the same strategy as panel one in the above set of plots but the points are slightly different.
