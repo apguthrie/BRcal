@@ -78,7 +78,7 @@ probability across the k\eqn{\times}k grid of \eqn{\delta} and
 
 \item{ylab}{Label for x-axis.}
 
-\item{optim_options}{List of additional arguments to be passed to \link[base]{optim}().}
+\item{optim_options}{List of additional arguments to be passed to \link[stats]{optim}().}
 
 \item{imgplt_options}{List of additional arguments to be passed to \link[fields]{image.plot}().}
 

@@ -79,7 +79,7 @@ selecting every \code{thin_by} observation.}
 
 \item{seed}{Seed for random thinning.  Set to NULL for no seed.}
 
-\item{optim_options}{List of additional arguments to be passed to \link[base]{optim}().}
+\item{optim_options}{List of additional arguments to be passed to \link[stats]{optim}().}
 
 \item{nloptr_options}{List with options to be passed to \code{nloptr()}.}
 
