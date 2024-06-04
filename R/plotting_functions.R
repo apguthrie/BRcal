@@ -121,7 +121,7 @@
 #' @param main Plot title.
 #' @param xlab Label for x-axis.
 #' @param ylab Label for x-axis.
-#' @param optim_options List of additional arguments to be passed to \link[base]{optim}().
+#' @param optim_options List of additional arguments to be passed to \link[stats]{optim}().
 #' @param imgplt_options List of additional arguments to be passed to \link[fields]{image.plot}().
 #' @param contour_options List of additional arguments to be passed to \link[graphics]{contour}().
 #'
