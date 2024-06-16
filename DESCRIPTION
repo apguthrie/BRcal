@@ -4,8 +4,8 @@ Version: 0.0.0.9000
 Authors@R: 
     c(person("Adeline P.", "Guthrie", , "apguthrie47@gmail.com", role = c("aut", "cre")),
       person("Christopher T.", "Franck", , "chfranck@vt.edu", role = c("aut")))
-Description: This package facilitates boldness-recalibration at a user specified 
-             level of calibration via the `brcal()` function. Supporting functions 
+Description: Boldness-recalibration at a user specified 
+             level of calibration facilitated the `brcal()` function. Supporting functions 
              to assess calibration via Bayesian and Frequentist approaches, 
              MLE recalibration, LLO-adjust via any specified
              parameters, and visualize results are also provided.   
