@@ -52,16 +52,13 @@ check_input_outcomes <- function(y, name="y", event=1){
     }
   }
 
-  # check y is vector
-  if(!is.vector(y)) stop("argument ", name, " is ", class(y) ," type, not a vector")
-
   # check y only has two values
   if(length(unique(y)) != 2) warning("argument ", name, " has ", length(unique(y)), " levels")
-
+  
   # check event is in y
   if(!(event %in% y)) stop("argument event misspecified, event not in y")
 
-  # Convert to 0, 1 if not already
+    # Convert to 0, 1 if not already
   y <- ifelse(y == event, 1, 0)
 
   # check y is numeric (should always be true based on above line)
@@ -74,8 +71,6 @@ check_input_outcomes <- function(y, name="y", event=1){
 }
 
 check_input_params <- function(params, name="params", tau=FALSE){
-
-  # print(paste0("params: delta = ", params[1], ", gamma = ", params[2], " in check_input_params"))
 
   # check if params is list
   if(is.list(params)){
@@ -114,4 +109,24 @@ check_input_gamma <- function(gamma, name="gamma"){
   # check gamma in Reals & numeric & size 1
   if(length(gamma) != 1) stop("argument ", name, " must be single value")
   if(!is.numeric(gamma)) stop("argument ", name, " is not numeric type")
+}
+
+
+# Checks a single value is:
+# - only one value
+# - numeric
+# - in [0, 1]
+check_value01 <- function(x, name="x"){
+  
+  # check x is vector
+  
+  if(length(x) != 1) stop("length(", name, ") = ", length(x) ,", should be a single value")
+  
+  # check x is numeric
+  if(!is.numeric(x)) stop("argument ", name, " is not numeric type")
+  
+  # check x are probabilities in [0,1]
+  if(!check_probs(x)) stop("argument ", name, " is not in [0,1]")
+  
+  return(x)
 }
