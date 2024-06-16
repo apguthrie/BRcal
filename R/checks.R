@@ -52,16 +52,13 @@ check_input_outcomes <- function(y, name="y", event=1){
     }
   }
 
-  # # check y is vector
-  # if(!is.vector(y)) stop("argument ", name, " is ", class(y) ," type, not a vector")
-
   # check y only has two values
   if(length(unique(y)) != 2) warning("argument ", name, " has ", length(unique(y)), " levels")
-
+  
   # check event is in y
   if(!(event %in% y)) stop("argument event misspecified, event not in y")
 
-  # Convert to 0, 1 if not already
+    # Convert to 0, 1 if not already
   y <- ifelse(y == event, 1, 0)
 
   # check y is numeric (should always be true based on above line)
