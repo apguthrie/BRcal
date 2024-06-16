@@ -3,6 +3,21 @@
 #  LLO() Tests                              #
 #############################################
 
+test_that("LLO() only takes valid x",{
+  x <-  rnorm(10, mean=100)
+  expect_error(LLO(x, 1, 1))
+  
+  x <-  rnorm(10, mean=-100)
+  expect_error(LLO(x, 1, 1))
+  
+  expect_error(LLO(TRUE, 1, 1))
+  expect_error(LLO("1", 1, 1))
+  
+  x <- runif(10)
+  expect_warning(LLO(matrix(x),1,1))
+  expect_error(LLO(as.data.frame(x=x),1,1))
+})
+
 test_that("LLO() only accepts single numeric inputs > 0 for delta", {
   # Set up
   set.seed(47)
@@ -152,6 +167,227 @@ test_that("LLO() warns when NaNs returned", {
 
 })
 
+
+#############################################
+#  llo_lrt() Tests                          #
+#############################################
+
+test_that("llo_lrt() only takes valid y",{
+  x <- runif(10)
+  y <- rbinom(10, 1, x)
+  expect_no_condition(llo_lrt(x,y))
+
+  expect_error(llo_lrt(x,-y))
+  expect_error(llo_lrt(x, c(rep("hi", 5), rep("bye", 5))))
+  expect_no_condition(llo_lrt(x, c(rep("hi", 5), rep("bye", 5)), event="hi"))
+})
+
+
+test_that("llo_lrt() only accepts valid input for optim_details",{
+  x <- runif(10)
+  y <- rbinom(10,1,x)
+  
+  expect_no_condition(llo_lrt(x,y,optim_details = TRUE))
+  expect_no_condition(llo_lrt(x,y,optim_details = 1))
+  expect_no_condition(llo_lrt(x,y,optim_details = FALSE))
+  expect_no_condition(llo_lrt(x,y,optim_details = 0))
+  expect_no_condition(llo_lrt(x,y,optim_details = T))
+  expect_no_condition(llo_lrt(x,y,optim_details = F))
+  
+  expect_error(llo_lrt(x,y,optim_details = 10))
+  expect_error(llo_lrt(x,y,optim_details = c(T, F)))
+  expect_error(llo_lrt(x,y,optim_details = c(2, 4)))
+  expect_error(llo_lrt(x,y,optim_details = "TRUE"))
+  expect_error(llo_lrt(x,y,optim_details = c()))
+}) 
+
+test_that("llo_lrt() only accepts x & y of the same length",{
+  x <- runif(10)
+  y <- rbinom(10,1,x)
+  
+  expect_error(llo_lrt(x,c(y,y)))
+}) 
+
+test_that("llo_lrt() only valid input of epsilon",{
+  x <- runif(10)
+  y <- rbinom(10,1,x)
+  
+  expect_error(llo_lrt(x,y, epsilon=10))
+  expect_error(llo_lrt(x,y, epsilon=-1))
+  expect_error(llo_lrt(x,y, epsilon="0.3"))
+  expect_error(llo_lrt(x,y, epsilon=c(0.2, 0.3)))
+  expect_error(llo_lrt(x,y, epsilon=TRUE))
+}) 
+
+test_that("llo_lrt() only valid input of event",{
+  x <- runif(10)
+  y <- rbinom(10,1,x)
+  
+  expect_error(llo_lrt(x,y, event=10))
+  expect_error(llo_lrt(x,y, event=-1))
+  expect_error(llo_lrt(x,y, event="0.3"))
+  expect_error(llo_lrt(x,y, event=c(0.2, 0.3)))
+  #expect_error(llo_lrt(x,y, event=TRUE))
+}) 
+
+
+test_that("llo_lrt() gives correct p-value",{
+  
+  # number of decimal places
+  dec <- 5
+  
+  # check that llo_lrt gives correct p-value for fivethirtyeight
+  lrt_538 <- llo_lrt(hockey$x, hockey$y)
+  expect_equal(round(lrt_538$pval, dec), round(0.118396594, dec))
+  
+  # check that llo_lrt gives correct p-value for random noise
+  lrt_rand <- llo_lrt(rand_pundit$x, rand_pundit$y)
+  expect_equal(round(lrt_rand$pval, dec), round(0.0000000, dec))
+})
+
+test_that("llo_lrt() gives correct test stat",{
+  
+  # number of decimal places
+  dec <- 5
+  
+  # check that llo_lrt gives correct test_stat for fivethirtyeight
+  lrt_538 <- llo_lrt(hockey$x, hockey$y)
+  expect_equal(round(lrt_538$test_stat, dec), round(4.267411, dec))
+  
+  # check that llo_lrt gives correct test_stat for random noise
+  lrt_rand <- llo_lrt(rand_pundit$x, rand_pundit$y)
+  expect_equal(round(lrt_rand$test_stat, dec), round(70.66915, dec))
+})
+
+test_that("llo_lrt() gives correct est_params",{
+  
+  # number of decimal places
+  dec <- 5
+  
+  # check that llo_lrt gives correct est_params for fivethirtyeight
+  lrt_538 <- llo_lrt(hockey$x, hockey$y)
+  expect_equal(round(lrt_538$est_params[1], dec), round(0.9453966, dec))
+  expect_equal(round(lrt_538$est_params[2], dec), round(1.4005730, dec))
+  
+  # check that llo_lrt gives correct est_params for random noise
+  lrt_rand <- llo_lrt(rand_pundit$x, rand_pundit$y)
+  expect_equal(round(lrt_rand$est_params[1], dec), round(1.13946217, dec))
+  expect_equal(round(lrt_rand$est_params[2], dec), round(0.07199484, dec))
+})
+
+
+#############################################
+#  mle_recal() Tests                        #
+#############################################
+
+test_that("mle_recal() only accepts valid input for optim_details",{
+  x <- runif(10)
+  y <- rbinom(10,1,x)
+  
+  expect_no_condition(mle_recal(x,y,optim_details = TRUE))
+  expect_no_condition(mle_recal(x,y,optim_details = 1))
+  expect_no_condition(mle_recal(x,y,optim_details = FALSE))
+  expect_no_condition(mle_recal(x,y,optim_details = 0))
+  expect_no_condition(mle_recal(x,y,optim_details = T))
+  expect_no_condition(mle_recal(x,y,optim_details = F))
+  
+  expect_error(mle_recal(x,y,optim_details = 10))
+  expect_error(mle_recal(x,y,optim_details = c(T, F)))
+  expect_error(mle_recal(x,y,optim_details = c(2, 4)))
+  expect_error(mle_recal(x,y,optim_details = "TRUE"))
+  expect_error(mle_recal(x,y,optim_details = c()))
+}) 
+
+test_that("mle_recal() only accepts valid input for probs_only",{
+  x <- runif(10)
+  y <- rbinom(10,1,x)
+  
+  expect_no_condition(mle_recal(x,y,probs_only = TRUE))
+  expect_no_condition(mle_recal(x,y,probs_only = 1))
+  expect_no_condition(mle_recal(x,y,probs_only = FALSE))
+  expect_no_condition(mle_recal(x,y,probs_only = 0))
+  expect_no_condition(mle_recal(x,y,probs_only = T))
+  expect_no_condition(mle_recal(x,y,probs_only = F))
+  
+  expect_error(mle_recal(x,y,probs_only = 10))
+  expect_error(mle_recal(x,y,probs_only = c(T, F)))
+  expect_error(mle_recal(x,y,probs_only = c(2, 4)))
+  expect_error(mle_recal(x,y,probs_only = "TRUE"))
+  expect_error(mle_recal(x,y,probs_only = c()))
+}) 
+
+test_that("mle_recal() only accepts x & y of the same length",{
+  x <- runif(10)
+  y <- rbinom(10,1,x)
+  
+  expect_error(mle_recal(x,c(y,y)))
+}) 
+
+
+test_that("mle_recal() returns vector of correct size", {
+  # Set up
+  set.seed(47)
+  x <- runif(10)
+  y <- rbinom(10,1,x)
+  
+  # Numeric vector input - vector of size n=100
+  expect_no_condition(l <- mle_recal(x, y))
+  expect_true(check_probs(l$probs))
+  expect_vector(l$probs)
+})
+
+test_that("mle_recal() gives correct MLEs",{
+  
+  # number of decimal places
+  dec <- 5
+  
+  # check that llo_lrt gives correct test_stat for fivethirtyeight
+  mle_538 <- mle_recal(hockey$x, hockey$y)
+  expect_equal(round(mle_538$MLEs[1], dec), round(0.9453966, dec))
+  expect_equal(round(mle_538$MLEs[2], dec), round(1.4005730, dec))
+})
+
+test_that("mle_recal() accepts both probs_only and optim_details=TRUE",{
+  x <- runif(10)
+  y <- rbinom(10,1,x)
+  
+  expect_no_condition(mle_recal(x,y, optim_details = TRUE, probs_only = TRUE))
+}) 
+
+#############################################
+#  logit() Tests                            #
+#############################################
+
+test_that("(INTERNAL) logit() works ok",{
+  x <- runif(10)
+  expect_no_condition(logit(x))
+  
+  expect_error(logit(x, epsilon="hi"))
+})
+
+#############################################
+#  to_prob() Tests                            #
+#############################################
+
+test_that("(INTERNAL) to_prob() works ok",{
+  x <- runif(10)
+  expect_no_condition(to_prob(x))
+  
+  expect_error(to_prob(x, epsilon="hi"))
+})
+
+#############################################
+#  llo_lik() Tests                          #
+#############################################
+
+test_that("(INTERNAL) llo_lik() works with log=FALSE",{
+  x <- runif(10)
+  y <- rbinom(10,1,x)
+  
+  expect_no_condition(llo_lik(params=c(1,1),x,y))
+  expect_no_condition(llo_lik(params=c(1,1),x,y, log=TRUE))
+}) 
+
 #############################################
 #  prelec() Tests                           #
 #############################################
@@ -298,317 +534,10 @@ test_that("prelec() returns valid output", {
 
 })
 
-#############################################
-#  llo_lik() Tests                          #
-#############################################
 
 
-test_that("llo_lik() only accepts valid params",{
-  set.seed(37)
-  n <- 100
-  x <- runif(n)
-  y <- rbinom(n, 1, prob=x)
-
-  # params not length 2
-  params4 <- c(1)
-  expect_error(llo_lik(params4, x, y))
-  params5 <- c(1, 1, 2, 3)
-  expect_error(llo_lik(params5, x, y))
-
-  # delta <= 0
-  params2 <- c(0, 1)
-  expect_error(llo_lik(params2, x, y))
-  params3 <- c(-10, 1)
-  expect_error(llo_lik(params3, x, y))
-
-  # delta non-numeric
-  params6 <- c(TRUE, FALSE)
-  expect_error(llo_lik(params6, x, y))
-  params7 <- c("10", 1)
-  expect_error(llo_lik(params7, x, y))
-  params8 <- c(list(1,2), 1)
-  expect_warning(expect_error(llo_lik(params8, x, y)))
-
-  # gamma
-
-})
-
-test_that("llo_lik() only accepts x in correct format",{
-  set.seed(37)
-  n <- 100
-  x <- runif(n)
-  y <- rbinom(n, 1, prob=x)
-  params <- c(1, 1)
-
-  # x has values outside [0,1]
-  x2 <- rnorm(n)
-  expect_error(llo_lik(params, x, y2))
-
-  # y is character vector
-  y2 <- c(0, 1)
-  x3 <- c("h", "f")
-  expect_error(llo_lik(params, x3, y2))
-
-  # y is logical vector
-  x4 <- c(TRUE, FALSE)
-  expect_error(llo_lik(params, x4, y2))
-
-  # y is list - warning
-  x5 <- list(runif(n))
-  expect_warning(llo_lik(params, x5, y))
-  x6 <- list(0.5, 0.2)
-  expect_warning(llo_lik(params, x6, y2))
-
-  # y is matrix - error (diff lengths) & warning (wrong type)
-  x7 <- matrix(c(0.2, 1, 0.7532),ncol=1)
-  expect_error(llo_lik(params, x7, y2))
-
-  # y is matrix - warning (wrong type)
-  x8 <- matrix(c(0.111, 0), ncol=1)
-  expect_error(llo_lik(params, x8, y2))
-})
-
-test_that("llo_lik() only accepts y in correct format",{
-  set.seed(37)
-  n <- 100
-  x <- runif(n)
-  params <- c(1,1)
-
-  # y has non 0 or 1s
-  y2 <- rnorm(n)
-  expect_error(llo_lik(params, x, y2))
-
-  # y is character vector
-  x2 <- c(0.5, 0.1)
-  y3 <- c("h", "f")
-  expect_error(llo_lik(params, x2, y3))
-
-  # y is logical vector
-  y4 <- c(TRUE, FALSE)
-  expect_error(llo_lik(params, x2, y3))
-
-  # y is list - warning
-  y5 <- list(rbinom(n, 1, prob=x))
-  expect_warning(llo_lik(params, x, y5))
-  y6 <- list(1, 0)
-  expect_warning(llo_lik(params, x2, y6))
-
-  # y is matrix - error (diff lengths) & warning (wrong type)
-  y7 <- matrix(c(0,1,1),ncol=1)
-  expect_error(llo_lik(params, x2, y7))
-
-  # y is matrix - warning (wrong type)
-  y8 <- matrix(c(0,1),ncol=1)
-  expect_error(llo_lik(params, x2, y8))
-})
 
 
-test_that("llo_lik() only accepts x and y of the same length",{
-  set.seed(37)
-  n <- 100
-  x <- runif(n)
-  y <- rbinom(n, 1, prob=x)
-  params <- c(1,1)
-
-  # same length - no error
-  expect_no_error(llo_lik(params, x, y))
-
-  # y shorter than x - error
-  y2 <- c(0, 1,0)
-  expect_error(llo_lik(params, x, y2))
-
-  # x shorter than y - error
-  x2 <-c(0.2, 0.4, 0.7)
-  expect_error(llo_lik(params, x2, y))
-})
-
-test_that("llo_lik() only accepts log in correct format", {
-  # set up
-  set.seed(37)
-  n <- 100
-  x <- runif(n)
-  y <- rbinom(n, 1, prob=x)
-  params <- c(1,1)
-
-  # character input - error
-  expect_error(llo_lik(params, x, y, log="yes"))
-
-  # numeric input - error
-  expect_error(llo_lik(params, x, y, log=2))
-
-  # logical input - no error
-  expect_no_error(llo_lik(params, x, y, log=TRUE))
-  expect_no_error(llo_lik(params, x, y, log=FALSE))
-  expect_no_error(llo_lik(params, x, y, log=T))
-  expect_no_error(llo_lik(params, x, y, log=F))
-
-  # numeric but technically ok
-  expect_no_error(llo_lik(params, x, y, log=0))
-  expect_no_error(llo_lik(params, x, y, log=1))
-})
-
-test_that("llo_lik() only accepts neg in correct format",{
-  # set up
-  set.seed(37)
-  n <- 100
-  x <- runif(n)
-  y <- rbinom(n, 1, prob=x)
-  params <- c(1,1)
-
-  # character input - error
-  expect_error(llo_lik(params, x, y, neg="yes"))
-
-  # numeric input - error
-  expect_error(llo_lik(params, x, y, neg=2))
-
-  # logical input - no error
-  expect_no_error(llo_lik(params, x, y, neg=TRUE))
-  expect_no_error(llo_lik(params, x, y, neg=FALSE))
-  expect_no_error(llo_lik(params, x, y, neg=T))
-  expect_no_error(llo_lik(params, x, y, neg=F))
-
-  # numeric but technically ok
-  expect_no_error(llo_lik(params, x, y, neg=0))
-  expect_no_error(llo_lik(params, x, y, neg=1))
-})
-
-test_that("llo_lik() only accepts tau in correct format",{
-  # set up
-  set.seed(37)
-  n <- 100
-  x <- runif(n)
-  y <- rbinom(n, 1, prob=x)
-  params <- c(1,1)
-
-  # character input - error
-  expect_error(llo_lik(params, x, y, tau="yes"))
-
-  # numeric input - error
-  expect_error(llo_lik(params, x, y, tau=2))
-
-  # logical input - no error
-  expect_no_error(llo_lik(params, x, y, tau=TRUE))
-  expect_no_error(llo_lik(params, x, y, tau=FALSE))
-  expect_no_error(llo_lik(params, x, y, tau=T))
-  expect_no_error(llo_lik(params, x, y, tau=F))
-
-  # numeric but technically ok
-  expect_no_error(llo_lik(params, x, y, tau=0))
-  expect_no_error(llo_lik(params, x, y, tau=1))
-})
-
-#############################################
-#  LLO_LRT() Tests                          #
-#############################################
-
-test_that("LLO_LRT() only accepts valid params",{
-  set.seed(37)
-  n <- 100
-  x <- runif(n)
-  y <- rbinom(n, 1, prob=x)
-
-  # params not length 2
-  params4 <- c(1)
-  expect_error(LLO_LRT(x, y, params4))
-  params5 <- c(1, 1, 2, 3)
-  expect_error(LLO_LRT(x, y, params5))
-
-  # delta <= 0
-  params2 <- c(0, 1)
-  expect_error(LLO_LRT(x, y, params2))
-  params3 <- c(-10, 1)
-  expect_error(LLO_LRT(x, y, params3))
-
-  # delta non-numeric
-  params6 <- c(TRUE, FALSE)
-  expect_error(LLO_LRT(x, y, params6))
-  params7 <- c("10", 1)
-  expect_error(LLO_LRT(x, y, params7))
-  params8 <- c(list(1,2), 1)
-  expect_warning(expect_error(LLO_LRT(x, y, params8)))
-
-  # gamma
-
-})
-#
-# test_that("LLO_LRT() only takes valid outcomes",{
-#   set.seed(37)
-#   n <- 100
-#   x <- runif(n)
-#   params <- c(1,1)
-#
-#   # y has non 0 or 1s
-#   y2 <- rnorm(n)
-#   expect_error(llo_lik(params, x, y2))
-#
-#   # y is character vector
-#   x2 <- c(0.5, 0.1)
-#   y3 <- c("h", "f")
-#   expect_error(llo_lik(params, x2, y3))
-#
-#   # y is logical vector
-#   y4 <- c(TRUE, FALSE)
-#   expect_error(llo_lik(params, x2, y3))
-#
-#   # y is list - warning
-#   y5 <- list(rbinom(n, 1, prob=x))
-#   expect_warning(llo_lik(params, x, y5))
-#   y6 <- list(1, 0)
-#   expect_warning(llo_lik(params, x2, y6))
-#
-#   # y is matrix - error (diff lengths) & warning (wrong type)
-#   y7 <- matrix(c(0,1,1),ncol=1)
-#   expect_error(llo_lik(params, x2, y7))
-#
-#   # y is matrix - warning (wrong type)
-#   y8 <- matrix(c(0,1),ncol=1)
-#   expect_error(llo_lik(params, x2, y8))
-#
-# })
-
-test_that("LLO_LRT() gives correct p-value",{
-
-  # number of decimal places
-  dec <- 5
-
-  # check that LLO_LRT gives correct p-value for fivethirtyeight
-  lrt_538 <- LLO_LRT(hockey$x, hockey$y)
-  expect_equal(round(lrt_538$pval, dec), round(0.118396594, dec))
-
-  # check that LLO_LRT gives correct p-value for random noise
-  lrt_rand <- LLO_LRT(rand_pundit$x, rand_pundit$y)
-  expect_equal(round(lrt_rand$pval, dec), round(0.0000000, dec))
-})
-
-test_that("LLO_LRT() gives correct test stat",{
-
-  # number of decimal places
-  dec <- 5
-
-  # check that LLO_LRT gives correct test_stat for fivethirtyeight
-  lrt_538 <- LLO_LRT(hockey$x, hockey$y)
-  expect_equal(round(lrt_538$test_stat, dec), round(4.267411, dec))
-
-  # check that LLO_LRT gives correct test_stat for random noise
-  lrt_rand <- LLO_LRT(rand_pundit$x, rand_pundit$y)
-  expect_equal(round(lrt_rand$test_stat, dec), round(70.66915, dec))
-})
-
-test_that("LLO_LRT() gives correct est_params",{
-
-  # number of decimal places
-  dec <- 5
-
-  # check that LLO_LRT gives correct est_params for fivethirtyeight
-  lrt_538 <- LLO_LRT(hockey$x, hockey$y)
-  expect_equal(round(lrt_538$est_params[1], dec), round(0.9453966, dec))
-  expect_equal(round(lrt_538$est_params[2], dec), round(1.4005730, dec))
-
-  # check that LLO_LRT gives correct est_params for random noise
-  lrt_rand <- LLO_LRT(rand_pundit$x, rand_pundit$y)
-  expect_equal(round(lrt_rand$est_params[1], dec), round(1.13946217, dec))
-  expect_equal(round(lrt_rand$est_params[2], dec), round(0.07199484, dec))
-})
 
 
 
