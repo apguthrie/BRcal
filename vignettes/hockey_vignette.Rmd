@@ -3,7 +3,7 @@ title: "Using `BRcal` to Assess and Embolden Probability Forecasts"
 output: rmarkdown::html_vignette
 bibliography: "../inst/REFERENCES.bib"
 vignette: >
-  %\VignetteIndexEntry{Using `BRcal`to Assess and Embolden Probability Forecasts}
+  %\VignetteIndexEntry{Using `BRcal` to Assess and Embolden Probability Forecasts}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -55,7 +55,7 @@ library(gridExtra)
 <!-- - add authors?  -->
 <!-- - %\VignetteIndexEntry{hockey_vignette} needs to reflect actual title! -->
 
-This vignette demonstrates how to use the `BRcal` package via a case study involving hockey home team win probability predictions and game outcomes. The core features of this package are (1) probability calibration assessment via `bayes_ms()` and `llo_lrt()`, (2) MLE (Maximum Likelihood Estimate) recalibration via `mle_recal()`, and (3) boldness-recalibration via `brcal()`.  Supporting features include visualizations via `lineplot()` and `plot_params()` and the linear in log odds (LLO) function (`LLO()`) for manual adjustment of probability predictions.  For more details on the methodology under the hood of the `BRcal` package, see @GuthrieFranck2024. Note that in many cases the output is truncated with `...` for readability.
+This vignette demonstrates how to use the `BRcal` package via a case study involving hockey home team win probability predictions and game outcomes. The core features of this package are (1) probability calibration assessment via `bayes_ms()` and `llo_lrt()`, (2) MLE (Maximum Likelihood Estimation) recalibration via `mle_recal()`, and (3) boldness-recalibration via `brcal()`.  Supporting features include visualizations via `lineplot()` and `plot_params()` and the linear in log odds (LLO) function (`LLO()`) for manual adjustment of probability predictions.  For more details on the methodology under the hood of the `BRcal` package, see @GuthrieFranck2024. Note that in many cases the output is truncated with `...` for readability.
 
 ## Installation
 
@@ -86,6 +86,10 @@ Once the package is installed, it can be loaded with the usual `library()` call.
 library(BRcal)
 ```
 
+# Illustrative Data Analysis with Core Functionality
+
+In this section, we demonstrate the core functionality of the `BRcal` package.
+
 ## Loading the Data
 
 The hockey data we will use throughout this vignette is directly available through the BRcal package in the object called `hockey` and can be loaded as follows:  
@@ -103,16 +107,16 @@ The data contains probability predictions and outcomes for all 868 regular seaso
 
 The predictions from @fivethirtyeight can also be found on their [website](https://data.fivethirtyeight.com/).  The random noise forecaster predictions were generated via random uniforms draws from 0.26 to 0.77 (the observed range in the FiveThirtyEight data) to mimic the behavior of a completely uninformed forecaster.
 
-## Common Convention Across the Package 
+## Common Convention Across the BRcal Package 
 
-The functions in the `BRcal` package share a lot of common arguments. Two that we want to explain up front are `x` and `y`, where `x` is a vector of probabilities predictions of binary events and `y` is the corresponding true event outcomes.  Since we are dealing with probabilities, `x` must contain numeric values from 0 to 1 (inclusive).  And as we are dealing with binary events, `y` must only take on two values, i.e. the two possible outcomes.
+The functions in the `BRcal` package share a lot of common arguments. Two that we want to explain are `x` and `y`, where `x` is a vector of probabilities predictions of binary events and `y` is the corresponding true event outcomes.  Since we are dealing with probabilities, `x` must contain numeric values from 0 to 1 (inclusive).  And as we are dealing with binary events, `y` must only take on two values, i.e. the two possible outcomes.
 
 By default, the functions in `BRcal` expect `y` to be a vector of 0s and 1s where a 1 represents a "event" and 0 represents a "non-event". Additionally, these functions expect that the probabilities in `x` are the probabilities of "event" at each observation. For demonstration of how to pass `y` as a binary vector that contains values other than 0s and 1s and properly specify `event`, see the [Specifying `event`](#event) Section. 
 
 
 ## Assessing Calibration via `bayes_ms()` and `llo_lrt()`
 
-The `BRcal` package provides two approaches to assessing calibration: a Bayesian model selection-based approach implemented in `bayes_ms()` and a likelihood ratio test for calibration in `llo_lrt()`.  
+The `BRcal` package provides two approaches to assessing calibration: an approximate Bayesian model selection-based approach implemented in `bayes_ms()` and a likelihood ratio test for calibration in `llo_lrt()`.  
 
 ### Bayesian Model Selection-based approach (`bayes_ms()`) {#bayesms}
 
@@ -123,7 +127,7 @@ bt538 <- bayes_ms(hockey$x, hockey$y)
 bt538
 ```
 
-Notice this function returns a list, which we've stored in `bt538` for later use.  The first element in the returned list is `Pmc` which shows the prior probability for the calibrated model.  
+Notice this function returns a list, which we've stored in `bt538` for later use.  The first element in the returned list is `Pmc` which shows the prior probability of the calibrated model.  
 
 The next two elements in the return list are `BIC_Mc` and `BIC_Mu` which are the Bayesian Information Criteria (BIC) for the calibrated model and the uncalibrated model, respectively.  These are used in the approximation for the Bayes Factor comparing the uncalibrated model to the calibrated model, which is returned in list element `BF`. 
 
@@ -136,7 +140,7 @@ The final list element is called `optim_details`, which itself is a list returne
 
 #### Setting the prior model probabilities via `Pmc`
 
-Imagine we wish to assess what the extent to which lower prior probabilities of calibration influences results. By default, this function uses assumes equal prior probabilities for the calibrated and uncalibrated models.  However, it is important for users to determine what priors make sense for the context of their problem.  Argument `Pmc` allows easy specification of the prior model probability for the calibrated model.  Naturally, `Pmc` must be a value in [0,1] and the prior model probability for the uncalibrated model is taken to be `1 - Pmc`.  
+Imagine we wish to assess the extent to which lower prior probabilities of calibration influence results. By default, this function uses assumes equal prior probabilities for the calibrated and uncalibrated models.  However, it is important for users to determine what priors make sense for the context of their problem.  Argument `Pmc` allows easy specification of the prior model probability for the calibrated model.  Naturally, `Pmc` must be a value in [0,1] and the prior model probability for the uncalibrated model is taken to be `1 - Pmc`.  
 
 For example, let's say it is reasonable to assume that the prior model probability of calibration for FiveThirtyEight is 0.2 instead of 0.5 based on past experience.  Then we could use `bayes_ms()` in the following way.
 
@@ -237,6 +241,9 @@ br90_tau
 ```
 
 
+# Additional Features and Details
+
+In this section, we demonstrate additional features in the `BRcal` package and discuss additional details that may be useful to more advanced use-cases.
 
 ## Passing Additional / Different Arguments to `nloptr()` {#nloptr_opts}
 
@@ -246,20 +253,12 @@ The [nloptr](https://cran.r-project.org/package=nloptr) package is extremely fle
 
 While the algorithm used by `optim()` was not very sensitive to the starting location of $\delta$ and $\gamma$, we've found the nature of boldness-recalibration makes `nloptr()` more sensitive to starting location.  By default, `brcal()` initializes the optimization at the MLEs for $\delta$ and $\gamma$.  While we've found this to be the most stable approach to setting a starting location, users can specify their own starting location by specifying `x0` and setting `start_at_MLEs=FALSE`.  
 
-To show the sensitivity of this approach to the starting values, let's set `x0` to $\delta = 10$, $\gamma = -5$ like we did with `optim()`.   
+To show the sensitivity of this approach to the starting values, try set `x0` to $\delta = 10$, $\gamma = -5$ like we did with `optim()`.  The line of code below will run `brcal()` with these starting values, however we do not run it automatically in this vignette as it causes an error.  In this case, the algorithm cannot converge and ends up crashing due to trying extreme values of the parameters. We encourage readers to run this code themselves to verify this result. 
 
-```{r eval=FALSE, out.lines.head=12, out.lines.tail=14}
+```{r out.lines.head=12, out.lines.tail=14}
 try(brcal(hockey$x, hockey$y, x0 = c(10, -5), start_at_MLEs = FALSE))
 ```
 
-
-<!-- ```{r br90_err, echo=FALSE, cache=TRUE, out.lines.head=12, out.lines.tail=14} -->
-<!-- err <- try(brcal(hockey$x, hockey$y, x0 = c(10, -5), start_at_MLEs = FALSE), silent=TRUE) -->
-<!-- stop("Error in optim(par = par, fn = llo_lik, ..., x = x, y = y, neg = TRUE,  : function cannot be evaluated at initial parameters") -->
-<!-- ``` -->
-
-
-Notice this time the algorithm cannot converge and ends up crashing due to trying extreme values of the parameters. 
 
 ### Algorithm
 
@@ -442,10 +441,11 @@ hockey$x_mle
 Let's visualize what this LLO-adjustment looks like by plotting the original probabilities (`hockey$x`) on the x-axis and the MLE recalibrated probabilities (`hockey$x_mle`) on the y-axis.  Note that the points below are the actual observations and the curve represents how any prediction along the 0-1 range would behave under `delta`=`r bt538$MLEs[1]` and `gamma`=`r bt538$MLEs[2]`.
 
 ```{r, fig.width=6, fig.height=4, fig.align='center'}
-# plot original vs LLO-adjusted via 2,2
+# plot original vs LLO-adjusted via MLEs
 ggplot2::ggplot(data=hockey, mapping=aes(x=x, y=x_mle)) +
   stat_function(fun=LLO,
-                args=list(delta=2, gamma=2),
+                args=list(delta=bt538$MLEs[1], 
+                          gamma=bt538$MLEs[2]),
                 geom="line",
                 linewidth=1,
                 color="black",
