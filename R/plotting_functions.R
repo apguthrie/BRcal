@@ -666,9 +666,9 @@ lineplot <- function(x=NULL, y=NULL, t_levels=NULL, df=NULL,
   df$label <- factor(df$label, levels=c(unique(df$label)))
   
   # Create lineplot
-  lines <- ggplot2::ggplot(data = df, mapping = aes_string(x = "label", y = "probs")) +
-    do.call(geom_point, c(list(aes_string(color = "outcome")), ggpoint_options)) +
-    do.call(geom_line, c(list(aes_string(group = "id", color = "outcome")), 
+  lines <- ggplot2::ggplot(data = df, mapping = aes(x = .data[["label"]], y = .data[["probs"]])) +
+    do.call(geom_point, c(list(aes(color = .data[["outcome"]])), ggpoint_options)) +
+    do.call(geom_line, c(list(aes(group = .data[["id"]], color = .data[["outcome"]])), 
                          ggline_options)) +
     labs(x = xlab,
          y = ylab) +
