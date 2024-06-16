@@ -128,7 +128,7 @@
 #'   no. 3, pp. 262-281.
 #'
 #' @examples
-#' #' # Simulate 100 predicted probabilities
+#' # Simulate 100 predicted probabilities
 #' x <- runif(100)
 #' # Simulated 100 binary event outcomes using x
 #' y <- rbinom(100, 1, x)  # By construction, x is well calibrated.
@@ -139,7 +139,6 @@
 #' # Perform 90% boldness-recalibration
 #' brcal(x, y, t=0.9)
 #'
-
 #'
 #' # To suppress all output from nloptr() for each iteration use print_level=0
 #' brcal(x, y, print_level=0)
@@ -148,7 +147,7 @@
 #' brcal(x, y, print_level=1)
 #'
 #' # To specify different starting values, use x0 and set start_at_MLEs=FALSE
-#' brcal(x, y, x0=c(1,2), start_at_MLEs=FALSE)
+#' brcal(x, y, x0=c(1,1), start_at_MLEs=FALSE)
 #'
 #' # Adjust stopping criteria:
 #' # set max number of evaluations to 100 (maxeval)
@@ -265,10 +264,8 @@ brcal <- function(x, y, t=0.95, Pmc=0.5, tau=FALSE, event=1,
     ub[1] <- log(ub[1])
   }
   
-  # print(missing(opts))
-  
   if(missing(opts)){
-    # print("inside opts ifelse")
+
     res <- nloptr::nloptr(x0 = x0,
                           eval_f = obj_f,
                           eval_grad_f = obj_grad_f,
@@ -331,24 +328,7 @@ brcal <- function(x, y, t=0.95, Pmc=0.5, tau=FALSE, event=1,
       if(!("xtol_rel" %in% names(opts$local_opts))){
         opts$local_opts$xtol_rel <- xtol_rel_inner
       }
-      
-      # if("eval_f" %in% names(opts$local_opts)){
-      # opts$local_opts$eval_f <- obj_f
-      # }
-      # if("eval_grad_f" %in% names(opts$local_opts)){
-      #   opts$local_opts$eval_grad_f <- obj_grad_f
-      # }
-      # if("eval_g_ineq" %in% names(opts$local_opts)){
-      #   opts$local_opts$eval_g_ineq <- constr_g
-      # }
-      # if("eval_jac_g_ineq" %in% names(opts$local_opts)){
-      #   opts$local_opts$eval_jac_g_ineq <- constr_grad_g
-      # }
-      
-      # append default args if not specified by user
-      # if(!("algorithm" %in% names(opts$local_opts))){
-      #   opts$local_opts
-      # }
+
     } else { # use default local opts
       opts$local_opts <- list(
         algorithm = "NLOPT_LD_SLSQP",
@@ -356,8 +336,6 @@ brcal <- function(x, y, t=0.95, Pmc=0.5, tau=FALSE, event=1,
         eval_jac_g_ineq = constr_grad_g,
         xtol_rel = xtol_rel_inner)
     }
-    
-    # print(opts)
     
     res <- nloptr::nloptr(x0 = x0,
                           eval_f = obj_f,
@@ -374,63 +352,8 @@ brcal <- function(x, y, t=0.95, Pmc=0.5, tau=FALSE, event=1,
                           Pmc = Pmc, 
                           epsilon=epsilon,
                           optim_options=optim_options)
-    
-    # print(res$solution)
-    
+
     res$call$opts <- opts
-    
-    # res$call$opts$local_opts$eval_f <- as.name("obj_f")
-    # res$call$opts$local_opts$eval_grad_f <- as.name("obj_grad_f")
-    # res$call$opts$local_opts$eval_g_ineq <- as.name("constr_g")
-    # res$call$opts$local_opts$eval_jac_g_ineq <- as.name("constr_grad_g")
-    
-    # local_opts <- opts$local_opts
-    # print(local_opts)
-    ##########################################
-    # res$call$opts <- list()
-    # 
-    # for(i in 1:length(names(opts))){
-    #   res$call$opts[[names(opts)[i]]] <- res$options[[names(opts)[i]]]
-    # }
-    # 
-    # # print(res$call$opts)
-    # 
-    # res$call$opts$local_opts <- list()
-    # 
-    # 
-    # 
-    # 
-    # to_store_local <- names(opts$local_opts)[!(names(opts$local_opts) %in% c("eval_f", "eval_grad_f", "eval_g_ineq", "eval_jac_g_ineq"))]
-    # print(to_store_local)
-    # for(i in 1:length(to_store_local)){
-    #   print(to_store_local[i])
-    #   print(res$local_options[[to_store_local[i]]])
-    #   res$call$opts$local_opts[[to_store_local[i]]] <- res$local_options[[to_store_local[i]]]
-    # }
-    
-    ####################################
-    
-    
-    # for(i in 1:length(names(local_opts))){
-    #   res$call$opts$local_opts[[names(local_opts)[i]]] <- res$local_options[[names(local_opts)[i]]]
-    # }
-    
-    # print(res$call$opts)
-    
-    # how to print the opts specified by the user?
-    
-    # to_store <- names(opts)[!(names(opts) %in% c("maxeval", "maxtime", "xtol_rel", "print_level", "local_opts"))]
-    # print(to_store)
-    # for(i in 1:length(to_store)){
-    #   res$call$opts[[to_store[i]]] <- res$options[[to_store[i]]]
-    # }
-    # print(res$call$opts)
-    # 
-    # to_store_local <- names(opts$local_opts)[!(names(opts$local_opts) %in% c("lb", "ub", "maxtime", "xtol_rel"))]
-    # print(to_store_local)
-    # for(i in 1:length(to_store_local)){
-    #   res$call$opts$local_opts[[to_store_local[i]]] <- res$local_options[[to_store_local[i]]]
-    # }
   }
   
   
@@ -465,8 +388,6 @@ brcal <- function(x, y, t=0.95, Pmc=0.5, tau=FALSE, event=1,
             
             for(k in 1:length(nms3)){
               current <- nms3[k]
-              # print(res$call$opts$local_opts[[current]])
-              # print(res$local_options[[current]])
               res$call$opts$local_opts[[current]] <- res$local_options[[current]]
             }
             
@@ -489,26 +410,6 @@ brcal <- function(x, y, t=0.95, Pmc=0.5, tau=FALSE, event=1,
   res$call$t <- t
   res$call$tau <- tau
   res$call$epsilon <- epsilon
-  
-  #############################
-  # # Make Call more useful when printed
-  # res$call$x0 <- res$x0               
-  # res$call$lb <- res$lb               
-  # res$call$ub <- res$ub    
-  # res$call$opts$maxeval <- res$options$maxeval     
-  # res$call$opts$maxtime  <- res$options$maxtime    
-  # res$call$opts$xtol_rel  <- res$options$xtol_rel    
-  # res$call$opts$print_level  <- res$options$print_level
-  # res$call$opts$local_opts$xtol_rel <- res$local_options$xtol_rel
-  # res$call$Pmc <- Pmc 
-  # res$call$t <- t
-  # res$call$tau <- tau
-  # res$call$epsilon <- epsilon
-  # 
-  # print(res$call$opts)
-  #######################
-  
-  # print(res$solution)
   
   # Convert to delta scale if optimized on tau
   if(tau){
@@ -603,33 +504,3 @@ constr_grad_g <- function(x, probs, outs, t, tau, Pmc, epsilon, optim_options){
   return(grad_obj)
 }
 
-
-# constr_grad_g2 <- function(x, probs, outs, t, tau, Pmc, epsilon){
-#   if(tau)(
-#     x[1] <- exp(x[1])
-#   )
-#   
-#   n <- length(probs)
-#   d <- x[1]
-#   g <- x[2]
-#   probs_new <- LLO_internal(x=probs, d, g)
-#   bt <- bayes_ms_internal(x=probs_new, y=outs, Pmc = Pmc, epsilon=epsilon)
-#   pmp <- bt$posterior_model_prob
-#   dhat <- bt$MLEs[1]
-#   ghat <- bt$MLEs[2]
-# 
-#   
-#   front <- pmp * (pmp - 1)
-#   
-#   firstd <- ((ghat - 1) * outs) / d
-#   secondd <- (dhat * ghat * probs^(g * ghat) * d^(g-1)) / (dhat * d^ghat * probs^(g * ghat) + (1-probs)^(g * ghat))
-#   thirdd <- (probs^g) / (d * probs^g + (1-probs)^g)
-#   
-#   firstg <- outs * (ghat-1) * log(probs) + ((1-outs)*(ghat-1)*log(1-probs))
-#   secondg <- (dhat * d^ghat * log(probs) * probs^(g*ghat) * ghat + (log(1-probs)*(1-probs^(g * ghat))*ghat)) / (dhat * d^ghat * probs^(g * ghat) + (1-probs)^(g * ghat))
-#   thirdg <- (d*log(probs)*probs^g * log(1-probs)*(1-probs)^g)/(d * probs^ghat + (1-probs)^g)
-# 
-#   grad_obj <- c(front * sum(firstd - secondd + thirdd),
-#                 front * sum(firstg - secondg + thirdg))
-#   return(grad_obj)
-# }

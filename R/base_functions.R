@@ -370,7 +370,6 @@ mle_recal_internal <- function(x, y, probs_only=TRUE, optim_details = TRUE, ...)
   }
 }
 
-# NEED TO MAKE NOTE IN DOCUMENTATION ABOUT ROUNDING OFF
 to_logit <- logit <- function(p, epsilon=.Machine$double.eps){
   
   # rounding off x's that are too close to zero or one
@@ -413,8 +412,6 @@ llo_lik <- function(params, x, y, log = FALSE, neg = FALSE, tau = FALSE, epsilon
 
 llo_optim <- function(x, y, par=c(0.5,0.5), tau=TRUE, gr=nll_gradient, lower = 0, upper = Inf, ...){
   
-  # print(lower)
-  # print(par)
   # convert delta to tau
   # NEED HANDELING FOR TAU = FALSE BC BOUND ON DELTA!
   if(tau){
@@ -474,7 +471,6 @@ prelec <- function(p, alpha, beta){
 }
 
 # Gradient function for negative log likelihood
-# add options for non log or non neg? why?
 nll_gradient <- function(params, x, y, tau){
   if(tau){
     params[1] <- exp(params[1])

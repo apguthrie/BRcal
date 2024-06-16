@@ -156,7 +156,7 @@ whichever scale \code{nloptr()} optimized on.
 }
 
 \examples{
-#' # Simulate 100 predicted probabilities
+# Simulate 100 predicted probabilities
 x <- runif(100)
 # Simulated 100 binary event outcomes using x
 y <- rbinom(100, 1, x)  # By construction, x is well calibrated.
@@ -175,7 +175,7 @@ brcal(x, y, print_level=0)
 brcal(x, y, print_level=1)
 
 # To specify different starting values, use x0 and set start_at_MLEs=FALSE
-brcal(x, y, x0=c(1,2), start_at_MLEs=FALSE)
+brcal(x, y, x0=c(1,1), start_at_MLEs=FALSE)
 
 # Adjust stopping criteria:
 # set max number of evaluations to 100 (maxeval)
