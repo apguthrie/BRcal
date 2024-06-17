@@ -205,44 +205,47 @@ x <- runif(100)
 y <- rbinom(100, 1, x)  # By construction, x is well calibrated.
 
 # Default plot
-plot_params(x, y)
+# plot_params(x, y)
+
+#' # Decrease grid density
+plot_params(x, y, k=20)
 
 # Adjust bounds on delta and gamma
-plot_params(x, y, dlim=c(0.0001, 3), glim=c(0.1,2))
+# plot_params(x, y, dlim=c(0.0001, 3), glim=c(0.1,2))
 
 # Increase grid density via k
-plot_params(x, y, k=200, dlim=c(0.0001, 3), glim=c(0.1,2))
+# plot_params(x, y, k=200, dlim=c(0.0001, 3), glim=c(0.1,2))
 
 # Save z matrix for faster plotting
-zmat_list <- plot_params(x, y, k=200, dlim=c(0.0001, 3), glim=c(0.1,2), return_z=TRUE)
+# zmat_list <- plot_params(x, y, k=200, dlim=c(0.0001, 3), glim=c(0.1,2), return_z=TRUE)
 
 # Reuse z matrix
-plot_params(z=zmat_list$z, k=200, dlim=c(0.0001, 3), glim=c(0.1,2))
+# plot_params(z=zmat_list$z, k=200, dlim=c(0.0001, 3), glim=c(0.1,2))
 
 # Add contours at t=0.95, 0.9, and 0.8
-plot_params(z=zmat_list$z, k=200, dlim=c(0.0001, 3), glim=c(0.1,2), t_levels=c(0.95, 0.9, 0.8))
+# plot_params(z=zmat_list$z, k=200, dlim=c(0.0001, 3), glim=c(0.1,2), t_levels=c(0.95, 0.9, 0.8))
 
 # Add points for 95\% boldness-recalibration parameters
-br95 <- brcal(x, y, t=0.95)
-plot_params(z=zmat_list$z, k=200,dlim=c(0.0001, 3), glim=c(0.1,2), t_levels=c(0.95, 0.9, 0.8))
-points(br95$BR_params[1], br95$BR_params[2], pch=19, col="white")
+# br95 <- brcal(x, y, t=0.95)
+# plot_params(z=zmat_list$z, k=200,dlim=c(0.0001, 3), glim=c(0.1,2), t_levels=c(0.95, 0.9, 0.8))
+# points(br95$BR_params[1], br95$BR_params[2], pch=19, col="white")
 
 # Change color and size of contours
-plot_params(z=zmat_list$z, k=200, dlim=c(0.5, 1.5), glim=c(0.25, 2.75), t_levels = c(0.99, 0.1), 
-contour_options=list(col="orchid", lwd=2))
+# plot_params(z=zmat_list$z, k=200, dlim=c(0.5, 1.5), glim=c(0.25, 2.75), t_levels = c(0.99, 0.1), 
+# contour_options=list(col="orchid", lwd=2))
 
 # Plot contours only
-plot_params(z=zmat_list$z, k=200, dlim=c(0.0001, 3), glim=c(0.1,2), t_levels=c(0.95, 0.9, 0.8),
-contours_only=TRUE)
+# plot_params(z=zmat_list$z, k=200, dlim=c(0.0001, 3), glim=c(0.1,2), t_levels=c(0.95, 0.9, 0.8),
+# contours_only=TRUE)
 
 # Pass arguments to image.plot()
-plot_params(z=zmat_list$z, k=200, dlim=c(0.5, 1.5), glim=c(0.25, 2.75),
-imgplt_options=list(horizontal = TRUE, nlevel=10, legend.lab="Posterior Model Prob"))
+# plot_params(z=zmat_list$z, k=200, dlim=c(0.5, 1.5), glim=c(0.25, 2.75),
+# imgplt_options=list(horizontal = TRUE, nlevel=10, legend.lab="Posterior Model Prob"))
 
 # Pass arguments to optim()
-plot_params(hockey$x, hockey$y, k=50, dlim=c(0.5, 1.5), glim=c(0.25, 2.75), 
-optim_options=list(method="L-BFGS-B", lower=c(0.0001, 10), upper=c(0.0001, 10), 
-control=list(maxit=200)))
+# plot_params(hockey$x, hockey$y, k=50, dlim=c(0.5, 1.5), glim=c(0.25, 2.75), 
+# optim_options=list(method="L-BFGS-B", lower=c(0.0001, 10), upper=c(0.0001, 10), 
+# control=list(maxit=200)))
 
 }
 \references{

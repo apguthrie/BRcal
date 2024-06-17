@@ -181,37 +181,37 @@ y <- rbinom(100, 1, x)  # By construction, x is well calibrated.
 lineplot(x, y)
 
 # Specifying Levels of Boldness-Recalibration via t_levels
-lineplot(x, y, t_levels=c(0.98, 0.95))
+# lineplot(x, y, t_levels=c(0.98, 0.95))
 
 # Returning a list with dataframe used to construct plot with return_df=TRUE
-lp1 <- lineplot(x, y, t_levels=c(0.98, 0.95), return_df=TRUE)
-lp1$plot
+# lp1 <- lineplot(x, y, t_levels=c(0.98, 0.95), return_df=TRUE)
+# lp1$plot
 
 # Reusing the previous dataframe to save calculation time
-lineplot(df=lp1$df)
+# lineplot(df=lp1$df)
 
 # Adjust geom_point cosmetics via ggpoint
 # Increase point size and change to open circles
-lineplot(df=lp1$df, ggpoint_options=list(size=3, shape=4))
+# lineplot(df=lp1$df, ggpoint_options=list(size=3, shape=4))
 
 # Adjust geom_line cosmetics via ggline
 # Increase line size and change transparencys
-lineplot(df=lp1$df, ggline_options=list(linewidth=2, alpha=0.1))
+# lineplot(df=lp1$df, ggline_options=list(linewidth=2, alpha=0.1))
 
 # Thinning down to 75 randomly selected observation
-lineplot(df=lp1$df, thin_to=75)
+# lineplot(df=lp1$df, thin_to=75)
 
 # Thinning down to 53\% of the data
-lineplot(df=lp1$df, thin_percent=0.53)
+# lineplot(df=lp1$df, thin_percent=0.53)
 
 # Thinning down to every 3rd observation
-lineplot(df=lp1$df, thin_by=3)
+# lineplot(df=lp1$df, thin_by=3)
 
 # Setting a different seed for thinning
-lineplot(df=lp1$df, thin_percent=0.53, seed=47)
+# lineplot(df=lp1$df, thin_percent=0.53, seed=47)
 
 # Setting NO seed for thinning (plot will be different every time)
-lineplot(df=lp1$df, thin_to=75, seed=NULL)
+# lineplot(df=lp1$df, thin_to=75, seed=NULL)
 
 }
 \references{
