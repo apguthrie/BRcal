@@ -1,5 +1,6 @@
 ---
 title: "Using `BRcal` to Assess and Embolden Probability Forecasts"
+subtitle: "Last Updated June 16, 2024"
 output: rmarkdown::html_vignette
 bibliography: "../inst/REFERENCES.bib"
 vignette: >
@@ -11,19 +12,6 @@ vignette: >
 ```{r, include = FALSE}
 # save the built-in output hook
 hook_output <- knitr::knit_hooks$get("output")
-
-# set a new output hook to truncate text output
-# knitr::knit_hooks$set(output = function(x, options) {
-#   if (!is.null(n <- options$out.lines)) {
-#     x <- xfun::split_lines(x)
-#     if (length(x) > n) {
-#       # truncate the output
-#       x <- c(head(x, n - floor(n/2)), "....\n", tail(x, floor(n/2)+1))
-#     }
-#     x <- paste(x, collapse = "\n")
-#   }
-#   hook_output(x, options)
-# })
 
 # set a new output hook to truncate text output
 knitr::knit_hooks$set(output = function(x, options) {
@@ -48,12 +36,6 @@ library(ggplot2)
 library(devtools)
 library(gridExtra)
 ```
-
-
-<!-- Notes to self:  -->
-<!-- - add date last updated when it's done? NEED to make sure this gets updated as edits are made, but using sys.dat won't work for this because it will reflect dat package is built not updated. -->
-<!-- - add authors?  -->
-<!-- - %\VignetteIndexEntry{hockey_vignette} needs to reflect actual title! -->
 
 This vignette demonstrates how to use the `BRcal` package via a case study involving hockey home team win probability predictions and game outcomes. The core features of this package are (1) probability calibration assessment via `bayes_ms()` and `llo_lrt()`, (2) MLE (Maximum Likelihood Estimation) recalibration via `mle_recal()`, and (3) boldness-recalibration via `brcal()`.  Supporting features include visualizations via `lineplot()` and `plot_params()` and the linear in log odds (LLO) function (`LLO()`) for manual adjustment of probability predictions.  For more details on the methodology under the hood of the `BRcal` package, see @GuthrieFranck2024. Note that in many cases the output is truncated with `...` for readability.
 
