@@ -4,18 +4,20 @@ Version: 0.0.0.9000
 Authors@R: 
     c(person("Adeline P.", "Guthrie", , "apguthrie47@gmail.com", role = c("aut", "cre")),
       person("Christopher T.", "Franck", , "chfranck@vt.edu", role = c("aut")))
-Description: Boldness-recalibration at a user specified 
-             level of calibration facilitated the `brcal()` function. Supporting functions 
+Description: Boldness-recalibration maximally spreads out probability predictions 
+             while maintaining a user specified level of calibration, 
+             facilitated the brcal() function. Supporting functions 
              to assess calibration via Bayesian and Frequentist approaches, 
              MLE recalibration, LLO-adjust via any specified
              parameters, and visualize results are also provided.   
-             See Guthrie & Franck (2024) for methodological details.
+             Methodological details can be found in Guthrie & Franck (2024) 
+             <doi:10.1080/00031305.2024.2339266>. 
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
 Depends: 
-    R (>= 2.10)
+    R (>= 4.3)
 LazyData: true
 Imports: 
     nloptr,
