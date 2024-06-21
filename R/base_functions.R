@@ -358,7 +358,6 @@ mle_recal_internal <- function(x, y, probs_only=TRUE, optim_details = TRUE, ...)
   est_params <- optLRT$par
   new_probs <- LLO_internal(x=x, est_params[1], est_params[2])
   if(probs_only){
-    if(optim_details) print(optLRT)
     return(new_probs)
   } else if(optim_details){
     return(list(probs = new_probs,
