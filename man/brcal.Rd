@@ -156,71 +156,39 @@ whichever scale \code{nloptr()} optimized on.
 }
 
 \examples{
-# Simulate 100 predicted probabilities
-x <- runif(100)
-# Simulated 100 binary event outcomes using x
-y <- rbinom(100, 1, x)  # By construction, x is well calibrated.
 
-# Perform 95\% boldness-recalibration
-brcal(x, y)
+# Simulate 50 predicted probabilities
+x <- runif(50)
+# Simulated 50 binary event outcomes using x
+y <- rbinom(50, 1, x)  # By construction, x is well calibrated.
 
-# Perform 90\% boldness-recalibration
-# brcal(x, y, t=0.9)
-
-
+# Perform 90\% boldness-recalibration by setting t=0.9
 # To suppress all output from nloptr() for each iteration use print_level=0
-# brcal(x, y, print_level=0)
-
-# For reduced output at each iteration used print_level=1 or 2
-# brcal(x, y, print_level=1)
-
+# (For reduced output at each iteration used print_level=1 or 2)
 # To specify different starting values, use x0 and set start_at_MLEs=FALSE
-# brcal(x, y, x0=c(1,1), start_at_MLEs=FALSE)
+brcal(x, y, t=0.9, x0=c(1,1), start_at_MLEs=FALSE, print_level=0)
 
 # Adjust stopping criteria:
-# set max number of evaluations to 100 (maxeval)
-# brcal(x, y, maxeval = 100)
+# set max number of evaluations to 50 (maxeval) OR stop after 0.5 second (maxtime)
+brcal(x, y, maxeval = 50, maxtime = 0.5, print_level=0)
 
-# Stop after 2 minutes (maxtime)
-# brcal(x, y, maxtime = 120)
+# Stop outer optimization when parameters change by less than .001 & 
+# Setting optimization bounds
+brcal(x, y, lb=c(0.001, 0), ub=c(10, 10), xtol_rel_outer = .01, print_level=0)
 
-# Stop inner optimization when parameters change by less than .0001
-# brcal(x, y, xtol_rel_inner = .0001)
-
-# Stop outer optimization when parameters change by less than .0001
-# brcal(x, y, xtol_rel_outer = .0001)
-
-# Setting optimization bounds 
-# delta in (0.0001, 10), gamma in (0, 10)
-# brcal(x, y, lb=c(0.001, 0), ub=c(10, 10))
-
-# Specify different arguments in nloptr
-# brcal(x, y, opts=list(xtol_abs=0.00001,
-#                      local_opts=list(algorithm="NLOPT_LD_MMA")))
-
-# Specify different arguments in optim
-# brcal(x, y, optim_options=list(method = "L-BFGS-B", lower = c(0, -1), 
-#                               upper = c(10, 25), control=list(reltol=1e-10)))
-
-# To specify different prior model probability of calibration, use Pmc
-# Prior model prob of 0.7:
-# brcal(x, y, Pmc=0.7)
-
-# Prior model prob of 0.2
-# brcal(x, y, Pmc=0.2)
-
-# What if events are defined by text instead of 0 or 1?
-# y2 <- ifelse(y==0, "Loss", "Win")
-# brcal(x, y2, event="Win", print_level=0)  # same result
-
-# What if we're interested in the probability of loss instead of win?
-# x2 <- 1 - x
-# brcal(x2, y2, event="Loss", print_level=0)
-
+# Specify different options for nloptr & optim
+brcal(x, y, opts=list(xtol_abs=0.01,
+                     local_opts=list(algorithm="NLOPT_LD_MMA")), 
+                     optim_options=list(method = "L-BFGS-B", lower = c(0, -1), 
+                              upper = c(10, 25), control=list(factr=0.01)),
+                              print_level=0)
+                              
 # Push probabilities away from bounds by 0.000001
-# x3 <- c(runif(50, 0, 0.0001), runif(50, .9999, 1))
-# y3 <- rbinom(100, 1, 0.5)
-# brcal(x3, y3, epsilon=0.000001)
+x3 <- c(runif(25, 0, 0.0001), runif(25, .9999, 1))
+y3 <- rbinom(50, 1, 0.5)
+brcal(x3, y3, epsilon=0.000001, print_level=0)
+
+# See vignette for more examples
 
 }
 \references{

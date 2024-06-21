@@ -1,8 +1,6 @@
 ######################################################
-#  External Functions (Version 2)                    #
+#  External Functions                                #
 ######################################################
-
-#  adjust behavior at gamma = 0?
 
 #' Draw image plot of posterior model probability surface.
 #'
@@ -148,53 +146,47 @@
 #'   <https://github.com/dnychka/fieldsRPackage>.
 #'
 #' @examples
-#' # Simulate 100 predicted probabilities
-#' x <- runif(100)
-#' # Simulated 100 binary event outcomes using x
-#' y <- rbinom(100, 1, x)  # By construction, x is well calibrated.
+#' 
+#' # Simulate 50 predicted probabilities
+#' set.seed(49)
+#' x <- runif(50)
+#' # Simulated 50 binary event outcomes using x
+#' y <- rbinom(50, 1, x)  # By construction, x is well calibrated.
 #'
-#' # Default plot
-#' # plot_params(x, y)
-#'
-#' #' # Decrease grid density
+#' #' # Set grid density k=20
 #' plot_params(x, y, k=20)
 #'
 #' # Adjust bounds on delta and gamma
-#' # plot_params(x, y, dlim=c(0.0001, 3), glim=c(0.1,2))
+#' plot_params(x, y, k=20, dlim=c(0.001, 3), glim=c(0.01,2))
 #'
-#' # Increase grid density via k
-#' # plot_params(x, y, k=200, dlim=c(0.0001, 3), glim=c(0.1,2))
-#'
-#' # Save z matrix for faster plotting
-#' # zmat_list <- plot_params(x, y, k=200, dlim=c(0.0001, 3), glim=c(0.1,2), return_z=TRUE)
+#' # Increase grid density via k & save z matrix for faster plotting
+#' zmat_list <- plot_params(x, y, k=100, dlim=c(0.001, 3), glim=c(0.01,2), return_z=TRUE)
 #'
 #' # Reuse z matrix
-#' # plot_params(z=zmat_list$z, k=200, dlim=c(0.0001, 3), glim=c(0.1,2))
+#' plot_params(z=zmat_list$z, k=100, dlim=c(0.001, 3), glim=c(0.01,2))
 #'
 #' # Add contours at t=0.95, 0.9, and 0.8
-#' # plot_params(z=zmat_list$z, k=200, dlim=c(0.0001, 3), glim=c(0.1,2), t_levels=c(0.95, 0.9, 0.8))
+#' plot_params(z=zmat_list$z, k=100, dlim=c(0.001, 3), glim=c(0.01,2), t_levels=c(0.95, 0.9, 0.8))
 #'
 #' # Add points for 95% boldness-recalibration parameters
-#' # br95 <- brcal(x, y, t=0.95)
-#' # plot_params(z=zmat_list$z, k=200,dlim=c(0.0001, 3), glim=c(0.1,2), t_levels=c(0.95, 0.9, 0.8))
-#' # points(br95$BR_params[1], br95$BR_params[2], pch=19, col="white")
+#' br95 <- brcal(x, y, t=0.95, print_level=0)
+#' plot_params(z=zmat_list$z, k=100, dlim=c(0.001, 3), glim=c(0.01,2), t_levels=c(0.95, 0.9, 0.8))
+#' points(br95$BR_params[1], br95$BR_params[2], pch=19, col="white")
 #'
 #' # Change color and size of contours
-#' # plot_params(z=zmat_list$z, k=200, dlim=c(0.5, 1.5), glim=c(0.25, 2.75), t_levels = c(0.99, 0.1), 
-#' # contour_options=list(col="orchid", lwd=2))
+#' plot_params(z=zmat_list$z, k=100, dlim=c(0.001, 3), glim=c(0.01,2), t_levels = c(0.99, 0.1), 
+#' contour_options=list(col="orchid", lwd=2))
 #' 
 #' # Plot contours only
-#' # plot_params(z=zmat_list$z, k=200, dlim=c(0.0001, 3), glim=c(0.1,2), t_levels=c(0.95, 0.9, 0.8),
-#' # contours_only=TRUE)
+#' plot_params(z=zmat_list$z, k=100, dlim=c(0.001, 3), glim=c(0.01,2), t_levels=c(0.95, 0.9, 0.8),
+#' contours_only=TRUE)
 #'
 #' # Pass arguments to image.plot()
-#' # plot_params(z=zmat_list$z, k=200, dlim=c(0.5, 1.5), glim=c(0.25, 2.75),
-#' # imgplt_options=list(horizontal = TRUE, nlevel=10, legend.lab="Posterior Model Prob"))
+#' plot_params(z=zmat_list$z, k=100, dlim=c(0.001, 3), glim=c(0.01,2),
+#'             imgplt_options=list(horizontal = TRUE, nlevel=10, 
+#'             legend.lab="Posterior Model Prob"))
 #'
-#' # Pass arguments to optim()
-#' # plot_params(hockey$x, hockey$y, k=50, dlim=c(0.5, 1.5), glim=c(0.25, 2.75), 
-#' # optim_options=list(method="L-BFGS-B", lower=c(0.0001, 10), upper=c(0.0001, 10), 
-#' # control=list(maxit=200)))
+#' # See vignette for more examples
 #' 
 plot_params <- function(x=NULL, y=NULL, z=NULL, t_levels = NULL,
                         Pmc = 0.5, event=1,
@@ -448,46 +440,44 @@ plot_params <- function(x=NULL, y=NULL, z=NULL, t_levels = NULL,
 #'   Springer-Verlag New York.
 #'
 #' @examples
-#' #' # Simulate 100 predicted probabilities
+#' 
+#' set.seed(28)
+#' # Simulate 100 predicted probabilities
 #' x <- runif(100)
 #' # Simulated 100 binary event outcomes using x
 #' y <- rbinom(100, 1, x)  # By construction, x is well calibrated.
 #'
-#' # Lineplot show change in probabilities from original to MLE-recalibration
-#' lineplot(x, y)
-#'
-#' # Specifying Levels of Boldness-Recalibration via t_levels
-#' # lineplot(x, y, t_levels=c(0.98, 0.95))
-#'
-#' # Returning a list with dataframe used to construct plot with return_df=TRUE
-#' # lp1 <- lineplot(x, y, t_levels=c(0.98, 0.95), return_df=TRUE)
-#' # lp1$plot
+#' # Lineplot show change in probabilities from original to MLE-recalibration to 
+#' # specified Levels of Boldness-Recalibration via t_levels
+#' # Return a list with dataframe used to construct plot with return_df=TRUE
+#' lp1 <- lineplot(x, y, t_levels=c(0.98, 0.95), return_df=TRUE)
+#' lp1$plot
 #'
 #' # Reusing the previous dataframe to save calculation time
-#' # lineplot(df=lp1$df)
+#' lineplot(df=lp1$df)
 #'
 #' # Adjust geom_point cosmetics via ggpoint
 #' # Increase point size and change to open circles
-#' # lineplot(df=lp1$df, ggpoint_options=list(size=3, shape=4))
+#' lineplot(df=lp1$df, ggpoint_options=list(size=3, shape=4))
 #'
 #' # Adjust geom_line cosmetics via ggline
 #' # Increase line size and change transparencys
-#' # lineplot(df=lp1$df, ggline_options=list(linewidth=2, alpha=0.1))
+#' lineplot(df=lp1$df, ggline_options=list(linewidth=2, alpha=0.1))
 #'
 #' # Thinning down to 75 randomly selected observation
-#' # lineplot(df=lp1$df, thin_to=75)
+#' lineplot(df=lp1$df, thin_to=75)
 #'
 #' # Thinning down to 53% of the data
-#' # lineplot(df=lp1$df, thin_percent=0.53)
+#' lineplot(df=lp1$df, thin_percent=0.53)
 #'
 #' # Thinning down to every 3rd observation
-#' # lineplot(df=lp1$df, thin_by=3)
+#' lineplot(df=lp1$df, thin_by=3)
 #'
 #' # Setting a different seed for thinning
-#' # lineplot(df=lp1$df, thin_percent=0.53, seed=47)
+#' lineplot(df=lp1$df, thin_percent=0.53, seed=47)
 #'
 #' # Setting NO seed for thinning (plot will be different every time)
-#' # lineplot(df=lp1$df, thin_to=75, seed=NULL)
+#' lineplot(df=lp1$df, thin_to=75, seed=NULL)
 #' 
 lineplot <- function(x=NULL, y=NULL, t_levels=NULL, df=NULL,
                      Pmc = 0.5, event=1, return_df=FALSE, 
