@@ -9,7 +9,12 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+
 ```{r, include = FALSE}
+# Save original options and par to reset at the end
+original_options <- options()
+original_par <- par()
+
 # save the built-in output hook
 hook_output <- knitr::knit_hooks$get("output")
 
@@ -735,6 +740,12 @@ lineplot(df=lp$df, thin_to=500, seed=NULL)
 ### Passing Additional Arguments to `optim` and `nloptr`
 
 Similar to the `plot_params` function, this function allows users to specify additional arguments to `optim` via `optim_options`.  Additionally, we also allow users to pass arguments to `nloptr` via `nloptr_options` in a similar fashion. In this case, the list passed via `nloptr_options` is passed to `opts` in the `brcal` function.  For more information on how to structure this list, see [Passing Additional / Different Arguments to `nloptr()`](#nloptr_opts). 
+
+```{r include=FALSE}
+# Reset user options and par
+options(original_options)
+par(original_par)
+```
 
 
 # References
