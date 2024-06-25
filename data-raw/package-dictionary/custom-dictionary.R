@@ -12,7 +12,7 @@ custom_user_spelling_dictionary = function(custom_words, pkg) {
   # For more details, see: ?"aspell-utils"
   utils::aspell_write_personal_dictionary_file(
     custom_words,
-    out = file.path(".aspell", "words.pws") 
+    out = file.path(".aspell", "words.pws")
   )
 
   invisible(custom_words)
