@@ -13,7 +13,7 @@ vignette: >
 ```{r, include = FALSE}
 # Save original options and par to reset at the end
 original_options <- options()
-original_par <- par()
+original_par <- par(no.readonly=TRUE)
 
 # save the built-in output hook
 hook_output <- knitr::knit_hooks$get("output")
