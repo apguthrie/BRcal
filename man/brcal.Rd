@@ -168,13 +168,10 @@ y <- rbinom(50, 1, x)  # By construction, x is well calibrated.
 # To specify different starting values, use x0 and set start_at_MLEs=FALSE
 brcal(x, y, t=0.9, x0=c(1,1), start_at_MLEs=FALSE, print_level=0)
 
-# Adjust stopping criteria:
-# set max number of evaluations to 50 (maxeval) OR stop after 0.5 second (maxtime)
-brcal(x, y, maxeval = 50, maxtime = 0.5, print_level=0)
-
-# Stop outer optimization when parameters change by less than .001 & 
-# Setting optimization bounds
-brcal(x, y, lb=c(0.001, 0), ub=c(10, 10), xtol_rel_outer = .01, print_level=0)
+# Adjust stopping criteria set max number of evaluations to 50 (maxeval) OR 
+# stop after 0.5 second (maxtime)
+# and set optimization bounds using lb and ub
+brcal(x, y, maxeval = 50, maxtime = 0.5, lb=c(0.001, 0), ub=c(10, 10), print_level=0)
 
 # Specify different options for nloptr & optim
 brcal(x, y, opts=list(xtol_abs=0.01,
@@ -183,10 +180,11 @@ brcal(x, y, opts=list(xtol_abs=0.01,
                               upper = c(10, 25), control=list(factr=0.01)),
                               print_level=0)
                               
-# Push probabilities away from bounds by 0.000001
+# Push probabilities away from bounds by 0.000001 and
+# Stop outer optimization when parameters change by less than .001
 x3 <- c(runif(25, 0, 0.0001), runif(25, .9999, 1))
 y3 <- rbinom(50, 1, 0.5)
-brcal(x3, y3, epsilon=0.000001, print_level=0)
+brcal(x3, y3, epsilon=0.000001, xtol_rel_outer = .01, print_level=0)
 
 # See vignette for more examples
 
