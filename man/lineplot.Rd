@@ -86,6 +86,8 @@ the original size of (x,y).}
 \item{thin_by}{When non-null, the observations in (x,y) are thinned by
 selecting every \code{thin_by} observation.}
 
+\item{thin_percent}{This argument is deprecated, use \code{thin_prop} instead.}
+
 \item{seed}{Seed for random thinning.  Set to NULL for no seed.}
 
 \item{optim_options}{List of additional arguments to be passed to \link[stats]{optim}().}
