@@ -1,6 +1,6 @@
 Package: BRcal
 Title: Boldness-Recalibration of Binary Events
-Version: 0.0.4
+Version: 1.0.0
 Authors@R: 
     c(person("Adeline P.", "Guthrie", , "apguthrie47@gmail.com", role = c("aut", "cre")),
       person("Christopher T.", "Franck", , "chfranck@vt.edu", role = c("aut")))
@@ -15,7 +15,8 @@ LazyData: true
 Imports: 
     nloptr,
     fields,
-    ggplot2
+    ggplot2,
+    lifecycle
 Suggests: 
     knitr,
     rmarkdown,
