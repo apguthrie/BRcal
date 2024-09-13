@@ -1,6 +1,6 @@
 ---
 title: "Using `BRcal` to Assess and Embolden Probability Forecasts"
-subtitle: "Last Updated June 16, 2024"
+subtitle: "Last Updated September 13, 2024"
 output: rmarkdown::html_vignette
 bibliography: "../inst/REFERENCES.bib"
 vignette: >
@@ -57,7 +57,7 @@ The second way is to install the package from the most recent tarball available 
 
 ```{r, eval=FALSE}
 # Install via tarball
-install.packages("path_to_file\BRcal_0.0.0.9000.tar.gz", repos = NULL, type="source")
+install.packages("path_to_file\BRcal_1.0.0.tar.gz", repos = NULL, type="source")
 ```
 
 The third and simplest way to install the package is directly from CRAN (upon acceptance) via the usual `install.packages`.
@@ -679,7 +679,22 @@ nrow(lp$df)
 Now with this dataframe saved, we can pass it back via `df` without needing to specify `x` or `y` and we get the same plot as before, but much more quickly. This functionality makes it easier to make cosmetic adjustments to your plot without needing to wait for computations under the hood.
 
 ```{r, fig.width=6, fig.height=4, fig.align='center'}
-lineplot(df=lp$df)
+lineplot(df=lp$df, t_levels=c(0.95, 0.9, 0.8))
+```
+
+Users can also choose to omit specific boldness-recalibration sets even if they are included in `df`.  In the code below, we omit the 90\% and 80\% boldness-recalibrated sets by only setting `t_levels=0.95`.
+
+```{r, fig.width=6, fig.height=4, fig.align='center'}
+lineplot(df=lp$df, t_levels=c(0.95))
+```
+
+
+### Omitting the Original or MLE-Recalibrated sets from plotting via `plot_original` and `plot_MLE`
+
+To omit either the original set or the MLE-recalibrated set from plotting, users can specify `plot_original=FALSE` or `plot_MLE=FALSE`, respectively. Below is an example of omitting the original set by setting `plot_original=FALSE` while plotting the MLE-recalibrated and  boldness-recalibration sets returned in `df` above. 
+
+```{r, fig.width=6, fig.height=4, fig.align='center'}
+lineplot(df=lp$df, t_levels=c(0.95, 0.9, 0.8), plot_original=FALSE)
 ```
 
 
@@ -688,11 +703,11 @@ lineplot(df=lp$df)
 A key difference in how this plot is created compared to `plot_params()` is that it uses `ggplot2` instead of base `R` graphics.  Users of `lineplot()` have quite a few options for making cosmetic changes to these plots. The first set of options we'll discuss are those related to the points and lines already present on the lineplot.  To modify the appearance of the points, users can pass options to `geom_point()` via a list to `ggpoint_options`.  For example, the code below shows how to change the shape and size of the points.    
 
 ```{r, fig.width=6, fig.height=4, fig.align='center'}
-lineplot(df=lp$df, ggpoint_options=list(size=3, shape=1))
+lineplot(df=lp$df, t_levels=c(0.95, 0.9, 0.8), ggpoint_options=list(size=3, shape=1))
 ```
 
 ```{r, fig.width=6, fig.height=4, fig.align='center'}
-lineplot(df=lp$df, ggline_options=list(linewidth=2, alpha=0.1))
+lineplot(df=lp$df, t_levels=c(0.95, 0.9, 0.8), ggline_options=list(linewidth=2, alpha=0.1))
 ```
 
 An important thing to note about these two options is that their purpose is solely for adjustments that are not part of the `aes` statement in `geom_point()` or `geom_line()`.  Should users specify `aes` options via `ggpoint_options` or `ggline_options`, this will cause `ggplot()` to create a new layer of points or lines on top of those following the default settings we use under the hood.
@@ -700,7 +715,8 @@ An important thing to note about these two options is that their purpose is sole
 Another option for making cosmetic adjustments is to use the convention of `ggplot2` and add additional `ggplot2` functions to the returned lineplot using `+`.  For example, the code below shows how we could add the `scale_color_manual()` function to our plot to change the colors of the points and lines.  Notice that `ggplot2` throws a warning about another color scale already being present.  This is because under the hood we have already specified the default color scheme to be red and blue. A similar warning may appear in any case where a user adds a function that is already present in our original construction of the lineplot.  
 
 ```{r, fig.width=6, fig.height=4, fig.align='center'}
-lineplot(df=lp$df) + scale_color_manual(values = c("orchid", "darkgreen"))
+lineplot(df=lp$df, t_levels=c(0.95, 0.9, 0.8)) + 
+  scale_color_manual(values = c("orchid", "darkgreen"))
 ```
 
 
@@ -710,30 +726,32 @@ lineplot(df=lp$df) + scale_color_manual(values = c("orchid", "darkgreen"))
 Another strategy to save time when plotting is to reduce, or "thin", the amount of data plotted.  When sample sizes are large, the plot can become overcrowded and slow to plot.  We provide three options for thinning: 
 
 * `thin_to`: the observations in (x,y) are randomly sampled without replacement to form a set of size `thin_to` 
-* `thin_percent`: the observations in (x,y) are randomly sampled without replacement to form a set that is `thin_percent` * 100% of the original size of (x,y)
+* `thin_prop`: the observations in (x,y) are randomly sampled without replacement to form a set that is `thin_prop` * 100% of the original size of (x,y)
 * `thin_by`: the observations in (x,y) are thinned by selecting every `thin_by` observation  
 
-By default, all three of these settings are set to `NULL`, meaning no thinning is performed.  Users can only specify one thinning strategy at a time. Care should be taken in selecting a thinning approach based on the nature of your data and problem.  Note that MLE recalibration and boldness-recalibration will be done using the full set, so the posterior model probabilities are those of the full set.
+By default, all three of these settings are set to `NULL`, meaning no thinning is performed.  Users can only specify one thinning strategy at a time. Care should be taken in selecting a thinning approach based on the nature of your data and problem.  Note that MLE recalibration and boldness-recalibration will be done using the full set, so the posterior model probabilities are those of the full set.  
+
+Also note that if a thinning strategy is used with `return_df=TRUE`, the returned data frame will **only contain the reduced set** (i.e. the data *after* thinning).  
 
 Below is an example of each of these strategies.  Notice that each plot looks a little different since the observations selected are a little different under each strategy. 
 
 ```{r, fig.width=10, fig.height=4, fig.align='center'}
-lp1 <- lineplot(df=lp$df, thin_to=500)
-lp2 <- lineplot(df=lp$df, thin_percent=0.5)
-lp3 <- lineplot(df=lp$df, thin_by=2)
+lp1 <- lineplot(df=lp$df, t_levels=c(0.95, 0.9, 0.8), thin_to=500)
+lp2 <- lineplot(df=lp$df, t_levels=c(0.95, 0.9, 0.8), thin_prop=0.5)
+lp3 <- lineplot(df=lp$df, t_levels=c(0.95, 0.9, 0.8), thin_by=2)
 gridExtra::grid.arrange(lp1, lp2, lp3, ncol=3)
 ```
 
 By default, there is a seed set so that the observations selected stay the same through successive calls using the same thinning strategy.  To change the seed, users can specify their own via `seed`.  Notice in the example below that we're using the same strategy as panel one in the above set of plots but the points are slightly different.
 
 ```{r, fig.width=6, fig.height=4, fig.align='center'}
-lineplot(df=lp$df, thin_to=500, seed = 47)
+lineplot(df=lp$df, t_levels=c(0.95, 0.9, 0.8), thin_to=500, seed = 47)
 ```
 
 Alternatively, if users would prefer no seed be set, they can set `seed=NULL`.  In the plot below, we again have a different set of points and lines.  In fact, each compilation of this vignette will have a different set.
 
 ```{r, fig.width=6, fig.height=4, fig.align='center'}
-lineplot(df=lp$df, thin_to=500, seed=NULL)
+lineplot(df=lp$df, t_levels=c(0.95, 0.9, 0.8), thin_to=500, seed=NULL)
 ```
 
 
