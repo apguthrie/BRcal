@@ -551,8 +551,8 @@ lineplot <- function(x=NULL, y=NULL, t_levels=NULL, plot_original=TRUE,
     # check that additional options are in the form of a list
     if(!is.null(optim_options) & !is.list(optim_options)) stop("optim_options must be a list")
     if(!is.null(nloptr_options) & !is.list(nloptr_options)) stop("nloptr_options must be a list")
-  } else{
-    if(any(!(paste0(round(t_levels*100,0), "% B-R") %in% unique(df$set)))) warning("Not all t_levels found in df, will only plot those that are in df.")
+  } else{  # CHANGE
+    if(!is.null(t_levels) & any(!(paste0(round(t_levels*100,0), "% B-R") %in% unique(df$set)))) warning("Not all t_levels found in df, will only plot those that are in df.")
   }
   
   
@@ -571,7 +571,7 @@ lineplot <- function(x=NULL, y=NULL, t_levels=NULL, plot_original=TRUE,
   
   # Check if user using thin_percent instead of thin_prop
   if (is_present(thin_percent)) {
-    lifecycle::deprecate_warn("0.1.0", "lineplot(thin_percent)", "lineplot(thin_prop)")
+    lifecycle::deprecate_warn("1.0.0", "lineplot(thin_percent)", "lineplot(thin_prop)")
     thin_prop <- thin_percent
   }
   
@@ -766,6 +766,7 @@ get_zmat <- function(x, y, Pmc=0.5, len.out = 100, lower = c(0.0001,-2), upper =
   grd.BIC_2 <- c()
   optim.BIC_2 <- c()
   warn <- NULL
+  
   # Loop over grid of delta/gamma vals
   for(i in 1:nrow(grd)){
     
@@ -783,8 +784,6 @@ get_zmat <- function(x, y, Pmc=0.5, len.out = 100, lower = c(0.0001,-2), upper =
       dg_mle <- d_mle / (grd[i,1]^(g_mle / grd[i,2]))
       gg_mle <- g_mle / grd[i,2]
       
-      print(c(grd[i,1], grd[i,2], dg_mle, gg_mle))
-      
       # Get BIC for calibrated model
       BIC_1[i] <- (-2)*llo_lik(params=c(1,1), x=xg, y=y, log=TRUE)
       
@@ -793,9 +792,6 @@ get_zmat <- function(x, y, Pmc=0.5, len.out = 100, lower = c(0.0001,-2), upper =
       grd.BIC_2[i] <- 2*log(n) - 2*grd.loglik[i]
     }
   }
-  
-  # print(BIC_1)
-  # print(grd.BIC_2)
   
   # Get Bayes Factor and posterior model prob of calibration
   grd.BF <- exp(-(1/2) * (grd.BIC_2 - BIC_1)) 
