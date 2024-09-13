@@ -8,6 +8,8 @@ lineplot(
   x = NULL,
   y = NULL,
   t_levels = NULL,
+  plot_original = TRUE,
+  plot_MLE = TRUE,
   df = NULL,
   Pmc = 0.5,
   event = 1,
@@ -19,8 +21,9 @@ lineplot(
   ylim = c(0, 1),
   breaks = seq(0, 1, by = 0.2),
   thin_to = NULL,
-  thin_percent = NULL,
+  thin_prop = NULL,
   thin_by = NULL,
+  thin_percent = deprecated(),
   seed = 0,
   optim_options = NULL,
   nloptr_options = NULL,
@@ -39,6 +42,12 @@ By default, this function expects a vector of 0s (non-events) and 1s
 
 \item{t_levels}{Vector of desired level(s) of calibration at which to plot
 contours.}
+
+\item{plot_original}{Logical.  If \code{TRUE}, the original probabilities passed
+in \code{x} are plotted.}
+
+\item{plot_MLE}{Logical.  If \code{TRUE}, the MLE-recalibrated probabilities are
+plotted.}
 
 \item{df}{Dataframe returned by previous call to lineplot() specially
 formatted for use in this function. Only used for faster plotting when
@@ -70,8 +79,8 @@ passed to \code{scale_y_continous()}.}
 \item{thin_to}{When non-null, the observations in (x,y) are randomly sampled
 without replacement to form a set of size \code{thin_to}.}
 
-\item{thin_percent}{When non-null, the observations in (x,y) are randomly
-sampled without replacement to form a set that is \code{thin_percent} * 100\% of
+\item{thin_prop}{When non-null, the observations in (x,y) are randomly
+sampled without replacement to form a set that is \code{thin_prop} * 100\% of
 the original size of (x,y).}
 
 \item{thin_by}{When non-null, the observations in (x,y) are thinned by
@@ -153,7 +162,7 @@ boldness-recalibration.
 Another strategy to save time when plotting is to thin the amount of data
 plotted.  When sample sizes are large, the plot can become overcrowded and
 slow to plot.  We provide three options for thinning: \code{thin_to},
-\code{thin_percent}, and \code{thin_by}.  By default, all three of these settings are
+\code{thin_prop}, and \code{thin_by}.  By default, all three of these settings are
 set to \code{NULL}, meaning no thinning is performed.  Users can only specify
 one thinning strategy at a time. Care should be taken in selecting a
 thinning approach based on the nature of your data and problem.  Note that
@@ -200,13 +209,13 @@ lineplot(df=lp1$df, ggline_options=list(linewidth=2, alpha=0.1))
 lineplot(df=lp1$df, thin_to=75)
 
 # Thinning down to 53\% of the data
-lineplot(df=lp1$df, thin_percent=0.53)
+lineplot(df=lp1$df, thin_prop=0.53)
 
 # Thinning down to every 3rd observation
 lineplot(df=lp1$df, thin_by=3)
 
 # Setting a different seed for thinning
-lineplot(df=lp1$df, thin_percent=0.53, seed=47)
+lineplot(df=lp1$df, thin_prop=0.53, seed=47)
 
 # Setting NO seed for thinning (plot will be different every time)
 lineplot(df=lp1$df, thin_to=75, seed=NULL)

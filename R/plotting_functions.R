@@ -80,7 +80,7 @@
 #'   misleading results. Under large sample sizes where thinning is used, note
 #'   this is only an approximate visual of the posterior model probability. 
 #'
-#' @section Grid cells that show up white / round off warning message:
+#' @section Grid cells that show up white / inaccuracies warning message:
 #'
 #'   In some cases, grid cells in the plot may show up as white instead of one
 #'   of the colors from red to blue shown on the legend.  A white grid cell
@@ -90,11 +90,16 @@
 #'   recalculating z) or (2) the values of the parameters at these locations
 #'   cause the values in `x` to be LLO-adjusted such that they virtually equal 0
 #'   or 1.  This invokes the use of `epsilon` to push them away from these
-#'   boundaries for stability. However, in these extreme cases this can cause
-#'   inaccuracies in this plot. For this reason, we either throw the warning
-#'   message: "Roundoff may cause inaccuracies in upper region of plot" or allow
-#'   the cell to be plotted as white to notify the user and avoid plotting
-#'   artifacts.
+#'   boundaries for stability.   This typically happens when |gamma| is very large.
+#'   However, in these extreme cases this can cause inaccuracies in this plot. 
+#'   For this reason, we either throw the warning message: "Probs too close to 0 
+#'   or 1 under very large |gamma|" and allow the cell to be plotted as white 
+#'   to notify the user and avoid plotting artifacts.  
+#'   
+#'   Additionally, when gamma is very close to 0, we cannot directly calculate 
+#'   the MLEs for the grid shifted prediction and thus must use `optim()`
+#'   to approximate them.  In this case, we throw a `warning` to notify users there
+#'   may be inaccuracies. 
 #'
 #' @inheritParams bayes_ms
 #' @param z Matrix returned by previous call to `plot_params()` containing
@@ -384,7 +389,7 @@ plot_params <- function(x=NULL, y=NULL, z=NULL, t_levels = NULL,
 #'   Another strategy to save time when plotting is to thin the amount of data
 #'   plotted.  When sample sizes are large, the plot can become overcrowded and
 #'   slow to plot.  We provide three options for thinning: `thin_to`,
-#'   `thin_percent`, and `thin_by`.  By default, all three of these settings are
+#'   `thin_prop`, and `thin_by`.  By default, all three of these settings are
 #'   set to `NULL`, meaning no thinning is performed.  Users can only specify
 #'   one thinning strategy at a time. Care should be taken in selecting a
 #'   thinning approach based on the nature of your data and problem.  Note that
@@ -401,6 +406,10 @@ plot_params <- function(x=NULL, y=NULL, z=NULL, t_levels = NULL,
 #'
 #'
 #' @inheritParams plot_params
+#' @param plot_original Logical.  If `TRUE`, the original probabilities passed 
+#'   in `x` are plotted.
+#' @param plot_MLE Logical.  If `TRUE`, the MLE-recalibrated probabilities are 
+#'   plotted.
 #' @param df Dataframe returned by previous call to lineplot() specially
 #'   formatted for use in this function. Only used for faster plotting when
 #'   making minor cosmetic changes to a previous call.
@@ -412,9 +421,10 @@ plot_params <- function(x=NULL, y=NULL, z=NULL, t_levels = NULL,
 #'   passed to `scale_y_continous()`.
 #' @param thin_to When non-null, the observations in (x,y) are randomly sampled
 #'   without replacement to form a set of size `thin_to`.
-#' @param thin_percent When non-null, the observations in (x,y) are randomly
-#'   sampled without replacement to form a set that is `thin_percent` * 100% of
+#' @param thin_prop When non-null, the observations in (x,y) are randomly
+#'   sampled without replacement to form a set that is `thin_prop` * 100% of
 #'   the original size of (x,y).
+#' @param thin_percent This argument is deprecated, use `thin_prop` instead.
 #' @param thin_by When non-null, the observations in (x,y) are thinned by
 #'   selecting every `thin_by` observation.
 #' @param seed Seed for random thinning.  Set to NULL for no seed.
@@ -432,6 +442,8 @@ plot_params <- function(x=NULL, y=NULL, z=NULL, t_levels = NULL,
 #' @export
 #'
 #' @import ggplot2
+#' @importFrom lifecycle is_present
+#' @importFrom lifecycle deprecated
 #'
 #' @references Guthrie, A. P., and Franck, C. T. (2024) Boldness-Recalibration
 #'   for Binary Event Predictions, \emph{The American Statistician} 1-17.
@@ -468,26 +480,28 @@ plot_params <- function(x=NULL, y=NULL, z=NULL, t_levels = NULL,
 #' lineplot(df=lp1$df, thin_to=75)
 #'
 #' # Thinning down to 53% of the data
-#' lineplot(df=lp1$df, thin_percent=0.53)
+#' lineplot(df=lp1$df, thin_prop=0.53)
 #'
 #' # Thinning down to every 3rd observation
 #' lineplot(df=lp1$df, thin_by=3)
 #'
 #' # Setting a different seed for thinning
-#' lineplot(df=lp1$df, thin_percent=0.53, seed=47)
+#' lineplot(df=lp1$df, thin_prop=0.53, seed=47)
 #'
 #' # Setting NO seed for thinning (plot will be different every time)
 #' lineplot(df=lp1$df, thin_to=75, seed=NULL)
 #' 
-lineplot <- function(x=NULL, y=NULL, t_levels=NULL, df=NULL,
+lineplot <- function(x=NULL, y=NULL, t_levels=NULL, plot_original=TRUE,
+                     plot_MLE=TRUE, df=NULL,
                      Pmc = 0.5, event=1, return_df=FALSE, 
                      epsilon=.Machine$double.eps,
                      title="Line Plot", ylab="Probability",
                      xlab = "Posterior Model Probability",
                      ylim=c(0,1), breaks=seq(0,1,by=0.2), 
                      thin_to=NULL,
-                     thin_percent=NULL, 
+                     thin_prop=NULL, 
                      thin_by=NULL,
+                     thin_percent=deprecated(),
                      seed=0,
                      optim_options=NULL,
                      nloptr_options=NULL,
@@ -503,6 +517,14 @@ lineplot <- function(x=NULL, y=NULL, t_levels=NULL, df=NULL,
   # check either x and y or df are specified
   if(is.null(df) & (is.null(x) | is.null(y))) stop("must specify either x and y or df")
   
+  # check original and MLE toggles are logical
+  if(!is.logical(plot_original) & !(plot_original %in% c(0,1))){
+    stop("argument plot_original must be logical")
+  }
+  if(!is.logical(plot_MLE) & !(plot_MLE %in% c(0,1))){
+    stop("argument plot_MLE must be logical")
+  }
+  
   if(is.null(df)){
     
     # check x is vector, values in [0,1]
@@ -517,6 +539,9 @@ lineplot <- function(x=NULL, y=NULL, t_levels=NULL, df=NULL,
     # check t is valid calibration prob
     if(!is.null(t_levels)) t_levels <- check_input_probs(t_levels, name="t_levels")
     
+    # check # sets specified
+    if(plot_original + plot_MLE + length(t_levels) < 1) stop("Must specify at least one set to plot via plot_original, plot_MLE, and/or t_levels")
+    
     # check Pmc is valid prior model prob
     Pmc <- check_input_probs(Pmc, name="Pmc")
     
@@ -526,6 +551,15 @@ lineplot <- function(x=NULL, y=NULL, t_levels=NULL, df=NULL,
     # check that additional options are in the form of a list
     if(!is.null(optim_options) & !is.list(optim_options)) stop("optim_options must be a list")
     if(!is.null(nloptr_options) & !is.list(nloptr_options)) stop("nloptr_options must be a list")
+  } else{
+    if(any(!(paste0(round(t_levels*100,0), "% B-R") %in% unique(df$set)))) warning("Not all t_levels found in df, will only plot those that are in df.")
+  }
+  
+  
+  
+  # check return_df is logical
+  if(!is.logical(return_df) & !(return_df %in% c(0,1))){
+    stop("argument return_df must be logical")
   }
   
   # check thin_to
@@ -535,8 +569,14 @@ lineplot <- function(x=NULL, y=NULL, t_levels=NULL, df=NULL,
     if(is.infinite(thin_to)) stop("thin_to must be finite")
   }
   
-  # check thin_percent
-  if(!is.null(thin_percent)) thin_percent <- check_value01(thin_percent, name="thin_percent")
+  # Check if user using thin_percent instead of thin_prop
+  if (is_present(thin_percent)) {
+    lifecycle::deprecate_warn("0.1.0", "lineplot(thin_percent)", "lineplot(thin_prop)")
+    thin_prop <- thin_percent
+  }
+  
+  # check thin_prop
+  if(!is.null(thin_prop)) thin_prop <- check_value01(thin_prop, name="thin_prop")
   
   # check thin_by
   if(!is.null(thin_by)){
@@ -546,7 +586,7 @@ lineplot <- function(x=NULL, y=NULL, t_levels=NULL, df=NULL,
   }
   
   # check only one thinning strategy used
-  if((!is.null(thin_to) + !is.null(thin_percent) + !is.null(thin_by)) > 1) stop("only specify one thinning strategy")
+  if((!is.null(thin_to) + !is.null(thin_prop) + !is.null(thin_by)) > 1) stop("only specify one thinning strategy")
   
   # Check seed
   if(!is.null(seed)){
@@ -570,9 +610,9 @@ lineplot <- function(x=NULL, y=NULL, t_levels=NULL, df=NULL,
     if(!is.null(thin_to)){
       if(!is.null(seed)) set.seed(seed)
       rows <- sample(1:length(x), size=thin_to)
-    } else if (!is.null(thin_percent)){
+    } else if (!is.null(thin_prop)){
       if(!is.null(seed)) set.seed(seed)
-      rows <- sample(1:length(x), size=length(x)*thin_percent)
+      rows <- sample(1:length(x), size=length(x)*thin_prop)
     } else if (!is.null(thin_by)){
       rows <- seq(1,length(x),thin_by)
     }  else{
@@ -614,6 +654,7 @@ lineplot <- function(x=NULL, y=NULL, t_levels=NULL, df=NULL,
     temp$label <- paste0("MLE Recal. \n(",  round(bt_mle$posterior_model_prob, 5), ")")
     df <- rbind(df, temp)
     
+    
     # Boldness-recalibrate at given levels
     # loop over t values
     if(!is.null(t_levels)){
@@ -640,28 +681,37 @@ lineplot <- function(x=NULL, y=NULL, t_levels=NULL, df=NULL,
     if(!is.null(thin_to)){
       if(!is.null(seed)) set.seed(seed)
       rows <- sample(1:n, size=thin_to)
-    } else if (!is.null(thin_percent)){
+    } else if (!is.null(thin_prop)){
       if(!is.null(seed)) set.seed(seed)
-      rows <- sample(1:n, size=n*thin_percent)
+      rows <- sample(1:n, size=n*thin_prop)
     } else if (!is.null(thin_by)){
       rows <- seq(1,n,thin_by)
-    }  else{
+    } else{
       rows <- 1:n
     }
     
-    # extract rows to plot 
+    # Extract rows to plot 
     df <- df[df$id %in% rows,]
   }
+  
+  
   
   # Make sure outcome and label are factors
   df$outcome <- factor(df$outcome)
   df$set <- factor(df$set)
   df$label <- factor(df$label, levels=c(unique(df$label)))
   
+  # Extract sets to plot
+  cols <- c()
+  if(plot_original){cols <- c(cols, "Original")}
+  if(plot_MLE){cols <- c(cols, "MLE Recal")}
+  if(!is.null(t_levels)){for(i in 1:length(t_levels)){cols <- c(cols,paste0(round(t_levels[i]*100,0), "% B-R"))}}
+  df_plot <- df[which(df$set %in% cols),] 
+  
   # Create lineplot
-  lines <- ggplot2::ggplot(data = df, mapping = aes(x = .data[["label"]], y = .data[["probs"]])) +
-    do.call(geom_point, c(list(aes(color = .data[["outcome"]])), ggpoint_options)) +
-    do.call(geom_line, c(list(aes(group = .data[["id"]], color = .data[["outcome"]])), 
+  lines <- ggplot2::ggplot(data = df_plot, mapping = aes(x = .data[["label"]], y = .data[["probs"]])) +
+    do.call(geom_point, c(list(aes(color = as.factor(.data[["outcome"]]))), ggpoint_options)) +
+    do.call(geom_line, c(list(aes(group = .data[["id"]], color = as.factor(.data[["outcome"]]))), 
                          ggline_options)) +
     labs(x = xlab,
          y = ylab) +
@@ -704,7 +754,10 @@ get_zmat <- function(x, y, Pmc=0.5, len.out = 100, lower = c(0.0001,-2), upper =
   n <- length(x0)
   
   # MLE recalibrate
-  xM <- do.call(mle_recal_internal, c(list(x=x0, y=y, optim_details = FALSE, probs_only = TRUE), optim_options))
+  xM <- do.call(mle_recal_internal, c(list(x=x0, y=y, optim_details = FALSE, probs_only=FALSE), optim_options))
+  d_mle <- xM$MLEs[1]
+  g_mle <- xM$MLEs[2]
+  xM <- xM$probs
   
   # Set up storage
   grd.loglik <- c()
@@ -712,70 +765,50 @@ get_zmat <- function(x, y, Pmc=0.5, len.out = 100, lower = c(0.0001,-2), upper =
   BIC_1 <- c()
   grd.BIC_2 <- c()
   optim.BIC_2 <- c()
-  
   warn <- NULL
-  
   # Loop over grid of delta/gamma vals
   for(i in 1:nrow(grd)){
     
-    if(grd[i,2] == 0){  # REVISIT THIS
+    if(round(grd[i,2],3) == 0){ 
       temp <- do.call(bayes_ms_internal, c(list(LLO_internal(x=x0, delta = grd[i,1], gamma = grd[i,2]), y, Pmc=Pmc), optim_options))
       BIC_1[i] <- temp$BIC_Mc
       grd.BIC_2[i] <- temp$BIC_Mu
+      warn <- "There may be innaccuracies near gamma=0"
     }else{
-      # LLO-adjust based on current grid params
+      
+      # Grid shifted xs
       xg <- LLO_internal(x=x0, delta = grd[i,1], gamma = grd[i,2])
       
-      # Convert grid adjusted probs to logit scale
-      xg_logit <- logit(xg, epsilon=epsilon)
+      # MLEs for xg
+      dg_mle <- d_mle / (grd[i,1]^(g_mle / grd[i,2]))
+      gg_mle <- g_mle / grd[i,2]
       
-      # Get indices of two unique grid adjusted points following these conditions:
-      # - they are unique on probability scale up to 15 decimal places
-      # - they are unique on logit scale up to 15 decimal places
-      # - they are not within epsilon of the 0 or 1 boundary (because this causes round off problems)
-      
-      uniq_inds <- which(!duplicated(round(xg,15)) & !duplicated(round(xg_logit, 15)) & xg < 1-epsilon & xg > epsilon)
-      
-      # check to make sure there's at least two points
-      if(length(uniq_inds) < 2){
-        # uniq_inds <-  NA   # this way the plot will not plot anything at that cell
-        uniq_inds <- which(!duplicated(round(xg,15)) & !duplicated(round(xg_logit, 15)))
-        if(length(uniq_inds) < 2){
-          uniq_inds <-  NA
-        }else{
-          uniq_inds <- uniq_inds[1:2]
-          warn <- "Probs too close to 0 or 1, roundoff via epsilon may be causing inaccuracies"
-        }
-      } else{
-        uniq_inds <- uniq_inds[1:2]
-      }
-      
-      # Use point slope formula
-      start <- xg_logit[uniq_inds]
-      goal <- logit(xM[uniq_inds], epsilon=epsilon)
-      b <- (goal[2] - goal[1]) / (start[2] - start[1])
-      a <- goal[2] - b*start[2]
+      print(c(grd[i,1], grd[i,2], dg_mle, gg_mle))
       
       # Get BIC for calibrated model
       BIC_1[i] <- (-2)*llo_lik(params=c(1,1), x=xg, y=y, log=TRUE)
       
       # Get BIC for uncalibrated model
-      grd.loglik[i] <- llo_lik(params=c(exp(a),b), x=xg, y=y, log=TRUE)
+      grd.loglik[i] <- llo_lik(params=c(dg_mle, gg_mle), x=xg, y=y, log=TRUE)
       grd.BIC_2[i] <- 2*log(n) - 2*grd.loglik[i]
     }
   }
   
-  if(!is.null(warn)) warning(warn)
+  # print(BIC_1)
+  # print(grd.BIC_2)
   
   # Get Bayes Factor and posterior model prob of calibration
-  grd.BF <- exp(-(1/2) * (grd.BIC_2 - BIC_1)) #bayes_factor(BIC1 = grd.BIC_2, BIC2 = BIC_1)
+  grd.BF <- exp(-(1/2) * (grd.BIC_2 - BIC_1)) 
   Pmu <- 1 - Pmc
-  posts <- 1/(1+(grd.BF*(Pmu/Pmc))) #post_mod_prob(grd.BF)
+  posts <- 1/(1+(grd.BF*(Pmu/Pmc))) 
   
   # Reshape vector of posterior model probs into matrix for plotting
   z_mat <- matrix(posts, nrow = length(d), ncol = length(g))
   colnames(z_mat) <- g
   rownames(z_mat) <- d
+  
+  if(!is.null(warn)){warning(warn)}
+  if(anyNA(z_mat)){warning("Probs too close to 0 or 1 under very large |gamma|")}
   
   return(z_mat)
 }

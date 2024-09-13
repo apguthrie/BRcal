@@ -180,7 +180,7 @@ misleading results. Under large sample sizes where thinning is used, note
 this is only an approximate visual of the posterior model probability.
 }
 
-\section{Grid cells that show up white / round off warning message}{
+\section{Grid cells that show up white / inaccuracies warning message}{
 
 
 In some cases, grid cells in the plot may show up as white instead of one
@@ -191,11 +191,16 @@ not covered by the \code{z} matrix used (i.e. you've adjusted the bounds without
 recalculating z) or (2) the values of the parameters at these locations
 cause the values in \code{x} to be LLO-adjusted such that they virtually equal 0
 or 1.  This invokes the use of \code{epsilon} to push them away from these
-boundaries for stability. However, in these extreme cases this can cause
-inaccuracies in this plot. For this reason, we either throw the warning
-message: "Roundoff may cause inaccuracies in upper region of plot" or allow
-the cell to be plotted as white to notify the user and avoid plotting
-artifacts.
+boundaries for stability.   This typically happens when |gamma| is very large.
+However, in these extreme cases this can cause inaccuracies in this plot.
+For this reason, we either throw the warning message: "Probs too close to 0
+or 1 under very large |gamma|" and allow the cell to be plotted as white
+to notify the user and avoid plotting artifacts.
+
+Additionally, when gamma is very close to 0, we cannot directly calculate
+the MLEs for the grid shifted prediction and thus must use \code{optim()}
+to approximate them.  In this case, we throw a \code{warning} to notify users there
+may be inaccuracies.
 }
 
 \examples{
