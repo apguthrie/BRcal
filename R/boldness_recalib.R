@@ -412,25 +412,20 @@ obj_grad_f <- function(x, probs, outs, t, tau, Pmc, epsilon, optim_options){
   if(tau)(
     x[1] <- exp(x[1])
   )
-  
   n <- length(probs)
-  probs_new <- LLO_internal(x=probs, x[1], x[2])
+  probs_new <- LLO_internal(x=probs, x[1], x[2]) # x'
   sdp <- stats::sd(probs_new)
-  meanp <- mean(probs_new)
-  xmxg <- (probs * (1-probs))^x[2]
-  denom <- (x[1] * probs^x[2] + (1-probs)^x[2])^2
-  firstd <- xmxg/denom
-  meanxmxg <- mean(firstd)
-  pmmp <- (probs_new - meanp)
-  dxmxgl <- x[1] * xmxg * log(probs / (1-probs))
-  firstg <- dxmxgl/denom
-  meang <- mean(firstg)
-  innerd <- pmmp * (firstd - meanxmxg)
-  innerg <- pmmp * (firstg - meang)
+  meanp <- mean(probs_new)    # xbar'
   
-  grad_obj <- c((-1/((n-1) * sdp)) * sum(innerd),
-                (-1/((n-1) * sdp)) * sum(innerg))
+  out <- (probs_new - meanp) 
+  in1 <- (probs_new * (1 - probs_new))
+  in2 <- log(probs / (1-probs))
+  denom <- (n-1) * sdp
   
+  d_grad <- -sum(out * (in1 - mean(in1))) / (denom *x[1])
+  g_grad <- -sum(out * (in1*in2 - mean(in1*in2))) / denom
+  
+  grad_obj <- c(d_grad, g_grad)
   return(grad_obj)
 }
 
@@ -452,22 +447,17 @@ constr_grad_g <- function(x, probs, outs, t, tau, Pmc, epsilon, optim_options){
   probs_new <- LLO_internal(x=probs, x[1], x[2])
   bt <- do.call(bayes_ms_internal, c(list(x=probs_new, y=outs, Pmc = Pmc, epsilon=epsilon), optim_options))
   pmp <- bt$posterior_model_prob
-  pmp2 <- pmp^2
   dhat <- bt$MLEs[1]
   ghat <- bt$MLEs[2]
+  probs_MLE <- LLO_internal(x=probs_new, dhat, ghat)
   
-  pmps <- (pmp - pmp2)
+  pmps <- pmp * (1-pmp)
+  logp <- log(probs / (1-probs))
   
-  firstd <- (ghat - 1) * outs * (1/x[1])
-  secondd <- (dhat * probs^(ghat * x[2])*ghat*x[1]^(ghat-1)) / (dhat * x[1]^ghat * probs^(ghat * x[2]) + (1-probs)^(ghat * x[2]))
-  thirdd <- (probs^x[2]) / (x[1] * probs^(x[2]) + (1-probs)^x[2])
+  d_grad <- pmps * (1/x[1]) * sum((ghat-1)*outs - ghat*probs_MLE + probs_new)
+  g_grad <- pmps * sum(logp * ((ghat-1)*outs - ghat*probs_MLE + probs_new))
   
-  firstg <- (ghat - 1) * (outs * log(probs) + (1-outs) * log(1-probs))
-  secondg <- (ghat*(dhat * x[1]^ghat * probs^(x[2] * ghat) * log(probs) + (1-probs)^(x[2] * ghat)*log(1-probs))) / (dhat * x[1]^ghat * probs^(x[2]*ghat) + (1-probs)^(x[2]*ghat))
-  thirdg <- (x[1] * probs^x[2] * log(probs) + (1-probs)^x[2] * log(1-probs)) / (x[1] * probs^x[2] + (1-probs)^x[2])
-  
-  grad_obj <- c(pmps * sum(firstd - secondd + thirdd),
-                pmps * sum(firstg - secondg + thirdg))
+  grad_obj <- c(d_grad, g_grad)
   return(grad_obj)
 }
 
