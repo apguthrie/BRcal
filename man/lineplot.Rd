@@ -170,6 +170,10 @@ one thinning strategy at a time. Care should be taken in selecting a
 thinning approach based on the nature of your data and problem.  Note that
 MLE recalibration and boldness-recalibration will be done using the full
 set.
+
+Also note that if a thinning strategy is used with \code{return_df=TRUE}, the
+returned data frame will \strong{only contain the reduced set} (i.e. the data
+\emph{after} thinning).
 }
 
 \section{Passing additional arguments to \code{geom_point()} and \code{geom_line()}}{

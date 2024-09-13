@@ -394,7 +394,11 @@ plot_params <- function(x=NULL, y=NULL, z=NULL, t_levels = NULL,
 #'   one thinning strategy at a time. Care should be taken in selecting a
 #'   thinning approach based on the nature of your data and problem.  Note that
 #'   MLE recalibration and boldness-recalibration will be done using the full
-#'   set.
+#'   set. 
+#'   
+#'   Also note that if a thinning strategy is used with `return_df=TRUE`, the 
+#'   returned data frame will **only contain the reduced set** (i.e. the data 
+#'   *after* thinning).   
 #'
 #' @section Passing additional arguments to `geom_point()` and `geom_line()`:
 #'
@@ -551,7 +555,7 @@ lineplot <- function(x=NULL, y=NULL, t_levels=NULL, plot_original=TRUE,
     # check that additional options are in the form of a list
     if(!is.null(optim_options) & !is.list(optim_options)) stop("optim_options must be a list")
     if(!is.null(nloptr_options) & !is.list(nloptr_options)) stop("nloptr_options must be a list")
-  } else{  # CHANGE
+  } else{  
     if(!is.null(t_levels) & any(!(paste0(round(t_levels*100,0), "% B-R") %in% unique(df$set)))) warning("Not all t_levels found in df, will only plot those that are in df.")
   }
   
