@@ -9,4 +9,4 @@ set.seed(47)
 inds <- sample(1:nrow(foreclosure), 5000)
 foreclosure <- foreclosure[inds,]
 row.names(foreclosure) <- 1:nrow(foreclosure)
-usethis::use_data(foreclosure, internal=TRUE, overwrite = FALSE)
+usethis::use_data(foreclosure, overwrite = FALSE)

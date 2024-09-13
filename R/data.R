@@ -16,3 +16,24 @@
 #' }
 #' @source <https://data.fivethirtyeight.com/>
 "hockey"
+
+#' Foreclosure Monitoring Predictions data
+#'
+#' Foreclosure monitoring probability predictions and the true foreclosure 
+#' status pertaining of 5,000 housing transactions in 2010 
+#' from Wayne County, Michigan. These data were a randomly selected subset from
+#' data from presented in Keefe et al. (2017). 
+#'
+#' @format ## `foreclosure`
+#' A data frame with 5,000 rows and 3 columns:
+#' \describe{
+#'   \item{y}{sale type, 1 = foreclosure, 0 = regular sale}
+#'   \item{x}{predicted probabilities of foreclosure}
+#'   \item{year}{year of observed foreclosure or regular sale}
+#' }
+#' @source  Keefe, M.J., Franck, C.T., Woodall, W.H. (2017): Monitoring foreclosure 
+#' rates with a spatially risk-adjusted bernoulli cusum chart for concurrent 
+#' observations. \emph{Journal of Applied Statistics} 44(2), 325–341  
+#' <https://doi.org/10.1080/02664763.2016.1169257>
+
+"foreclosure"
