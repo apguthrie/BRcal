@@ -33,7 +33,7 @@
 #' }
 #' @source  Keefe, M.J., Franck, C.T., Woodall, W.H. (2017): Monitoring foreclosure 
 #' rates with a spatially risk-adjusted bernoulli cusum chart for concurrent 
-#' observations. \emph{Journal of Applied Statistics} 44(2), 325–341  
-#' <https://doi.org/10.1080/02664763.2016.1169257>
+#' observations. \emph{Journal of Applied Statistics} 44(2), 325–341 
+#' \doi{10.1080/02664763.2016.1169257} 
 
 "foreclosure"
