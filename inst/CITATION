@@ -3,6 +3,6 @@ bibentry(
   title    = "BRcal: Boldness-Recalibration of Binary Events",
   author   = "Adeline P. Guthrie, and Christopher T. Franck",
   year     = 2024,
-  note = {R package version 1.0.1},
-  url = {https://CRAN.R-project.org/package=BRcal},
+  note = "R package version 1.0.1",
+  url = "https://CRAN.R-project.org/package=BRcal",
 )
