@@ -1,8 +1,20 @@
 bibentry(
   bibtype  = "Manual",
-  title    = "BRcal: Boldness-Recalibration of Binary Events",
+  title    = "{BRcal: Boldness-Recalibration of Binary Events}",
   author   = "Adeline P. Guthrie, and Christopher T. Franck",
   year     = 2024,
   note = "R package version 1.0.1",
   url = "https://CRAN.R-project.org/package=BRcal",
+)
+
+bibentry(
+  bibtype  = "Article",
+  title    = "{BRcal: An R Package to Boldness-Recalibrate Probability Predictions}",
+  author   = "Adeline P. Guthrie, and Christopher T. Franck",
+  year     = 2024,
+  journal = "{arXiv}",
+  eprint = "2409.13858",
+  archivePrefix = "{arXiv}",
+  primaryClass = "stat.ME",
+  url = "https://arxiv.org/abs/2409.13858",
 )
