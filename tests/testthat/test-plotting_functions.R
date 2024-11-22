@@ -3,7 +3,8 @@
 #############################################
 
 test_that("plot_params() for hockey data doesn't break",{
-  expect_no_condition(plot_params(x=hockey$x, y=hockey$y, k=10))
+  expect_no_condition(plot_params(x=hockey$x, y=hockey$y, glim = c(0.1, 5), k=10))
+  expect_warning(plot_params(x=hockey$x, y=hockey$y, k=10))
 })
 
 test_that("plot_params() only allows valid grid values",{
@@ -23,7 +24,7 @@ test_that("plot_params() requires either z or x&y",{
 test_that("plot_params() only allows valid t_levels",{
   expect_error(plot_params(x=hockey$x, y=hockey$y, t_levels=c(-1)))
   expect_error(plot_params(x=hockey$x, y=hockey$y, t_levels=c(Inf)))
-  expect_no_condition(plot_params(x=hockey$x, y=hockey$y, t_levels=c(0.9, 0.8, 0.4), k=10))
+  expect_no_condition(plot_params(x=hockey$x, y=hockey$y, glim = c(0.1, 5), t_levels=c(0.9, 0.8, 0.4), k=10))
   expect_error(plot_params(x=hockey$x, y=hockey$y, t_levels=c(TRUE)))
   expect_error(plot_params(x=hockey$x, y=hockey$y, t_levels=c("hi")))
   expect_error(plot_params(x=hockey$x, y=hockey$y, t_levels=c(100)))
@@ -35,12 +36,12 @@ test_that("plot_params() only accepts valid input for return_z",{
   x <- runif(10)
   y <- rbinom(10,1,x)
   
-  expect_no_condition(plot_params(x=hockey$x, y=hockey$y, k=2, return_z = TRUE))
-  expect_no_condition(plot_params(x=hockey$x, y=hockey$y, k=2, return_z = 1))
-  expect_no_condition(plot_params(x=hockey$x, y=hockey$y, k=2, return_z = FALSE))
-  expect_no_condition(plot_params(x=hockey$x, y=hockey$y, k=2, return_z = 0))
-  expect_no_condition(plot_params(x=hockey$x, y=hockey$y, k=2, return_z = T))
-  expect_no_condition(plot_params(x=hockey$x, y=hockey$y, k=2, return_z = F))
+  expect_no_condition(plot_params(x=hockey$x, y=hockey$y, glim = c(0.1, 5), k=2, return_z = TRUE))
+  expect_no_condition(plot_params(x=hockey$x, y=hockey$y, glim = c(0.1, 5), k=2, return_z = 1))
+  expect_no_condition(plot_params(x=hockey$x, y=hockey$y, glim = c(0.1, 5), k=2, return_z = FALSE))
+  expect_no_condition(plot_params(x=hockey$x, y=hockey$y, glim = c(0.1, 5), k=2, return_z = 0))
+  expect_no_condition(plot_params(x=hockey$x, y=hockey$y, glim = c(0.1, 5), k=2, return_z = T))
+  expect_no_condition(plot_params(x=hockey$x, y=hockey$y, glim = c(0.1, 5), k=2, return_z = F))
   
   expect_error(plot_params(x=hockey$x, y=hockey$y, k=2, return_z = 10))
   expect_error(plot_params(x=hockey$x, y=hockey$y, k=2, return_z = "hi"))
@@ -54,11 +55,11 @@ test_that("plot_params() only accepts valid input for contours_only",{
   y <- rbinom(10,1,x)
   
   expect_error(plot_params(x=hockey$x, y=hockey$y, k=2, contours_only = TRUE))
-  expect_no_condition(plot_params(x=hockey$x, y=hockey$y, k=2, t_levels=c(0.9, 0.8, 0.4), contours_only = 1))
-  expect_no_condition(plot_params(x=hockey$x, y=hockey$y, k=2, contours_only = FALSE))
-  expect_no_condition(plot_params(x=hockey$x, y=hockey$y, k=2, contours_only = 0))
-  expect_no_condition(plot_params(x=hockey$x, y=hockey$y, k=2, t_levels=c(0.9, 0.8, 0.4), contours_only = T))
-  expect_no_condition(plot_params(x=hockey$x, y=hockey$y, k=2, contours_only = F))
+  expect_no_condition(plot_params(x=hockey$x, y=hockey$y,  glim = c(0.1, 5), k=2, t_levels=c(0.9, 0.8, 0.4), contours_only = 1))
+  expect_no_condition(plot_params(x=hockey$x, y=hockey$y, glim = c(0.1, 5), k=2, contours_only = FALSE))
+  expect_no_condition(plot_params(x=hockey$x, y=hockey$y, glim = c(0.1, 5), k=2, contours_only = 0))
+  expect_no_condition(plot_params(x=hockey$x, y=hockey$y, glim = c(0.1, 5), k=2, t_levels=c(0.9, 0.8, 0.4), contours_only = T))
+  expect_no_condition(plot_params(x=hockey$x, y=hockey$y, glim = c(0.1, 5), k=2, contours_only = F))
   
   expect_error(plot_params(x=hockey$x, y=hockey$y, k=2, contours_only = 10))
   expect_error(plot_params(x=hockey$x, y=hockey$y, k=2, contours_only = "hi"))
@@ -86,7 +87,7 @@ test_that("plot_params() behavior at gamma = 0",{
   x <- runif(10)
   y <- rbinom(10,1,x)
   
-  expect_no_condition(plot_params(x,y, k=3, glim=c(-1,1)))
+  expect_warning(plot_params(x,y, k=3, glim=c(-1,1)))
 })
 
 #############################################
@@ -134,11 +135,11 @@ test_that("lineplot() thinning",{
   expect_error(lineplot(x=x, y=y, thin_to=1))
   expect_error(lineplot(x=x, y=y, thin_to=c(10,20)))
   
-  expect_no_condition(lineplot(x=x, y=y, thin_percent=0.5))
-  expect_error(lineplot(x=x, y=y, thin_percent=Inf))
-  expect_error(lineplot(x=x, y=y, thin_percent=-1))
-  expect_error(lineplot(x=x, y=y, thin_percent=2))
-  expect_error(lineplot(x=x, y=y, thin_percent=c(0.2, 0.3)))
+  expect_no_condition(lineplot(x=x, y=y, thin_prop=0.5))
+  expect_error(lineplot(x=x, y=y, thin_prop=Inf))
+  expect_error(lineplot(x=x, y=y, thin_prop=-1))
+  expect_error(lineplot(x=x, y=y, thin_prop=2))
+  expect_error(lineplot(x=x, y=y, thin_prop=c(0.2, 0.3)))
   
   expect_no_condition(lineplot(x=x, y=y, thin_by=2))
   expect_error(lineplot(x=x, y=y, thin_by=Inf))
@@ -159,12 +160,12 @@ test_that("lineplot() thinning with df",{
   expect_error(lineplot(df=df, thin_to=1))
   expect_error(lineplot(df=df, thin_to=c(10,20)))
   
-  expect_no_condition(lineplot(df=df, thin_percent=0.5))
-  expect_error(lineplot(df=df, thin_percent=Inf))
-  expect_error(lineplot(df=df, thin_percent="hi"))
-  expect_error(lineplot(df=df, thin_percent=-1))
-  expect_error(lineplot(df=df, thin_percent=2))
-  expect_error(lineplot(df=df, thin_percent=c(0.2, 0.3)))
+  expect_no_condition(lineplot(df=df, thin_prop=0.5))
+  expect_error(lineplot(df=df, thin_prop=Inf))
+  expect_error(lineplot(df=df, thin_prop="hi"))
+  expect_error(lineplot(df=df, thin_prop=-1))
+  expect_error(lineplot(df=df, thin_prop=2))
+  expect_error(lineplot(df=df, thin_prop=c(0.2, 0.3)))
   
   expect_no_condition(lineplot(df=df, thin_by=2))
   expect_error(lineplot(df=df, thin_by=Inf))

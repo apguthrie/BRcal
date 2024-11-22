@@ -12,7 +12,7 @@ test_that("bayes_ms gives correct posterior_model_prob",{
   expect_equal(round(bayes_538$posterior_model_prob, dec), round(0.9903632, dec))
 
   # check that bayes_ms gives correct posterior_model_prob for random noise
-  bayes_rand <- bayes_ms(rand_pundit$x, rand_pundit$y)
+  bayes_rand <- bayes_ms(hockey$rand, hockey$y)
   expect_equal(round(bayes_rand$posterior_model_prob, dec), round(0.0000000, dec))
 })
 
@@ -34,30 +34,30 @@ test_that("bayes_ms gives correct BIC",{
 
   # check that bayes_ms gives correct BIC for fivethirtyeight
   bayes_538 <- bayes_ms(hockey$x, hockey$y)
-  expect_equal(round(bayes_538$BIC_H0, dec), round(1148.637, dec))
-  expect_equal(round(bayes_538$BIC_H1, dec), round(1157.902, dec))
+  expect_equal(round(bayes_538$BIC_Mc, dec), round(1148.637, dec))
+  expect_equal(round(bayes_538$BIC_Mu, dec), round(1157.902, dec))
 
   # check that bayes_ms gives correct BIC for random noise
-  bayes_rand <- bayes_ms(rand_pundit$x, rand_pundit$y)
-  expect_equal(round(bayes_rand$BIC_H0, dec), round(1269.664, dec))
-  expect_equal(round(bayes_rand$BIC_H1, dec), round(1212.527, dec))
+  bayes_rand <- bayes_ms(hockey$rand, hockey$y)
+  expect_equal(round(bayes_rand$BIC_Mc, dec), round(1269.664, dec))
+  expect_equal(round(bayes_rand$BIC_Mu, dec), round(1212.527, dec))
 
 })
 
-test_that("bayes_ms gives correct est_params",{
+test_that("bayes_ms gives correct MLEs",{
 
   # number of decimal places
   dec <- 5
 
-  # check that bayes_ms gives correct est_params for fivethirtyeight
+  # check that bayes_ms gives correct MLEs for fivethirtyeight
   bayes_538 <- bayes_ms(hockey$x, hockey$y)
-  expect_equal(round(bayes_538$est_params[1], dec), round(0.9453966 , dec))
-  expect_equal(round(bayes_538$est_params[2], dec), round(1.4005730, dec))
+  expect_equal(round(bayes_538$MLEs[1], dec), round(0.9453966 , dec))
+  expect_equal(round(bayes_538$MLEs[2], dec), round(1.4005730, dec))
 
-  # check that bayes_ms gives correct est_params for random noise
-  bayes_rand <- bayes_ms(rand_pundit$x, rand_pundit$y)
-  expect_equal(round(bayes_rand$est_params[1], dec), round(1.13946217, dec))
-  expect_equal(round(bayes_rand$est_params[2], dec), round(0.07199484, dec))
+  # check that bayes_ms gives correct MLEs for random noise
+  bayes_rand <- bayes_ms(hockey$rand, hockey$y)
+  expect_equal(round(bayes_rand$MLEs[1], dec), round(1.13946217, dec))
+  expect_equal(round(bayes_rand$MLEs[2], dec), round(0.07199484, dec))
 })
 
 

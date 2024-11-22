@@ -241,7 +241,7 @@ test_that("llo_lrt() gives correct p-value",{
   expect_equal(round(lrt_538$pval, dec), round(0.118396594, dec))
   
   # check that llo_lrt gives correct p-value for random noise
-  lrt_rand <- llo_lrt(rand_pundit$x, rand_pundit$y)
+  lrt_rand <- llo_lrt(hockey$rand, hockey$y)
   expect_equal(round(lrt_rand$pval, dec), round(0.0000000, dec))
 })
 
@@ -255,24 +255,24 @@ test_that("llo_lrt() gives correct test stat",{
   expect_equal(round(lrt_538$test_stat, dec), round(4.267411, dec))
   
   # check that llo_lrt gives correct test_stat for random noise
-  lrt_rand <- llo_lrt(rand_pundit$x, rand_pundit$y)
+  lrt_rand <- llo_lrt(hockey$rand, hockey$y)
   expect_equal(round(lrt_rand$test_stat, dec), round(70.66915, dec))
 })
 
-test_that("llo_lrt() gives correct est_params",{
+test_that("llo_lrt() gives correct MLEs",{
   
   # number of decimal places
   dec <- 5
   
-  # check that llo_lrt gives correct est_params for fivethirtyeight
+  # check that llo_lrt gives correct MLEs for fivethirtyeight
   lrt_538 <- llo_lrt(hockey$x, hockey$y)
-  expect_equal(round(lrt_538$est_params[1], dec), round(0.9453966, dec))
-  expect_equal(round(lrt_538$est_params[2], dec), round(1.4005730, dec))
+  expect_equal(round(lrt_538$MLEs[1], dec), round(0.9453966, dec))
+  expect_equal(round(lrt_538$MLEs[2], dec), round(1.4005730, dec))
   
-  # check that llo_lrt gives correct est_params for random noise
-  lrt_rand <- llo_lrt(rand_pundit$x, rand_pundit$y)
-  expect_equal(round(lrt_rand$est_params[1], dec), round(1.13946217, dec))
-  expect_equal(round(lrt_rand$est_params[2], dec), round(0.07199484, dec))
+  # check that llo_lrt gives correct MLEs for random noise
+  lrt_rand <- llo_lrt(hockey$rand, hockey$y)
+  expect_equal(round(lrt_rand$MLEs[1], dec), round(1.13946217, dec))
+  expect_equal(round(lrt_rand$MLEs[2], dec), round(0.07199484, dec))
 })
 
 
